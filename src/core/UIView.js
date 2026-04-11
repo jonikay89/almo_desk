@@ -1,7 +1,9 @@
 import UIColor from './UIColor.js';
+import UIResponder from './UIResponder.js';
 
-class UIView {
+class UIView extends UIResponder {
     constructor() {
+        super();
         this.superview = null;
         this.window = null;
         this._frame = { x: 0, y: 0, width: 0, height: 0 };
@@ -10,7 +12,6 @@ class UIView {
         this._hidden = false;
         this._alpha = 1;
         this._clipsToBounds = false;
-        this.userInteractionEnabled = true;
         this.tag = 0;
         this.subviews = [];
         this.element = document.createElement('div');

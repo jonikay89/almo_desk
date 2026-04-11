@@ -1,13 +1,13 @@
-import UIView from './UIView.js';
+import UIResponder from './UIResponder.js';
 
-class UIViewController extends UIView {
+class UIViewController extends UIResponder {
     constructor() {
         super();
-        this.view = new UIView();
-        this.view.element = null;
+        this.view = null;
         this.isViewLoaded = false;
         this.parentController = null;
         this.childControllers = [];
+        this._view = null;
     }
 
     loadView() {
@@ -25,6 +25,17 @@ class UIViewController extends UIView {
     viewDidDisappear(animated = false) {}
 
     viewDidLayoutSubviews() {}
+
+    get view() {
+        return this._view;
+    }
+
+    set view(view) {
+        this._view = view;
+        if (view) {
+            view._nextResponder = this;
+        }
+    }
 
     didMove(toParentController) {
         if (toParentController) {
@@ -57,7 +68,7 @@ class UIViewController extends UIView {
             this.isViewLoaded = true;
             this.viewDidLoad();
         }
-        return this.view;
+        return this._view;
     }
 
     createView() {
@@ -66,6 +77,22 @@ class UIViewController extends UIView {
 
     getView() {
         return this.loadViewIfNeeded().element;
+    }
+
+    touchesBegan(touches, event) {
+        this._view?.touchesBegan?.(touches, event);
+    }
+
+    touchesMoved(touches, event) {
+        this._view?.touchesMoved?.(touches, event);
+    }
+
+    touchesEnded(touches, event) {
+        this._view?.touchesEnded?.(touches, event);
+    }
+
+    touchesCancelled(touches, event) {
+        this._view?.touchesCancelled?.(touches, event);
     }
 }
 
