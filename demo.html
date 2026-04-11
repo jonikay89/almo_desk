@@ -17,7 +17,13 @@
             UITableView, UITableViewCell, UICollectionView, UICollectionViewCell, UICollectionViewFlowLayout,
             UINavigationBar, UINavigationItem, UITabBar, UITabBarItem,
             UISearchBar, UIAlertController, UIPickerView, UIImageView, UIImage,
-            UIColor, CGPoint, CGSize, CGRect
+            UIColor, CGPoint, CGSize, CGRect, Date, URL, URLQueryItem, URLComponents,
+            UUID, Decimal, Character, TimeZone, Calendar, Locale, Measurement,
+            UnitLength, UnitMass, UnitTemperature, UnitTime,
+            FileManager, UserDefaults, Bundle, Notification, AppError, AnyHashable,
+            JSONEncoder, JSONDecoder, NumberFormatter, DateFormatter,
+            OrderedSet, SortedSet, WeakDictionary,
+            Regex, Predicate, Task, Lock, ReadWriteLock, AtomicInt, AtomicBool
         } from './src/core/index.js';
 
         class DemoViewController {
@@ -62,6 +68,17 @@
                 yOffset = this.addSection('UIAlertController', [this.createAlertControllerDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('UIImageView', [this.createImageViewDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('CGGeometry', [this.createGeometryDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Date', [this.createDateDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('URL & URLComponents', [this.createURLDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UUID & Character', [this.createUUIDDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('TimeZone & Calendar', [this.createTimeZoneDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Locale & Measurement', [this.createLocaleMeasurementDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('FileManager & UserDefaults', [this.createStorageDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Notification & Error', [this.createNotificationErrorDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Formatters & Coders', [this.createFormatterDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Collections', [this.createCollectionDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Regex & Predicate', [this.createRegexPredicateDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Async & Locking', [this.createAsyncLockingDemos()], yOffset, padding, contentWidth);
 
                 this.scrollView.setContentSize(contentWidth, yOffset + 40);
             }
@@ -837,6 +854,651 @@
                 insetLabel.fontSize = 14;
                 insetLabel.textColor = UIColor.black();
                 container.addSubview(insetLabel);
+
+                return container;
+            }
+
+            createDateDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 200 };
+
+                const now = new Date();
+                const nowLabel = new UILabel(`Now: ${now.toString()}`);
+                nowLabel.init();
+                nowLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                nowLabel.fontSize = 14;
+                nowLabel.textColor = UIColor.black();
+                container.addSubview(nowLabel);
+
+                const isoLabel = new UILabel(`ISO: ${now.toISOString()}`);
+                isoLabel.init();
+                isoLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                isoLabel.fontSize = 14;
+                isoLabel.textColor = UIColor.black();
+                container.addSubview(isoLabel);
+
+                const componentsLabel = new UILabel(`Components: ${now.year}/${now.month}/${now.day} ${now.hour}:${now.minute}:${now.second}`);
+                componentsLabel.init();
+                componentsLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                componentsLabel.fontSize = 14;
+                componentsLabel.textColor = UIColor.black();
+                container.addSubview(componentsLabel);
+
+                const tomorrow = now.addingDays(1);
+                const tomorrowLabel = new UILabel(`Tomorrow: ${tomorrow.toDateString()}`);
+                tomorrowLabel.init();
+                tomorrowLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                tomorrowLabel.fontSize = 14;
+                tomorrowLabel.textColor = UIColor.black();
+                container.addSubview(tomorrowLabel);
+
+                const formattedLabel = new UILabel(`Formatted: ${now.format('yyyy-MM-dd HH:mm:ss')}`);
+                formattedLabel.init();
+                formattedLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                formattedLabel.fontSize = 14;
+                formattedLabel.textColor = UIColor.black();
+                container.addSubview(formattedLabel);
+
+                const timeIntervalLabel = new UILabel(`Since 1970: ${now.timeIntervalSince1970.toFixed(0)}s`);
+                timeIntervalLabel.init();
+                timeIntervalLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                timeIntervalLabel.fontSize = 14;
+                timeIntervalLabel.textColor = UIColor.black();
+                container.addSubview(timeIntervalLabel);
+
+                return container;
+            }
+
+            createURLDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 220 };
+
+                const url = new URL('https://example.com:8080/path/to/file.html?query=123#section');
+                const schemeLabel = new UILabel(`Scheme: ${url.scheme}`);
+                schemeLabel.init();
+                schemeLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                schemeLabel.fontSize = 14;
+                schemeLabel.textColor = UIColor.black();
+                container.addSubview(schemeLabel);
+
+                const hostLabel = new UILabel(`Host: ${url.host}`);
+                hostLabel.init();
+                hostLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                hostLabel.fontSize = 14;
+                hostLabel.textColor = UIColor.black();
+                container.addSubview(hostLabel);
+
+                const pathLabel = new UILabel(`Path: ${url.path}`);
+                pathLabel.init();
+                pathLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                pathLabel.fontSize = 14;
+                pathLabel.textColor = UIColor.black();
+                container.addSubview(pathLabel);
+
+                const queryLabel = new UILabel(`Query: ${url.query}`);
+                queryLabel.init();
+                queryLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                queryLabel.fontSize = 14;
+                queryLabel.textColor = UIColor.black();
+                container.addSubview(queryLabel);
+
+                const appendedUrl = url.appendingPathComponent('newpage');
+                const appendedLabel = new UILabel(`Appended: ${appendedUrl.path}`);
+                appendedLabel.init();
+                appendedLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                appendedLabel.fontSize = 14;
+                appendedLabel.textColor = UIColor.black();
+                container.addSubview(appendedLabel);
+
+                const components = URLComponents.from('https://example.com/api?token=abc&debug=true');
+                const compLabel = new UILabel(`Components URL: ${components.string}`);
+                compLabel.init();
+                compLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                compLabel.fontSize = 12;
+                compLabel.textColor = UIColor.black();
+                container.addSubview(compLabel);
+
+                const queryItem = components.getQueryItemForName('token');
+                const itemLabel = new UILabel(`Token query item: ${queryItem ? queryItem.value : 'null'}`);
+                itemLabel.init();
+                itemLabel.frame = { x: 0, y: 144, width: 300, height: 20 };
+                itemLabel.fontSize = 14;
+                itemLabel.textColor = UIColor.black();
+                container.addSubview(itemLabel);
+
+                const newComponents = components.appendingQueryItem(URLQueryItem.of('page', '2'));
+                const newUrl = newComponents.string;
+                const newUrlLabel = new UILabel(`New URL: ${newUrl}`);
+                newUrlLabel.init();
+                newUrlLabel.frame = { x: 0, y: 168, width: 300, height: 20 };
+                newUrlLabel.fontSize = 12;
+                newUrlLabel.textColor = UIColor.black();
+                container.addSubview(newUrlLabel);
+
+                return container;
+            }
+
+            createUUIDDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 120 };
+
+                const uuid = new UUID();
+                const uuidLabel = new UILabel(`UUID: ${uuid.uuidString}`);
+                uuidLabel.init();
+                uuidLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                uuidLabel.fontSize = 14;
+                uuidLabel.textColor = UIColor.black();
+                container.addSubview(uuidLabel);
+
+                const uuid2 = UUID.from(uuid.uuidString);
+                const validLabel = new UILabel(`From existing: ${uuid2 ? uuid2.uuidString : 'null'}`);
+                validLabel.init();
+                validLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                validLabel.fontSize = 14;
+                validLabel.textColor = UIColor.black();
+                container.addSubview(validLabel);
+
+                const char = new Character('A');
+                const charLabel = new UILabel(`Char: ${char.char}, upper: ${char.toUpperCase().char}, ascii: ${char.asciiValue}`);
+                charLabel.init();
+                charLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                charLabel.fontSize = 14;
+                charLabel.textColor = UIColor.black();
+                container.addSubview(charLabel);
+
+                const char2 = Character.space();
+                const spaceLabel = new UILabel(`Space char: '${char2.char}', isWhitespace: ${char2.isWhitespace()}`);
+                spaceLabel.init();
+                spaceLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                spaceLabel.fontSize = 14;
+                spaceLabel.textColor = UIColor.black();
+                container.addSubview(spaceLabel);
+
+                const decimal = new Decimal('123.456789');
+                const decimalLabel = new UILabel(`Decimal: ${decimal.toString()}, floor: ${decimal.floor().toString()}`);
+                decimalLabel.init();
+                decimalLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                decimalLabel.fontSize = 14;
+                decimalLabel.textColor = UIColor.black();
+                container.addSubview(decimalLabel);
+
+                return container;
+            }
+
+            createTimeZoneDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 160 };
+
+                const tz = TimeZone.current();
+                const tzLabel = new UILabel(`Current: ${tz.identifier}, GMT offset: ${tz.secondsFromGMT}s`);
+                tzLabel.init();
+                tzLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                tzLabel.fontSize = 14;
+                tzLabel.textColor = UIColor.black();
+                container.addSubview(tzLabel);
+
+                const utc = TimeZone.UTC();
+                const utcLabel = new UILabel(`UTC: ${utc.identifier}, abbreviation: ${utc.abbreviation}`);
+                utcLabel.init();
+                utcLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                utcLabel.fontSize = 14;
+                utcLabel.textColor = UIColor.black();
+                container.addSubview(utcLabel);
+
+                const cal = Calendar.current();
+                const calLabel = new UILabel(`Calendar: ${cal.identifier}`);
+                calLabel.init();
+                calLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                calLabel.fontSize = 14;
+                calLabel.textColor = UIColor.black();
+                container.addSubview(calLabel);
+
+                const now = new Date();
+                const components = cal.dateComponents(now);
+                const componentsLabel = new UILabel(`Date components: ${components.year}/${components.month}/${components.day}`);
+                componentsLabel.init();
+                componentsLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                componentsLabel.fontSize = 14;
+                componentsLabel.textColor = UIColor.black();
+                container.addSubview(componentsLabel);
+
+                const tomorrow = cal.dateByAdding('day', 1, now);
+                const tomorrowLabel = new UILabel(`Tomorrow: ${tomorrow.toDateString()}`);
+                tomorrowLabel.init();
+                tomorrowLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                tomorrowLabel.fontSize = 14;
+                tomorrowLabel.textColor = UIColor.black();
+                container.addSubview(tomorrowLabel);
+
+                const locale = Locale.current();
+                const localeLabel = new UILabel(`Locale: ${locale.identifier}, language: ${locale.languageCode}`);
+                localeLabel.init();
+                localeLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                localeLabel.fontSize = 14;
+                localeLabel.textColor = UIColor.black();
+                container.addSubview(localeLabel);
+
+                return container;
+            }
+
+            createLocaleMeasurementDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 140 };
+
+                const m = new Measurement(100, UnitLength.meter);
+                const mLabel = new UILabel(`Measurement: ${m.value} ${m.symbol}`);
+                mLabel.init();
+                mLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                mLabel.fontSize = 14;
+                mLabel.textColor = UIColor.black();
+                container.addSubview(mLabel);
+
+                const converted = m.converting(UnitLength.kilometer);
+                const convLabel = new UILabel(`Converted: ${converted.value} ${converted.symbol}`);
+                convLabel.init();
+                convLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                convLabel.fontSize = 14;
+                convLabel.textColor = UIColor.black();
+                container.addSubview(convLabel);
+
+                const kg = new Measurement(1.5, UnitMass.kilogram);
+                const kgLabel = new UILabel(`Mass: ${kg.value} ${kg.symbol}`);
+                kgLabel.init();
+                kgLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                kgLabel.fontSize = 14;
+                kgLabel.textColor = UIColor.black();
+                container.addSubview(kgLabel);
+
+                const pound = kg.converting(UnitMass.pound);
+                const poundLabel = new UILabel(`In pounds: ${pound.value.toFixed(2)} ${pound.symbol}`);
+                poundLabel.init();
+                poundLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                poundLabel.fontSize = 14;
+                poundLabel.textColor = UIColor.black();
+                container.addSubview(poundLabel);
+
+                const temp = new Measurement(100, UnitTemperature.celsius);
+                const tempLabel = new UILabel(`Temperature: ${temp.value} ${temp.symbol}`);
+                tempLabel.init();
+                tempLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                tempLabel.fontSize = 14;
+                tempLabel.textColor = UIColor.black();
+                container.addSubview(tempLabel);
+
+                const fahrenheit = temp.converting(UnitTemperature.fahrenheit);
+                const fahrenheitLabel = new UILabel(`In Fahrenheit: ${fahrenheit.value.toFixed(1)} ${fahrenheit.symbol}`);
+                fahrenheitLabel.init();
+                fahrenheitLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                fahrenheitLabel.fontSize = 14;
+                fahrenheitLabel.textColor = UIColor.black();
+                container.addSubview(fahrenheitLabel);
+
+                return container;
+            }
+
+            createStorageDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 120 };
+
+                const fm = FileManager.default();
+                const homeDir = fm.homeDirectory();
+                const fmLabel = new UILabel(`Home: ${homeDir}`);
+                fmLabel.init();
+                fmLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                fmLabel.fontSize = 14;
+                fmLabel.textColor = UIColor.black();
+                container.addSubview(fmLabel);
+
+                const docsDir = fm.documentsDirectory();
+                const docsLabel = new UILabel(`Documents: ${docsDir}`);
+                docsLabel.init();
+                docsLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                docsLabel.fontSize = 12;
+                docsLabel.textColor = UIColor.black();
+                container.addSubview(docsLabel);
+
+                const defaults = UserDefaults.standard();
+                defaults.set('TestUser', 'username');
+                defaults.set(42, 'userId');
+                const userLabel = new UILabel(`Saved user: ${defaults.string('username')}`);
+                userLabel.init();
+                userLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                userLabel.fontSize = 14;
+                userLabel.textColor = UIColor.black();
+                container.addSubview(userLabel);
+
+                const idLabel = new UILabel(`Saved id: ${defaults.integer('userId')}`);
+                idLabel.init();
+                idLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                idLabel.fontSize = 14;
+                idLabel.textColor = UIColor.black();
+                container.addSubview(idLabel);
+
+                const bundle = Bundle.main();
+                const bundleLabel = new UILabel(`Bundle ID: ${bundle.identifier}`);
+                bundleLabel.init();
+                bundleLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                bundleLabel.fontSize = 14;
+                bundleLabel.textColor = UIColor.black();
+                container.addSubview(bundleLabel);
+
+                return container;
+            }
+
+            createNotificationErrorDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 140 };
+
+                const notif = Notification.named('AppDidLaunch');
+                const notifLabel = new UILabel(`Notification: ${notif.name}`);
+                notifLabel.init();
+                notifLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                notifLabel.fontSize = 14;
+                notifLabel.textColor = UIColor.black();
+                container.addSubview(notifLabel);
+
+                const notif2 = Notification.from('UserLoggedIn', null, { userId: 123 });
+                const notif2Label = new UILabel(`With userInfo: ${notif2.userInfo?.userId}`);
+                notif2Label.init();
+                notif2Label.frame = { x: 0, y: 24, width: 300, height: 20 };
+                notif2Label.fontSize = 14;
+                notif2Label.textColor = UIColor.black();
+                container.addSubview(notif2Label);
+
+                const err = AppError.validationError('Invalid email address');
+                const errLabel = new UILabel(`Error: ${err.message}`);
+                errLabel.init();
+                errLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                errLabel.fontSize = 14;
+                errLabel.textColor = UIColor.systemRed();
+                container.addSubview(errLabel);
+
+                const err2 = AppError.notFoundError('User profile not found');
+                const err2Label = new UILabel(`NotFound: ${err2.message}`);
+                err2Label.init();
+                err2Label.frame = { x: 0, y: 72, width: 300, height: 20 };
+                err2Label.fontSize = 14;
+                err2Label.textColor = UIColor.systemRed();
+                container.addSubview(err2Label);
+
+                const anyHash = AnyHashable.from(42);
+                const anyHashLabel = new UILabel(`AnyHashable: ${anyHash.value}, hash: ${anyHash.hashValue}`);
+                anyHashLabel.init();
+                anyHashLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                anyHashLabel.fontSize = 14;
+                anyHashLabel.textColor = UIColor.black();
+                container.addSubview(anyHashLabel);
+
+                const anyHash2 = AnyHashable.from('hello');
+                const anyHash2Label = new UILabel(`AnyHashable str: ${anyHash2.value}`);
+                anyHash2Label.init();
+                anyHash2Label.frame = { x: 0, y: 120, width: 300, height: 20 };
+                anyHash2Label.fontSize = 14;
+                anyHash2Label.textColor = UIColor.black();
+                container.addSubview(anyHash2Label);
+
+                return container;
+            }
+
+            createFormatterDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 180 };
+
+                const encoder = new JSONEncoder();
+                const obj = { name: 'Test', value: 42 };
+                const jsonStr = encoder.encode(obj);
+                const encoderLabel = new UILabel(`JSON Encoder: ${jsonStr.substring(0, 30)}...`);
+                encoderLabel.init();
+                encoderLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                encoderLabel.fontSize = 12;
+                encoderLabel.textColor = UIColor.black();
+                container.addSubview(encoderLabel);
+
+                const decoder = new JSONDecoder();
+                const decoded = decoder.decode(Object, jsonStr);
+                const decoderLabel = new UILabel(`JSON Decoder: ${decoded.name}, ${decoded.value}`);
+                decoderLabel.init();
+                decoderLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                decoderLabel.fontSize = 14;
+                decoderLabel.textColor = UIColor.black();
+                container.addSubview(decoderLabel);
+
+                const numFormatter = new NumberFormatter();
+                numFormatter.numberStyle = 'currency';
+                numFormatter.locale = 'en-US';
+                const currencyLabel = new UILabel(`Currency: ${numFormatter.string(1234.56)}`);
+                currencyLabel.init();
+                currencyLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                currencyLabel.fontSize = 14;
+                currencyLabel.textColor = UIColor.black();
+                container.addSubview(currencyLabel);
+
+                const percentFormatter = new NumberFormatter();
+                percentFormatter.numberStyle = 'percent';
+                percentFormatter.maximumFractionDigits = 1;
+                const percentLabel = new UILabel(`Percent: ${percentFormatter.string(0.756)}`);
+                percentLabel.init();
+                percentLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                percentLabel.fontSize = 14;
+                percentLabel.textColor = UIColor.black();
+                container.addSubview(percentLabel);
+
+                const dateFormatter = new DateFormatter();
+                dateFormatter.dateFormat = 'yyyy-MM-dd HH:mm:ss';
+                const now = new Date();
+                const formattedDate = dateFormatter.string(now);
+                const dateFormatterLabel = new UILabel(`Date: ${formattedDate}`);
+                dateFormatterLabel.init();
+                dateFormatterLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                dateFormatterLabel.fontSize = 14;
+                dateFormatterLabel.textColor = UIColor.black();
+                container.addSubview(dateFormatterLabel);
+
+                const shortFormatter = new DateFormatter();
+                shortFormatter.dateStyle = 'short';
+                shortFormatter.timeStyle = 'short';
+                const shortDateLabel = new UILabel(`Short: ${shortFormatter.string(now)}`);
+                shortDateLabel.init();
+                shortDateLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                shortDateLabel.fontSize = 14;
+                shortDateLabel.textColor = UIColor.black();
+                container.addSubview(shortDateLabel);
+
+                const parsed = dateFormatter.date('2024-01-15 10:30:00');
+                const parsedLabel = new UILabel(`Parsed: ${parsed ? parsed.toDateString() : 'null'}`);
+                parsedLabel.init();
+                parsedLabel.frame = { x: 0, y: 144, width: 300, height: 20 };
+                parsedLabel.fontSize = 14;
+                parsedLabel.textColor = UIColor.black();
+                container.addSubview(parsedLabel);
+
+                return container;
+            }
+
+            createCollectionDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 180 };
+
+                const orderedSet = OrderedSet.of(1, 3, 5, 3, 1);
+                const orderedLabel = new UILabel(`OrderedSet: [${orderedSet.array.join(', ')}], count: ${orderedSet.count}`);
+                orderedLabel.init();
+                orderedLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                orderedLabel.fontSize = 14;
+                orderedLabel.textColor = UIColor.black();
+                container.addSubview(orderedLabel);
+
+                const has5 = orderedSet.contains(5);
+                const has7 = orderedSet.contains(7);
+                const containsLabel = new UILabel(`Contains 5: ${has5}, Contains 7: ${has7}`);
+                containsLabel.init();
+                containsLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                containsLabel.fontSize = 14;
+                containsLabel.textColor = UIColor.black();
+                container.addSubview(containsLabel);
+
+                const sortedSet = new SortedSet([3, 1, 4, 1, 5, 9, 2, 6]);
+                const sortedLabel = new UILabel(`SortedSet: [${sortedSet.array.join(', ')}]`);
+                sortedLabel.init();
+                sortedLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                sortedLabel.fontSize = 14;
+                sortedLabel.textColor = UIColor.black();
+                container.addSubview(sortedLabel);
+
+                const weakDict = new WeakDictionary();
+                const key = { id: 1 };
+                weakDict.set(key, 'value1');
+                const weakDictLabel = new UILabel(`WeakDict get: ${weakDict.get(key)}`);
+                weakDictLabel.init();
+                weakDictLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                weakDictLabel.fontSize = 14;
+                weakDictLabel.textColor = UIColor.black();
+                container.addSubview(weakDictLabel);
+
+                const weakDictHas = weakDict.has(key);
+                const weakDictHasLabel = new UILabel(`WeakDict has: ${weakDictHas}`);
+                weakDictHasLabel.init();
+                weakDictHasLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                weakDictHasLabel.fontSize = 14;
+                weakDictHasLabel.textColor = UIColor.black();
+                container.addSubview(weakDictHasLabel);
+
+                const weakDictCount = weakDict.count;
+                const countLabel = new UILabel(`WeakDict count: ${weakDictCount}`);
+                countLabel.init();
+                countLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                countLabel.fontSize = 14;
+                countLabel.textColor = UIColor.black();
+                container.addSubview(countLabel);
+
+                return container;
+            }
+
+            createRegexPredicateDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 160 };
+
+                const regex = new Regex('[a-z]+');
+                const matches = 'hello world'.match(regex);
+                const regexLabel = new UILabel(`Regex matches 'hello': ${JSON.stringify(matches)}`);
+                regexLabel.init();
+                regexLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                regexLabel.fontSize = 12;
+                regexLabel.textColor = UIColor.black();
+                container.addSubview(regexLabel);
+
+                const emailRegex = new Regex('[a-z]+@[a-z]+\\.[a-z]+');
+                const isEmail = emailRegex.matches('test@example.com');
+                const emailLabel = new UILabel(`Email regex: ${isEmail}`);
+                emailLabel.init();
+                emailLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                emailLabel.fontSize = 14;
+                emailLabel.textColor = UIColor.black();
+                container.addSubview(emailLabel);
+
+                const replaced = 'hello world'.replace('world', 'there');
+                const replaceLabel = new UILabel(`Replace: ${replaced}`);
+                replaceLabel.init();
+                replaceLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                replaceLabel.fontSize = 14;
+                replaceLabel.textColor = UIColor.black();
+                container.addSubview(replaceLabel);
+
+                const predicate = Predicate.of('TRUEPREDICATE');
+                const predTrue = predicate.evaluate({});
+                const predLabel = new UILabel(`Predicate true: ${predTrue}`);
+                predLabel.init();
+                predLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                predLabel.fontSize = 14;
+                predLabel.textColor = UIColor.black();
+                container.addSubview(predLabel);
+
+                const predAnd = Predicate.true().and(Predicate.false());
+                const predAndLabel = new UILabel(`True AND False: ${predAnd.evaluate({})}`);
+                predAndLabel.init();
+                predAndLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                predAndLabel.fontSize = 14;
+                predAndLabel.textColor = UIColor.black();
+                container.addSubview(predAndLabel);
+
+                const funcPred = Predicate.from(x => x.value > 5);
+                const funcPredLabel = new UILabel(`Func predicate (10>5): ${funcPred.evaluate({ value: 10 })}`);
+                funcPredLabel.init();
+                funcPredLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                funcPredLabel.fontSize = 14;
+                funcPredLabel.textColor = UIColor.black();
+                container.addSubview(funcPredLabel);
+
+                return container;
+            }
+
+            createAsyncLockingDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 180 };
+
+                const atomicInt = new AtomicInt(0);
+                atomicInt.incrementAndGet();
+                atomicInt.addAndGet(5);
+                const atomicIntLabel = new UILabel(`AtomicInt: ${atomicInt.value}`);
+                atomicIntLabel.init();
+                atomicIntLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                atomicIntLabel.fontSize = 14;
+                atomicIntLabel.textColor = UIColor.black();
+                container.addSubview(atomicIntLabel);
+
+                const atomicBool = new AtomicBool(false);
+                atomicBool.toggle();
+                const atomicBoolLabel = new UILabel(`AtomicBool: ${atomicBool.value}`);
+                atomicBoolLabel.init();
+                atomicBoolLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                atomicBoolLabel.fontSize = 14;
+                atomicBoolLabel.textColor = UIColor.black();
+                container.addSubview(atomicBoolLabel);
+
+                const casSuccess = atomicInt.compareAndSet(6, 100);
+                const casFail = atomicInt.compareAndSet(6, 200);
+                const casLabel = new UILabel(`CAS 6->100: ${casSuccess}, CAS 6->200: ${casFail}, val: ${atomicInt.value}`);
+                casLabel.init();
+                casLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                casLabel.fontSize = 12;
+                casLabel.textColor = UIColor.black();
+                container.addSubview(casLabel);
+
+                const task = Task.run((resolve) => {
+                    setTimeout(() => resolve('Task done!'), 100);
+                });
+                const taskLabel = new UILabel(`Task created: ${task.toString()}`);
+                taskLabel.init();
+                taskLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                taskLabel.fontSize = 14;
+                taskLabel.textColor = UIColor.black();
+                container.addSubview(taskLabel);
+
+                const lock = Lock.lock();
+                const lockLabel = new UILabel(`Lock: ${lock.toString()}`);
+                lockLabel.init();
+                lockLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                lockLabel.fontSize = 14;
+                lockLabel.textColor = UIColor.black();
+                container.addSubview(lockLabel);
+
+                const rwLock = ReadWriteLock.lock();
+                const rwLockLabel = new UILabel(`ReadWriteLock: ${rwLock.toString()}`);
+                rwLockLabel.init();
+                rwLockLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                rwLockLabel.fontSize = 14;
+                rwLockLabel.textColor = UIColor.black();
+                container.addSubview(rwLockLabel);
 
                 return container;
             }

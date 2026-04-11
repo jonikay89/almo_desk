@@ -133,3 +133,17 @@ export {
     extractIndirect
 } from './PatternMatching.js';
 export { CGPoint, CGSize, CGRect } from './CGGeometry.js';
+export { 
+    Date, URL, URLQueryItem, URLComponents,
+    UUID, Decimal, Character, TimeZone, Calendar, Locale,
+    Measurement, Unit, UnitLength, UnitMass, UnitTemperature, UnitTime,
+    FileManager, UserDefaults, Bundle, Notification, AppError, AnyHashable
+} from './SwiftTypes.js';
+export {
+    JSONEncoder, JSONDecoder, NumberFormatter, DateFormatter,
+    OrderedSet, SortedSet, WeakDictionary,
+    Regex, RegexComponent, Predicate,
+    Task, AsyncSequence,
+    Lock, ReadWriteLock, AtomicInt, AtomicBool,
+    UnsafePointer, UnsafeMutablePointer
+} from './MoreSwiftTypes.js';
