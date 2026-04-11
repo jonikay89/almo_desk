@@ -13,6 +13,10 @@ class UIControl extends UIView {
         this._targetActions = [];
     }
 
+    get description() {
+        return `UIControl(enabled: ${this.enabled}, selected: ${this.selected}, highlighted: ${this.highlighted})`;
+    }
+
     init() {
         this.element = document.createElement('div');
         this.element.className = 'ui-control';
@@ -131,6 +135,26 @@ class UIControl extends UIView {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            enabled: this.enabled,
+            selected: this.selected,
+            highlighted: this.highlighted,
+            contentVerticalAlignment: this.contentVerticalAlignment,
+            contentHorizontalAlignment: this.contentHorizontalAlignment
+        };
+    }
+
+    static decode(data) {
+        const control = new UIControl();
+        control.enabled = data.enabled !== false;
+        control.selected = data.selected || false;
+        control.highlighted = data.highlighted || false;
+        control.contentVerticalAlignment = data.contentVerticalAlignment || 'center';
+        control.contentHorizontalAlignment = data.contentHorizontalAlignment || 'center';
+        return control;
     }
 }
 

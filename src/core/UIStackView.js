@@ -11,6 +11,13 @@ class UIStackView extends UIView {
         this._isLayoutFlipped = false;
         this.element = document.createElement('div');
         this.element.className = 'ui-stackview';
+        
+        arrangedSubviews.forEach(view => this.addArrangedSubview(view));
+    }
+
+    get description() {
+        const viewDescs = this._arrangedSubviews.map(v => v.description || 'UIView').join(', ');
+        return `UIStackView(axis: ${this._axis}, arrangedSubviews: [${viewDescs}])`;
     }
 
     get axis() {
@@ -51,6 +58,10 @@ class UIStackView extends UIView {
 
     get arrangedSubviews() {
         return this._arrangedSubviews;
+    }
+
+    arrangedSubviewsAsArray() {
+        return [...this._arrangedSubviews];
     }
 
     init() {
@@ -176,6 +187,24 @@ class UIStackView extends UIView {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            axis: this._axis,
+            distribution: this._distribution,
+            alignment: this._alignment,
+            spacing: this._spacing
+        };
+    }
+
+    static decode(data) {
+        const stackView = new UIStackView();
+        stackView._axis = data.axis || 'horizontal';
+        stackView._distribution = data.distribution || 'fill';
+        stackView._alignment = data.alignment || 'center';
+        stackView._spacing = data.spacing || 0;
+        return stackView;
     }
 }
 

@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UITableViewCell extends UIView {
     constructor(reuseIdentifier = null) {
@@ -146,6 +147,36 @@ class UITableViewCell extends UIView {
 
     layoutSubviews() {
         super.layoutSubviews();
+    }
+
+    get description() {
+        return `UITableViewCell(text: "${this.text}", detailText: "${this.detailText}", accessoryType: "${this.accessoryType}")`;
+    }
+
+    selectionStyleAsNumber() {
+        const styleMap = { none: 0, default: 1 };
+        return NSNumber.of(styleMap[this.selectionStyle] !== undefined ? styleMap[this.selectionStyle] : 0);
+    }
+
+    encode() {
+        return {
+            reuseIdentifier: this.reuseIdentifier,
+            text: this.text,
+            detailText: this.detailText,
+            image: this.image,
+            accessoryType: this.accessoryType,
+            selectionStyle: this.selectionStyle
+        };
+    }
+
+    static decode(data) {
+        const cell = new UITableViewCell(data.reuseIdentifier);
+        cell.text = data.text;
+        cell.detailText = data.detailText;
+        cell.image = data.image;
+        cell.accessoryType = data.accessoryType;
+        cell.selectionStyle = data.selectionStyle;
+        return cell;
     }
 }
 

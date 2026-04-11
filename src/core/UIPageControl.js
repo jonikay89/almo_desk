@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UIPageControl extends UIView {
     constructor() {
@@ -27,6 +28,18 @@ class UIPageControl extends UIView {
     set currentPage(value) {
         this._currentPage = Math.max(0, Math.min(this._numberOfPages - 1, Math.floor(value)));
         this.#updateDots();
+    }
+
+    get description() {
+        return `UIPageControl(currentPage: ${this._currentPage}, numberOfPages: ${this._numberOfPages})`;
+    }
+
+    currentPageAsNumber() {
+        return NSNumber.of(this._currentPage);
+    }
+
+    numberOfPagesAsNumber() {
+        return NSNumber.of(this._numberOfPages);
     }
 
     init() {
@@ -95,6 +108,20 @@ class UIPageControl extends UIView {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            currentPage: this._currentPage,
+            numberOfPages: this._numberOfPages
+        };
+    }
+
+    static decode(data) {
+        const pc = new UIPageControl();
+        pc._currentPage = data.currentPage || 0;
+        pc._numberOfPages = data.numberOfPages || 0;
+        return pc;
     }
 }
 

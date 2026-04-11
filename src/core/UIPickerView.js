@@ -1,6 +1,7 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { WeakRef } from './WeakReference.js';
+import { NSNumber } from './Foundation.js';
 
 class UIPickerView extends UIView {
     constructor() {
@@ -10,6 +11,10 @@ class UIPickerView extends UIView {
         this.numberOfComponents = 1;
         this.selectedRow = 0;
         this.pickers = [];
+    }
+
+    get description() {
+        return `UIPickerView(numberOfComponents: ${this.numberOfComponents}, selectedRow: ${this.selectedRow})`;
     }
 
     get delegate() {
@@ -26,6 +31,14 @@ class UIPickerView extends UIView {
 
     set dataSource(value) {
         this._dataSource = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
+    }
+
+    selectedRowAsNumber() {
+        return NSNumber.of(this.selectedRow);
+    }
+
+    numberOfComponentsAsNumber() {
+        return NSNumber.of(this.numberOfComponents);
     }
 
     init() {
@@ -220,6 +233,20 @@ class UIPickerView extends UIView {
         this._delegate = null;
         this._dataSource = null;
         super.deinit();
+    }
+
+    encode() {
+        return {
+            numberOfComponents: this.numberOfComponents,
+            selectedRow: this.selectedRow
+        };
+    }
+
+    static decode(data) {
+        const picker = new UIPickerView();
+        picker.numberOfComponents = data.numberOfComponents || 1;
+        picker.selectedRow = data.selectedRow || 0;
+        return picker;
     }
 }
 

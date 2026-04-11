@@ -1,5 +1,6 @@
 import UIResponder from './UIResponder.js';
 import { WeakRef } from './WeakReference.js';
+import { NSNumber } from './Foundation.js';
 
 class UIViewController extends UIResponder {
     constructor() {
@@ -108,6 +109,31 @@ class UIViewController extends UIResponder {
 
     touchesCancelled(touches, event) {
         this._view?.touchesCancelled?.(touches, event);
+    }
+
+    get description() {
+        const childCount = this._childControllers.length;
+        return `UIViewController(childControllers: ${childCount}, isViewLoaded: ${this.isViewLoaded})`;
+    }
+
+    childControllersAsArray() {
+        return this.childControllers;
+    }
+
+    isViewLoadedAsNumber() {
+        return NSNumber.of(this.isViewLoaded ? 1 : 0);
+    }
+
+    encode() {
+        return {
+            isViewLoaded: this.isViewLoaded
+        };
+    }
+
+    static decode(data) {
+        const vc = new UIViewController();
+        vc.isViewLoaded = data.isViewLoaded;
+        return vc;
     }
 }
 

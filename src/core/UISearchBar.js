@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { NSNumber, Scanner } from './Foundation.js';
 
 class UISearchBar extends UIView {
     constructor(placeholder = 'Search') {
@@ -180,6 +181,44 @@ class UISearchBar extends UIView {
 
     layoutSubviews() {
         super.layoutSubviews();
+    }
+
+    get description() {
+        return `UISearchBar(text: "${this.text}", placeholder: "${this.placeholder}", selectedScopeButtonIndex: ${this.selectedScopeButtonIndex})`;
+    }
+
+    scanner() {
+        return new Scanner(this.text);
+    }
+
+    textAsNumber() {
+        const num = parseFloat(this.text);
+        return isNaN(num) ? null : NSNumber.of(num);
+    }
+
+    selectedScopeButtonIndexAsNumber() {
+        return NSNumber.of(this.selectedScopeButtonIndex);
+    }
+
+    encode() {
+        return {
+            text: this.text,
+            placeholder: this.placeholder,
+            selectedScopeButtonIndex: this.selectedScopeButtonIndex,
+            showsCancelButton: this.showsCancelButton,
+            showsScopeBar: this.showsScopeBar,
+            scopeButtonTitles: [...this.scopeButtonTitles]
+        };
+    }
+
+    static decode(data) {
+        const searchBar = new UISearchBar(data.placeholder);
+        searchBar.text = data.text;
+        searchBar.selectedScopeButtonIndex = data.selectedScopeButtonIndex;
+        searchBar.showsCancelButton = data.showsCancelButton;
+        searchBar.showsScopeBar = data.showsScopeBar;
+        searchBar.scopeButtonTitles = [...data.scopeButtonTitles];
+        return searchBar;
     }
 }
 

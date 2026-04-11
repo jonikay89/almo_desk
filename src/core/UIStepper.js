@@ -1,5 +1,6 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UIStepper extends UIControl {
     constructor() {
@@ -48,6 +49,26 @@ class UIStepper extends UIControl {
 
     set stepValue(val) {
         this._stepValue = val;
+    }
+
+    get description() {
+        return `UIStepper(value: ${this._value}, range: [${this._minimumValue}, ${this._maximumValue}], step: ${this._stepValue})`;
+    }
+
+    valueAsNumber() {
+        return NSNumber.of(this._value);
+    }
+
+    minimumValueAsNumber() {
+        return NSNumber.of(this._minimumValue);
+    }
+
+    maximumValueAsNumber() {
+        return NSNumber.of(this._maximumValue);
+    }
+
+    stepValueAsNumber() {
+        return NSNumber.of(this._stepValue);
     }
 
     init() {
@@ -261,6 +282,26 @@ class UIStepper extends UIControl {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            value: this._value,
+            minimumValue: this._minimumValue,
+            maximumValue: this._maximumValue,
+            stepValue: this._stepValue,
+            wraps: this.wraps
+        };
+    }
+
+    static decode(data) {
+        const stepper = new UIStepper();
+        stepper._value = data.value || 0;
+        stepper._minimumValue = data.minimumValue || 0;
+        stepper._maximumValue = data.maximumValue || 100;
+        stepper._stepValue = data.stepValue || 1;
+        stepper.wraps = data.wraps || false;
+        return stepper;
     }
 }
 

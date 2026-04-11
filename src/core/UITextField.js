@@ -1,5 +1,6 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
+import { Scanner, NSNumber } from './Foundation.js';
 
 class UITextField extends UIControl {
     constructor(placeholder = '') {
@@ -28,6 +29,29 @@ class UITextField extends UIControl {
             this._textColor = UIColor.colorWithHex(color);
         }
         this.#updateStyle();
+    }
+
+    get description() {
+        return `UITextField(text: "${this.text}", placeholder: "${this.placeholder}")`;
+    }
+
+    scanner() {
+        return new Scanner(this.text);
+    }
+
+    parseInt() {
+        const scanner = this.scanner();
+        return scanner.scanInt();
+    }
+
+    parseDouble() {
+        const scanner = this.scanner();
+        return scanner.scanDouble();
+    }
+
+    textAsNumber() {
+        const num = this.parseDouble();
+        return num !== null ? NSNumber.of(num) : null;
     }
 
     init() {
@@ -192,6 +216,27 @@ class UITextField extends UIControl {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            text: this.text,
+            placeholder: this.placeholder,
+            fontSize: this.fontSize,
+            textAlignment: this.textAlignment,
+            isSecureTextEntry: this.isSecureTextEntry,
+            keyboardType: this.keyboardType
+        };
+    }
+
+    static decode(data) {
+        const textField = new UITextField(data.placeholder || '');
+        textField.text = data.text || '';
+        textField.fontSize = data.fontSize || 14;
+        textField.textAlignment = data.textAlignment || 'left';
+        textField.isSecureTextEntry = data.isSecureTextEntry || false;
+        textField.keyboardType = data.keyboardType || 'default';
+        return textField;
     }
 }
 

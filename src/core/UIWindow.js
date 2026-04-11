@@ -1,4 +1,5 @@
 import UIView from './UIView.js';
+import { NSNumber } from './Foundation.js';
 
 class UIWindow extends UIView {
     constructor() {
@@ -84,6 +85,39 @@ class UIWindow extends UIView {
             this.rootViewController.view.willMoveToWindow(this);
             this.rootViewController.view.didMoveToWindow();
         }
+    }
+
+    get description() {
+        const vcDesc = this.rootViewController ? `rootViewController: UIViewController` : 'rootViewController: null';
+        return `UIWindow(${vcDesc}, windowLevel: ${this.windowLevel}, isKeyWindow: ${this.isKeyWindow})`;
+    }
+
+    windowLevelAsNumber() {
+        return NSNumber.of(this.windowLevel);
+    }
+
+    isKeyWindowAsNumber() {
+        return NSNumber.of(this.isKeyWindow ? 1 : 0);
+    }
+
+    isVisibleAsNumber() {
+        return NSNumber.of(this.isVisible ? 1 : 0);
+    }
+
+    encode() {
+        return {
+            windowLevel: this.windowLevel,
+            isKeyWindow: this.isKeyWindow,
+            isVisible: this.isVisible
+        };
+    }
+
+    static decode(data) {
+        const window = new UIWindow();
+        window.windowLevel = data.windowLevel;
+        window.isKeyWindow = data.isKeyWindow;
+        window.isVisible = data.isVisible;
+        return window;
     }
 }
 

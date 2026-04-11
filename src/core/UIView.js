@@ -1,5 +1,6 @@
 import UIColor from './UIColor.js';
 import UIResponder from './UIResponder.js';
+import { NSValue } from './Foundation.js';
 
 class UIView extends UIResponder {
     constructor() {
@@ -149,6 +150,30 @@ class UIView extends UIResponder {
         }
     }
 
+    get description() {
+        return `UIView(frame: {x: ${this._frame.x}, y: ${this._frame.y}, width: ${this._frame.width}, height: ${this._frame.height}})`;
+    }
+
+    frameValue() {
+        return NSValue.valueWithRect(this._frame);
+    }
+
+    boundsValue() {
+        return NSValue.valueWithRect(this._bounds);
+    }
+
+    centerValue() {
+        return NSValue.valueWithPoint(this._center);
+    }
+
+    sizeValue() {
+        return NSValue.valueWithSize({ width: this._frame.width, height: this._frame.height });
+    }
+
+    pointValue() {
+        return NSValue.valueWithPoint({ x: this._frame.x, y: this._frame.y });
+    }
+
     init() {
         return this;
     }
@@ -200,6 +225,30 @@ class UIView extends UIResponder {
             }
             this.superview = null;
         }
+    }
+
+    encode() {
+        return {
+            frame: this._frame,
+            bounds: this._bounds,
+            center: this._center,
+            alpha: this._alpha,
+            hidden: this._hidden,
+            tag: this.tag,
+            zIndex: this.zIndex,
+            backgroundColor: this._backgroundColor ? this._backgroundColor.hex : null
+        };
+    }
+
+    static decode(data) {
+        const view = new UIView();
+        if (data.frame) view.frame = data.frame;
+        if (data.alpha !== undefined) view.alpha = data.alpha;
+        if (data.hidden !== undefined) view.hidden = data.hidden;
+        if (data.tag !== undefined) view.tag = data.tag;
+        if (data.zIndex !== undefined) view.zIndex = data.zIndex;
+        if (data.backgroundColor) view.backgroundColor = UIColor.colorWithHex(data.backgroundColor);
+        return view;
     }
 }
 

@@ -1,5 +1,6 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UISegmentedControl extends UIControl {
     constructor(items = []) {
@@ -15,6 +16,11 @@ class UISegmentedControl extends UIControl {
         this.apportionsSegmentWidthsByContent = false;
     }
 
+    get description() {
+        const titles = this.segments.map(s => `"${s.title}"`).join(', ');
+        return `UISegmentedControl(selectedIndex: ${this._selectedSegmentIndex}, segments: [${titles}])`;
+    }
+
     get selectedSegmentIndex() {
         return this._selectedSegmentIndex;
     }
@@ -22,6 +28,18 @@ class UISegmentedControl extends UIControl {
     set selectedSegmentIndex(index) {
         this._selectedSegmentIndex = index;
         this.#updateAppearance();
+    }
+
+    selectedSegmentIndexAsNumber() {
+        return NSNumber.of(this._selectedSegmentIndex);
+    }
+
+    numberOfSegmentsAsNumber() {
+        return NSNumber.of(this.segments.length);
+    }
+
+    segmentTitlesAsArray() {
+        return this.segments.map(s => s.title);
     }
 
     init() {
@@ -277,6 +295,24 @@ class UISegmentedControl extends UIControl {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            selectedSegmentIndex: this._selectedSegmentIndex,
+            segments: this.segments.map(s => ({ title: s.title, enabled: s.enabled })),
+            tintColor: this.tintColor?.hex
+        };
+    }
+
+    static decode(data) {
+        const titles = (data.segments || []).map(s => s.title || '');
+        const control = new UISegmentedControl(titles);
+        control._selectedSegmentIndex = data.selectedSegmentIndex || 0;
+        if (data.tintColor) {
+            control.tintColor = UIColor.colorWithHex(data.tintColor);
+        }
+        return control;
     }
 }
 

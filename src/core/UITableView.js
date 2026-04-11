@@ -2,6 +2,7 @@ import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
+import { NSValue } from './Foundation.js';
 
 class UITableView extends UIScrollView {
     constructor(style = 'plain') {
@@ -19,6 +20,11 @@ class UITableView extends UIScrollView {
         this.allowsMultipleSelection = false;
         this.editing = false;
         this._data = [];
+        this.reusableCells = {};
+    }
+
+    get description() {
+        return `UITableView(style: ${this.style}, rowHeight: ${this.rowHeight}, dataSource: ${this._dataSource ? 'set' : 'nil'})`;
     }
 
     get delegate() {
@@ -35,6 +41,50 @@ class UITableView extends UIScrollView {
 
     set dataSource(value) {
         this._dataSource = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
+    }
+
+    numberOfSections() {
+        return Optional.of(this.dataSource?.numberOfSectionsInTableView)
+            .flatMap(fn => Optional.fromNullable(fn(this)))
+            .getOrElse(1);
+    }
+
+    numberOfRowsInSection(section) {
+        return Optional.of(this.dataSource?.tableView_numberOfRowsInSection)
+            .flatMap(fn => Optional.fromNullable(fn(this, section)))
+            .getOrElse(0);
+    }
+
+    visibleCells() {
+        const cells = this.contentElement?.querySelectorAll('.ui-tableview-cell') || [];
+        return Array.from(cells);
+    }
+
+    indexPathsForVisibleRows() {
+        const cells = this.contentElement?.querySelectorAll('.ui-tableview-cell') || [];
+        return Array.from(cells).map(cell => ({
+            row: parseInt(cell.dataset.index, 10),
+            section: parseInt(cell.dataset.section, 10) || 0
+        }));
+    }
+
+    rectForRowAtIndexPath(indexPath) {
+        return {
+            x: 0,
+            y: indexPath.row * this.rowHeight,
+            width: this.frame.width,
+            height: this.rowHeight
+        };
+    }
+
+    rectForSection(section) {
+        const numberOfRows = this.numberOfRowsInSection(section);
+        return {
+            x: 0,
+            y: section * (numberOfRows * this.rowHeight + this.sectionHeaderHeight),
+            width: this.frame.width,
+            height: numberOfRows * this.rowHeight + this.sectionHeaderHeight
+        };
     }
 
     init() {
@@ -78,9 +128,7 @@ class UITableView extends UIScrollView {
 
         this.contentElement.innerHTML = '';
 
-        const numberOfSections = Optional.of(this.dataSource.numberOfSectionsInTableView)
-            .flatMap(fn => Optional.fromNullable(fn(this)))
-            .getOrElse(1);
+        const numberOfSections = this.numberOfSections();
 
         let currentY = 0;
         const results = [];
@@ -217,6 +265,31 @@ class UITableView extends UIScrollView {
         if (this.contentElement) {
             this.contentElement.style.width = `${this.frame.width}px`;
         }
+    }
+
+    encode() {
+        return {
+            style: this.style,
+            rowHeight: this.rowHeight,
+            sectionHeaderHeight: this.sectionHeaderHeight,
+            sectionFooterHeight: this.sectionFooterHeight,
+            separatorStyle: this.separatorStyle,
+            allowsSelection: this.allowsSelection,
+            allowsMultipleSelection: this.allowsMultipleSelection,
+            editing: this.editing
+        };
+    }
+
+    static decode(data) {
+        const tableView = new UITableView(data.style || 'plain');
+        tableView.rowHeight = data.rowHeight || 44;
+        tableView.sectionHeaderHeight = data.sectionHeaderHeight || 30;
+        tableView.sectionFooterHeight = data.sectionFooterHeight || 0;
+        tableView.separatorStyle = data.separatorStyle || 'singleLine';
+        tableView.allowsSelection = data.allowsSelection !== false;
+        tableView.allowsMultipleSelection = data.allowsMultipleSelection || false;
+        tableView.editing = data.editing || false;
+        return tableView;
     }
 }
 

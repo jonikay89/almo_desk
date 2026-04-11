@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UIProgressView extends UIView {
     constructor() {
@@ -16,6 +17,14 @@ class UIProgressView extends UIView {
     set progress(value) {
         this._progress = Math.max(0, Math.min(1, value));
         this.#updateProgress();
+    }
+
+    get description() {
+        return `UIProgressView(progress: ${(this._progress * 100).toFixed(1)}%)`;
+    }
+
+    progressAsNumber() {
+        return NSNumber.of(this._progress);
     }
 
     init() {
@@ -89,6 +98,18 @@ class UIProgressView extends UIView {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            progress: this._progress
+        };
+    }
+
+    static decode(data) {
+        const progressView = new UIProgressView();
+        progressView._progress = data.progress;
+        return progressView;
     }
 }
 

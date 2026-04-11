@@ -1,3 +1,5 @@
+import { NSNumber } from './Foundation.js';
+
 class UIColor {
     constructor(red, green, blue, alpha = 1) {
         if (typeof red === 'string' && red.startsWith('#')) {
@@ -17,6 +19,30 @@ class UIColor {
             this.blue = blue !== undefined ? blue : 0;
             this.alpha = alpha !== undefined ? alpha : 1;
         }
+    }
+
+    get description() {
+        if (this.alpha === 0) return 'UIColor.clear';
+        if (this.alpha === 1) {
+            return `UIColor(red: ${this.red.toFixed(3)}, green: ${this.green.toFixed(3)}, blue: ${this.blue.toFixed(3)})`;
+        }
+        return `UIColor(red: ${this.red.toFixed(3)}, green: ${this.green.toFixed(3)}, blue: ${this.blue.toFixed(3)}, alpha: ${this.alpha.toFixed(3)})`;
+    }
+
+    redValue() {
+        return NSNumber.of(this.red);
+    }
+
+    greenValue() {
+        return NSNumber.of(this.green);
+    }
+
+    blueValue() {
+        return NSNumber.of(this.blue);
+    }
+
+    alphaValue() {
+        return NSNumber.of(this.alpha);
     }
 
     static clear() {
@@ -192,6 +218,19 @@ class UIColor {
                this.green === other.green &&
                this.blue === other.blue &&
                this.alpha === other.alpha;
+    }
+
+    encode() {
+        return {
+            red: this.red,
+            green: this.green,
+            blue: this.blue,
+            alpha: this.alpha
+        };
+    }
+
+    static decode(data) {
+        return new UIColor(data.red, data.green, data.blue, data.alpha);
     }
 }
 

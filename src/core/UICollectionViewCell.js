@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UICollectionViewCell extends UIView {
     constructor(reuseIdentifier = null) {
@@ -80,6 +81,31 @@ class UICollectionViewCell extends UIView {
 
     layoutSubviews() {
         super.layoutSubviews();
+    }
+
+    get description() {
+        return `UICollectionViewCell(reuseIdentifier: ${this.reuseIdentifier || 'null'}, label: "${this.label?.textContent || ''}")`;
+    }
+
+    isSelectedAsNumber() {
+        return NSNumber.of(this._selected ? 1 : 0);
+    }
+
+    encode() {
+        return {
+            reuseIdentifier: this.reuseIdentifier,
+            label: this.label?.textContent || '',
+            _selected: this._selected
+        };
+    }
+
+    static decode(data) {
+        const cell = new UICollectionViewCell(data.reuseIdentifier);
+        if (data.label) {
+            cell.setLabel(data.label);
+        }
+        cell._selected = data._selected;
+        return cell;
     }
 }
 

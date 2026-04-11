@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UIActivityIndicatorView extends UIView {
     constructor() {
@@ -8,6 +9,14 @@ class UIActivityIndicatorView extends UIView {
         this.color = UIColor.systemBlue();
         this.hidesWhenStopped = true;
         this._isAnimating = false;
+    }
+
+    get description() {
+        return `UIActivityIndicatorView(style: ${this.style}, isAnimating: ${this._isAnimating})`;
+    }
+
+    get isAnimating() {
+        return this._isAnimating;
     }
 
     init() {
@@ -106,6 +115,20 @@ class UIActivityIndicatorView extends UIView {
 
     layoutSubviews() {
         super.layoutSubviews();
+    }
+
+    encode() {
+        return {
+            style: this.style,
+            hidesWhenStopped: this.hidesWhenStopped
+        };
+    }
+
+    static decode(data) {
+        const indicator = new UIActivityIndicatorView();
+        indicator.style = data.style || 'medium';
+        indicator.hidesWhenStopped = data.hidesWhenStopped !== false;
+        return indicator;
     }
 }
 

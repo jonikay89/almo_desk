@@ -1,5 +1,6 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UISwitch extends UIControl {
     constructor() {
@@ -17,6 +18,14 @@ class UISwitch extends UIControl {
     set isOn(value) {
         this._isOn = !!value;
         this.#updateAppearance();
+    }
+
+    get description() {
+        return `UISwitch(isOn: ${this._isOn})`;
+    }
+
+    isOnAsNumber() {
+        return NSNumber.of(this._isOn ? 1 : 0);
     }
 
     init() {
@@ -134,6 +143,18 @@ class UISwitch extends UIControl {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            isOn: this._isOn
+        };
+    }
+
+    static decode(data) {
+        const sw = new UISwitch();
+        sw._isOn = data.isOn || false;
+        return sw;
     }
 }
 

@@ -3,6 +3,7 @@ import UIView from './UIView.js';
 import UILabel from './UILabel.js';
 import UIButton from './UIButton.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UIAlertController extends UIViewController {
     constructor(title, message, preferredStyle = 'alert') {
@@ -229,6 +230,38 @@ class UIAlertController extends UIViewController {
         sheet.init();
         sheet.present();
         return sheet;
+    }
+
+    get description() {
+        return `UIAlertController(title: "${this.title}", message: "${this.message}", preferredStyle: "${this.preferredStyle}", actions: ${this.actions.length})`;
+    }
+
+    actionsAsArray() {
+        return this.actions.map(action => ({ ...action }));
+    }
+
+    textFieldsAsArray() {
+        return this.textFields.map(field => ({ ...field }));
+    }
+
+    encode() {
+        return {
+            title: this.title,
+            message: this.message,
+            preferredStyle: this.preferredStyle,
+            actions: this.actions.map(a => ({ title: a.title, style: a.style })),
+            textFields: this.textFields.map(f => ({ type: f.type, placeholder: f.placeholder }))
+        };
+    }
+
+    static decode(data) {
+        const alert = new UIAlertController(data.title, data.message, data.preferredStyle);
+        data.actions.forEach(a => alert.addAction(a.title, a.style));
+        data.textFields.forEach(f => alert.addTextField(cfg => {
+            cfg.type = f.type;
+            cfg.placeholder = f.placeholder;
+        }));
+        return alert;
     }
 }
 

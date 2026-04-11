@@ -122,6 +122,268 @@ const UserRole = {
 UserRole.admin.rawValue; // 'ADMIN_LEVEL_1'
 ```
 
+## Foundation Integration in UIKit Components
+
+UIKit components have been enhanced with Foundation classes:
+
+### UIView
+```javascript
+// CustomStringConvertible
+view.description; // "UIView(frame: {x: 0, y: 0, width: 100, height: 50})"
+
+// NSValue helpers
+view.frameValue();    // NSValue with rect
+view.boundsValue();   // NSValue with rect
+view.centerValue();    // NSValue with point
+view.sizeValue();      // NSValue with size
+view.pointValue();     // NSValue with point
+
+// Codable
+view.encode();        // { frame, bounds, center, alpha, hidden, tag, zIndex, backgroundColor }
+UIView.decode(data);  // Reconstruct view from data
+```
+
+### UIColor
+```javascript
+// CustomStringConvertible
+color.description; // "UIColor(red: 0.000, green: 0.478, blue: 1.000, alpha: 1.000)"
+
+// NSNumber helpers
+color.redValue();      // NSNumber
+color.greenValue();    // NSNumber
+color.blueValue();     // NSNumber
+color.alphaValue();    // NSNumber
+
+// Codable
+color.encode();        // { red, green, blue, alpha }
+UIColor.decode(data); // Reconstruct color
+```
+
+### UISlider, UIStepper
+```javascript
+// CustomStringConvertible
+slider.description; // "UISlider(value: 0.500, range: [0, 1])"
+
+// NSNumber helpers
+slider.valueAsNumber();        // NSNumber
+slider.minimumValueAsNumber(); // NSNumber
+slider.maximumValueAsNumber(); // NSNumber
+
+// Codable
+slider.encode();              // { value, minimumValue, maximumValue }
+UISlider.decode(data);        // Reconstruct slider
+```
+
+### UISwitch
+```javascript
+// CustomStringConvertible
+sw.description; // "UISwitch(isOn: true)"
+
+// NSNumber helpers
+sw.isOnAsNumber(); // NSNumber (1 or 0)
+
+// Codable
+sw.encode();        // { isOn }
+UISwitch.decode(data);
+```
+
+### UIProgressView
+```javascript
+// CustomStringConvertible
+progress.description; // "UIProgressView(progress: 50.0%)"
+
+// NSNumber helpers
+progress.progressAsNumber(); // NSNumber
+
+// Codable
+progress.encode();             // { progress }
+UIProgressView.decode(data);
+```
+
+### UIPageControl
+```javascript
+// CustomStringConvertible
+pageControl.description; // "UIPageControl(currentPage: 0, numberOfPages: 5)"
+
+// NSNumber helpers
+pageControl.currentPageAsNumber();   // NSNumber
+pageControl.numberOfPagesAsNumber(); // NSNumber
+
+// Codable
+pageControl.encode();               // { currentPage, numberOfPages }
+UIPageControl.decode(data);
+```
+
+### UITextField
+```javascript
+// CustomStringConvertible
+textField.description; // "UITextField(text: "hello", placeholder: "Enter text")"
+
+// Scanner helpers
+textField.scanner();      // Create Scanner from text
+textField.parseInt();     // Parse integer from text
+textField.parseDouble();  // Parse double from text
+textField.textAsNumber(); // NSNumber or null
+
+// Codable
+textField.encode();        // { text, placeholder, fontSize, textAlignment, isSecureTextEntry, keyboardType }
+UITextField.decode(data);
+```
+
+### UILabel
+```javascript
+// CustomStringConvertible
+label.description; // "UILabel(text: "Hello World")"
+
+// Codable
+label.encode();     // { text, fontSize, fontFamily, fontWeight, textAlignment, numberOfLines, isEnabled }
+UILabel.decode(data);
+```
+
+### UIImage
+```javascript
+// CustomStringConvertible
+image.description; // "UIImage(url: "photo.jpg")"
+
+// Data integration
+image.imageData;        // Data object
+image.dataValue();      // Data object
+
+// Codable
+image.encode();      // { imageUrl, contentMode, backgroundColor }
+UIImage.decode(data);
+```
+
+### UIActivityIndicatorView
+```javascript
+// CustomStringConvertible
+indicator.description; // "UIActivityIndicatorView(style: large, isAnimating: true)"
+
+// Codable
+indicator.encode();                  // { style, hidesWhenStopped }
+UIActivityIndicatorView.decode(data);
+```
+
+## Core Classes
+
+### NSValue
+Container for wrapping C-style values (points, sizes, rects).
+
+```javascript
+import { NSValue } from './src/core/index.js';
+
+const point = NSValue.valueWithPoint({ x: 10, y: 20 });
+point.pointValue(); // { x: 10, y: 20 }
+point.type; // 'point'
+```
+
+### NSNumber
+Container for numeric values (int, double, bool).
+
+```javascript
+import { NSNumber } from './src/core/index.js';
+
+const num = new NSNumber(42);
+num.numberValue; // 42
+num.intValue; // 42
+num.doubleValue; // 42
+num.boolValue; // true
+num.stringValue; // '42'
+
+const boolNum = NSNumber.valueWithBool(true);
+boolNum.boolValue; // true
+```
+
+### Data
+Byte buffer for handling binary data.
+
+```javascript
+import { Data } from './src/core/index.js';
+
+const data = Data.fromString('hello');
+data.length; // 5
+data.toArray(); // [104, 101, 108, 108, 111]
+data.base64EncodedString(); // 'aGVsbG8='
+
+const decoded = Data.fromBase64EncodedString('aGVsbG8=');
+decoded.toString(0); // 'hello'
+```
+
+### NSURL
+URL handling similar to Foundation's NSURL.
+
+```javascript
+import { NSURL } from './src/core/index.js';
+
+const url = new NSURL('https://example.com/path/to/page?query=1#section');
+url.scheme; // 'https'
+url.host; // 'example.com'
+url.path; // '/path/to/page'
+url.isValid; // true
+
+const fileUrl = NSURL.fileURLWithPath('/Users/name/file.txt');
+fileUrl.isFileURL; // true
+
+const appended = url.appendingPathComponent('new');
+url.pathExtension(); // 'txt'
+```
+
+### Scanner
+String parsing for extracting numbers, strings, and patterns.
+
+```javascript
+import { Scanner } from './src/core/index.js';
+
+const scanner = new Scanner('42 is the answer');
+scanner.scanInt(); // 42
+scanner.scanString('is '); // 'is '
+scanner.scanUpToString('answer'); // 'the '
+scanner.skipSpaces();
+scanner.scanDouble(); // 3.14159
+```
+
+### Codable / JSONEncoder / JSONDecoder
+Encoding and decoding objects to/from JSON.
+
+```javascript
+import { CodableEncoder, CodableDecoder, encode, decode } from './src/core/index.js';
+
+const obj = { name: 'John', age: 30 };
+const json = encode(obj);
+const decoded = decode(Object, json);
+
+// With Date
+const date = new Date('2024-01-15T12:00:00Z');
+const encoder = new CodableEncoder();
+const encoded = encoder.encode(date);
+```
+
+### CustomStringConvertible
+Protocol for custom string descriptions.
+
+```javascript
+const product = {
+    name: 'Apple',
+    price: 0.99,
+    get description() {
+        return `Product: ${this.name} costs $${this.price.toFixed(2)}`;
+    }
+};
+product.description; // 'Product: Apple costs $0.99'
+```
+
+### RawRepresentable
+Protocol for types with raw values (like Swift enums).
+
+```javascript
+const UserRole = {
+    admin: { rawValue: 'ADMIN_LEVEL_1' },
+    editor: { rawValue: 'CONTENT_EDITOR' },
+    viewer: { rawValue: 'GUEST_VIEWER' }
+};
+UserRole.admin.rawValue; // 'ADMIN_LEVEL_1'
+```
+
 ## Core Classes
 
 ### NSObject

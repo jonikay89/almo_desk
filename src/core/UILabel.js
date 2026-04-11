@@ -19,6 +19,10 @@ class UILabel extends UIView {
         this._shadowOffset = { width: 0, height: 0 };
     }
 
+    get description() {
+        return `UILabel(text: "${this.text}")`;
+    }
+
     get textColor() {
         return this._textColor;
     }
@@ -182,6 +186,29 @@ class UILabel extends UIView {
 
     layoutSubviews() {
         super.layoutSubviews();
+    }
+
+    encode() {
+        return {
+            text: this.text,
+            fontSize: this.fontSize,
+            fontFamily: this.fontFamily,
+            fontWeight: this.fontWeight,
+            textAlignment: this.textAlignment,
+            numberOfLines: this.numberOfLines,
+            isEnabled: this.isEnabled
+        };
+    }
+
+    static decode(data) {
+        const label = new UILabel(data.text || '');
+        label.fontSize = data.fontSize || 14;
+        label.fontFamily = data.fontFamily || 'system-ui, sans-serif';
+        label.fontWeight = data.fontWeight || 'normal';
+        label.textAlignment = data.textAlignment || 'left';
+        label.numberOfLines = data.numberOfLines || 1;
+        label.isEnabled = data.isEnabled !== false;
+        return label;
     }
 }
 

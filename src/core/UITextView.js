@@ -1,5 +1,6 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
+import { Scanner, NSNumber } from './Foundation.js';
 
 class UITextView extends UIScrollView {
     constructor(text = '') {
@@ -17,6 +18,10 @@ class UITextView extends UIScrollView {
         this.spellCheckingType = 'default';
     }
 
+    get description() {
+        return `UITextView(text: "${this.text.substring(0, 20)}${this.text.length > 20 ? '...' : ''}")`;
+    }
+
     get textColor() {
         return this._textColor;
     }
@@ -28,6 +33,25 @@ class UITextView extends UIScrollView {
             this._textColor = UIColor.colorWithHex(color);
         }
         this.#updateStyle();
+    }
+
+    scanner() {
+        return new Scanner(this.text);
+    }
+
+    parseInt() {
+        const scanner = this.scanner();
+        return scanner.scanInt();
+    }
+
+    parseDouble() {
+        const scanner = this.scanner();
+        return scanner.scanDouble();
+    }
+
+    textAsNumber() {
+        const num = this.parseDouble();
+        return num !== null ? NSNumber.of(num) : null;
     }
 
     init() {
@@ -167,6 +191,27 @@ class UITextView extends UIScrollView {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            text: this.text,
+            fontSize: this.fontSize,
+            fontFamily: this.fontFamily,
+            textAlignment: this.textAlignment,
+            isEditable: this.isEditable,
+            isScrollEnabled: this.isScrollEnabled
+        };
+    }
+
+    static decode(data) {
+        const textView = new UITextView(data.text || '');
+        textView.fontSize = data.fontSize || 14;
+        textView.fontFamily = data.fontFamily || 'system-ui, sans-serif';
+        textView.textAlignment = data.textAlignment || 'left';
+        textView.isEditable = data.isEditable !== false;
+        textView.isScrollEnabled = data.isScrollEnabled !== false;
+        return textView;
     }
 }
 

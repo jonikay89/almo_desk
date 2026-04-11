@@ -14,6 +14,10 @@ class UIDatePicker extends UIControl {
         this.pickers = {};
     }
 
+    get description() {
+        return `UIDatePicker(date: ${this._date.toISOString()}, mode: ${this.datePickerMode})`;
+    }
+
     get date() {
         return this._date;
     }
@@ -31,6 +35,10 @@ class UIDatePicker extends UIControl {
 
     get maximumDate() {
         return this._maximumDate;
+    }
+
+    dateValue() {
+        return this._date;
     }
 
     init() {
@@ -299,6 +307,26 @@ class UIDatePicker extends UIControl {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            date: this._date.toISOString(),
+            minimumDate: this._minimumDate?.toISOString() || null,
+            maximumDate: this._maximumDate?.toISOString() || null,
+            datePickerMode: this.datePickerMode,
+            minuteInterval: this.minuteInterval
+        };
+    }
+
+    static decode(data) {
+        const picker = new UIDatePicker();
+        picker._date = data.date ? new Date(data.date) : new Date();
+        picker._minimumDate = data.minimumDate ? new Date(data.minimumDate) : null;
+        picker._maximumDate = data.maximumDate ? new Date(data.maximumDate) : null;
+        picker.datePickerMode = data.datePickerMode || 'date';
+        picker.minuteInterval = data.minuteInterval || 1;
+        return picker;
     }
 }
 

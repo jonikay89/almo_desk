@@ -2,6 +2,7 @@ import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
+import { NSValue } from './Foundation.js';
 
 class UICollectionView extends UIScrollView {
     constructor(frame, collectionViewLayout) {
@@ -13,6 +14,11 @@ class UICollectionView extends UIScrollView {
         this.allowsMultipleSelection = false;
         this.backgroundView = null;
         this._data = [];
+        this.reusableCells = {};
+    }
+
+    get description() {
+        return `UICollectionView(layout: ${this.collectionViewLayout?.constructor?.name || 'unknown'}, allowsSelection: ${this.allowsSelection})`;
     }
 
     get delegate() {
@@ -29,6 +35,47 @@ class UICollectionView extends UIScrollView {
 
     set dataSource(value) {
         this._dataSource = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
+    }
+
+    numberOfSections() {
+        return Optional.of(this.dataSource?.numberOfSectionsInCollectionView)
+            .flatMap(fn => Optional.fromNullable(fn(this)))
+            .getOrElse(1);
+    }
+
+    numberOfItemsInSection(section) {
+        return Optional.of(this.dataSource?.numberOfItemsInCollectionView)
+            .flatMap(fn => Optional.fromNullable(fn(this, section)))
+            .getOrElse(0);
+    }
+
+    visibleCells() {
+        const cells = this.contentElement?.querySelectorAll('.ui-collectionview-cell') || [];
+        return Array.from(cells);
+    }
+
+    indexPathsForVisibleItems() {
+        const cells = this.contentElement?.querySelectorAll('.ui-collectionview-cell') || [];
+        return Array.from(cells).map((cell, index) => ({ item: index, section: 0 }));
+    }
+
+    layoutAttributesForItemAtIndexPath(indexPath) {
+        const layout = this.collectionViewLayout;
+        const itemWidth = layout.itemSize?.width || 100;
+        const itemHeight = layout.itemSize?.height || 100;
+        const spacing = layout.minimumInteritemSpacing || 10;
+        const lineSpacing = layout.minimumLineSpacing || 10;
+        const sectionInset = layout.sectionInset || { top: 10, right: 10, bottom: 10, left: 10 };
+        
+        const maxWidth = this.frame.width || 300;
+        const itemsPerRow = Math.floor((maxWidth - sectionInset.left - sectionInset.right + spacing) / (itemWidth + spacing));
+        const row = Math.floor(indexPath.item / itemsPerRow);
+        const col = indexPath.item % itemsPerRow;
+        
+        const x = sectionInset.left + col * (itemWidth + spacing);
+        const y = sectionInset.top + row * (itemHeight + lineSpacing);
+        
+        return NSValue.valueWithRect({ x, y, width: itemWidth, height: itemHeight });
     }
 
     init() {
@@ -144,6 +191,20 @@ class UICollectionView extends UIScrollView {
             this.contentElement.style.width = `${this.frame.width}px`;
         }
     }
+
+    encode() {
+        return {
+            allowsSelection: this.allowsSelection,
+            allowsMultipleSelection: this.allowsMultipleSelection
+        };
+    }
+
+    static decode(data) {
+        const collectionView = new UICollectionView({}, new UICollectionViewFlowLayout());
+        collectionView.allowsSelection = data.allowsSelection !== false;
+        collectionView.allowsMultipleSelection = data.allowsMultipleSelection || false;
+        return collectionView;
+    }
 }
 
 class UICollectionViewFlowLayout {
@@ -155,6 +216,34 @@ class UICollectionViewFlowLayout {
         this.scrollDirection = 'vertical';
         this.headerReferenceSize = { width: 0, height: 0 };
         this.footerReferenceSize = { width: 0, height: 0 };
+    }
+
+    get description() {
+        return `UICollectionViewFlowLayout(itemSize: {w: ${this.itemSize.width}, h: ${this.itemSize.height}})`;
+    }
+
+    itemSizeValue() {
+        return NSValue.valueWithSize(this.itemSize);
+    }
+
+    encode() {
+        return {
+            itemSize: this.itemSize,
+            minimumInteritemSpacing: this.minimumInteritemSpacing,
+            minimumLineSpacing: this.minimumLineSpacing,
+            sectionInset: this.sectionInset,
+            scrollDirection: this.scrollDirection
+        };
+    }
+
+    static decode(data) {
+        const layout = new UICollectionViewFlowLayout();
+        layout.itemSize = data.itemSize || { width: 100, height: 100 };
+        layout.minimumInteritemSpacing = data.minimumInteritemSpacing || 10;
+        layout.minimumLineSpacing = data.minimumLineSpacing || 10;
+        layout.sectionInset = data.sectionInset || { top: 10, right: 10, bottom: 10, left: 10 };
+        layout.scrollDirection = data.scrollDirection || 'vertical';
+        return layout;
     }
 }
 

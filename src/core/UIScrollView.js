@@ -1,6 +1,7 @@
 import UIView from './UIView.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
+import { NSValue } from './Foundation.js';
 
 class UIScrollView extends UIView {
     constructor() {
@@ -14,6 +15,10 @@ class UIScrollView extends UIView {
         this._alwaysBounceVertical = false;
         this.contentInset = { top: 0, right: 0, bottom: 0, left: 0 };
         this._delegate = null;
+    }
+
+    get description() {
+        return `UIScrollView(contentOffset: {x: ${this._contentOffset.x}, y: ${this._contentOffset.y}}, contentSize: {w: ${this._contentSize.width}, h: ${this._contentSize.height}})`;
     }
 
     get delegate() {
@@ -97,6 +102,18 @@ class UIScrollView extends UIView {
         if (this.element) {
             this.element.style.overscrollBehaviorY = value ? 'auto' : 'none';
         }
+    }
+
+    contentOffsetValue() {
+        return NSValue.valueWithPoint(this._contentOffset);
+    }
+
+    contentSizeValue() {
+        return NSValue.valueWithSize(this._contentSize);
+    }
+
+    contentInsetValue() {
+        return NSValue.valueWithRect(this.contentInset);
     }
 
     init() {
@@ -205,6 +222,28 @@ class UIScrollView extends UIView {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+    }
+
+    encode() {
+        return {
+            contentSize: this._contentSize,
+            contentOffset: this._contentOffset,
+            showsHorizontalScrollIndicator: this._showsHorizontalScrollIndicator,
+            showsVerticalScrollIndicator: this._showsVerticalScrollIndicator,
+            bounces: this._bounces,
+            contentInset: this.contentInset
+        };
+    }
+
+    static decode(data) {
+        const scrollView = new UIScrollView();
+        scrollView._contentSize = data.contentSize || { width: 0, height: 0 };
+        scrollView._contentOffset = data.contentOffset || { x: 0, y: 0 };
+        scrollView._showsHorizontalScrollIndicator = data.showsHorizontalScrollIndicator !== false;
+        scrollView._showsVerticalScrollIndicator = data.showsVerticalScrollIndicator !== false;
+        scrollView._bounces = data.bounces !== false;
+        scrollView.contentInset = data.contentInset || { top: 0, right: 0, bottom: 0, left: 0 };
+        return scrollView;
     }
 }
 

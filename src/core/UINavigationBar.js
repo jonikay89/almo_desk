@@ -12,6 +12,14 @@ class UINavigationBar extends UIView {
         this.items = [];
     }
 
+    get description() {
+        return `UINavigationBar(title: ${this.topItem?.title || 'none'})`;
+    }
+
+    itemsAsArray() {
+        return [...this.items];
+    }
+
     init() {
         this.element = document.createElement('nav');
         this.element.className = 'ui-navigationbar';
@@ -32,6 +40,9 @@ class UINavigationBar extends UIView {
             this.backItem = this.topItem;
         }
         this.topItem = item;
+        if (!this.items.includes(item)) {
+            this.items.push(item);
+        }
         this.#render(animated);
     }
 
@@ -114,6 +125,19 @@ class UINavigationBar extends UIView {
     layoutSubviews() {
         super.layoutSubviews();
     }
+
+    encode() {
+        return {
+            items: this.items.map(item => ({ title: item.title })),
+            prefersLargeTitles: this.prefersLargeTitles
+        };
+    }
+
+    static decode(data) {
+        const navBar = new UINavigationBar();
+        navBar.prefersLargeTitles = data.prefersLargeTitles || false;
+        return navBar;
+    }
 }
 
 class UINavigationItem {
@@ -122,6 +146,10 @@ class UINavigationItem {
         this.leftBarButtonItem = null;
         this.rightBarButtonItem = null;
         this.backAction = null;
+    }
+
+    get description() {
+        return `UINavigationItem(title: ${this.title})`;
     }
 
     setLeftBarButtonItem(item) {
@@ -133,7 +161,16 @@ class UINavigationItem {
     }
 
     setHidesBackButton(hidesBackButton) {
-        // Implementation
+    }
+
+    encode() {
+        return {
+            title: this.title
+        };
+    }
+
+    static decode(data) {
+        return new UINavigationItem(data.title || '');
     }
 }
 

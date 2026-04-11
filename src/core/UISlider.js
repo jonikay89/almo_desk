@@ -1,5 +1,6 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UISlider extends UIControl {
     constructor() {
@@ -28,6 +29,22 @@ class UISlider extends UIControl {
 
     get maximumValue() {
         return this._maximumValue;
+    }
+
+    get description() {
+        return `UISlider(value: ${this._value.toFixed(3)}, range: [${this._minimumValue}, ${this._maximumValue}])`;
+    }
+
+    valueAsNumber() {
+        return NSNumber.of(this._value);
+    }
+
+    minimumValueAsNumber() {
+        return NSNumber.of(this._minimumValue);
+    }
+
+    maximumValueAsNumber() {
+        return NSNumber.of(this._maximumValue);
     }
 
     init() {
@@ -223,6 +240,22 @@ class UISlider extends UIControl {
             this.element.style.height = `${this.frame.height}px`;
         }
         this.#updateAppearance();
+    }
+
+    encode() {
+        return {
+            value: this._value,
+            minimumValue: this._minimumValue,
+            maximumValue: this._maximumValue
+        };
+    }
+
+    static decode(data) {
+        const slider = new UISlider();
+        slider._value = data.value;
+        slider._minimumValue = data.minimumValue;
+        slider._maximumValue = data.maximumValue;
+        return slider;
     }
 }
 

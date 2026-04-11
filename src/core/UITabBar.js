@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { NSNumber } from './Foundation.js';
 
 class UITabBar extends UIView {
     constructor() {
@@ -136,6 +137,31 @@ class UITabBar extends UIView {
     layoutSubviews() {
         super.layoutSubviews();
     }
+
+    get description() {
+        const selectedDesc = this.selectedItem ? `, selectedItem: "${this.selectedItem.title}"` : '';
+        return `UITabBar(items: ${this.items.length}${selectedDesc})`;
+    }
+
+    itemsAsArray() {
+        return this.items.map(item => item);
+    }
+
+    encode() {
+        return {
+            items: this.items.map(item => item.encode ? item.encode() : { title: item.title, image: item.image }),
+            selectedItem: this.selectedItem ? this.items.indexOf(this.selectedItem) : -1
+        };
+    }
+
+    static decode(data) {
+        const tabBar = new UITabBar();
+        tabBar.items = data.items.map(itemData => UITabBarItem.decode ? UITabBarItem.decode(itemData) : itemData);
+        if (data.selectedItem >= 0 && data.selectedItem < tabBar.items.length) {
+            tabBar.selectedItem = tabBar.items[data.selectedItem];
+        }
+        return tabBar;
+    }
 }
 
 class UITabBarItem {
@@ -145,6 +171,35 @@ class UITabBarItem {
         this.selectedImage = selectedImage;
         this.badgeValue = null;
         this.tag = 0;
+    }
+
+    get description() {
+        return `UITabBarItem(title: "${this.title}", image: ${this.image || 'null'}, badgeValue: ${this.badgeValue || 'null'})`;
+    }
+
+    badgeValueAsNumber() {
+        return this.badgeValue != null ? NSNumber.of(this.badgeValue) : null;
+    }
+
+    tagAsNumber() {
+        return NSNumber.of(this.tag);
+    }
+
+    encode() {
+        return {
+            title: this.title,
+            image: this.image,
+            selectedImage: this.selectedImage,
+            badgeValue: this.badgeValue,
+            tag: this.tag
+        };
+    }
+
+    static decode(data) {
+        const item = new UITabBarItem(data.title, data.image, data.selectedImage);
+        item.badgeValue = data.badgeValue;
+        item.tag = data.tag;
+        return item;
     }
 
     static systemItem(systemItem) {
