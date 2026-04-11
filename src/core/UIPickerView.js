@@ -1,14 +1,31 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { WeakRef } from './WeakReference.js';
 
 class UIPickerView extends UIView {
     constructor() {
         super();
-        this.delegate = null;
-        this.dataSource = null;
+        this._delegate = null;
+        this._dataSource = null;
         this.numberOfComponents = 1;
         this.selectedRow = 0;
         this.pickers = [];
+    }
+
+    get delegate() {
+        return this._delegate ? this._delegate.target : null;
+    }
+
+    set delegate(value) {
+        this._delegate = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
+    }
+
+    get dataSource() {
+        return this._dataSource ? this._dataSource.target : null;
+    }
+
+    set dataSource(value) {
+        this._dataSource = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
     }
 
     init() {
@@ -194,16 +211,15 @@ class UIPickerView extends UIView {
         return null;
     }
 
-    setDelegate(delegate) {
-        this.delegate = delegate;
-    }
-
-    setDataSource(dataSource) {
-        this.dataSource = dataSource;
-    }
-
     layoutSubviews() {
         super.layoutSubviews();
+    }
+
+    deinit() {
+        this.pickers = [];
+        this._delegate = null;
+        this._dataSource = null;
+        super.deinit();
     }
 }
 

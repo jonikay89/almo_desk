@@ -1,13 +1,14 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
 import { Optional, Result } from './Generics.js';
+import { WeakRef } from './WeakReference.js';
 
 class UITableView extends UIScrollView {
     constructor(style = 'plain') {
         super();
         this.style = style;
-        this.delegate = null;
-        this.dataSource = null;
+        this._delegate = null;
+        this._dataSource = null;
         this.rowHeight = 44;
         this.sectionHeaderHeight = 30;
         this.sectionFooterHeight = 0;
@@ -18,6 +19,22 @@ class UITableView extends UIScrollView {
         this.allowsMultipleSelection = false;
         this.editing = false;
         this._data = [];
+    }
+
+    get delegate() {
+        return this._delegate ? this._delegate.target : null;
+    }
+
+    set delegate(value) {
+        this._delegate = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
+    }
+
+    get dataSource() {
+        return this._dataSource ? this._dataSource.target : null;
+    }
+
+    set dataSource(value) {
+        this._dataSource = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
     }
 
     init() {
@@ -41,12 +58,13 @@ class UITableView extends UIScrollView {
     #setupEventListeners() {
         this.element.addEventListener('click', (e) => {
             const row = e.target.closest('.ui-tableview-cell');
-            if (row && this.delegate && !this.editing) {
+            const delegate = this.delegate;
+            if (row && delegate && !this.editing) {
                 const index = parseInt(row.dataset.index, 10);
                 const section = parseInt(row.dataset.section, 10) || 0;
                 
-                if (this.delegate && typeof this.delegate.tableViewDidSelectRowAt === 'function') {
-                    const result = this.delegate.tableViewDidSelectRowAt(this, index, section);
+                if (delegate && typeof delegate.tableViewDidSelectRowAt === 'function') {
+                    const result = delegate.tableViewDidSelectRowAt(this, index, section);
                     if (result instanceof Result) {
                         result.isFailure ? console.error(result.error) : null;
                     }

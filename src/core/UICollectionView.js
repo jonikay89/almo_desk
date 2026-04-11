@@ -1,17 +1,34 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
 import { Optional, Result } from './Generics.js';
+import { WeakRef } from './WeakReference.js';
 
 class UICollectionView extends UIScrollView {
     constructor(frame, collectionViewLayout) {
         super();
         this.collectionViewLayout = collectionViewLayout || new UICollectionViewFlowLayout();
-        this.delegate = null;
-        this.dataSource = null;
+        this._delegate = null;
+        this._dataSource = null;
         this.allowsSelection = true;
         this.allowsMultipleSelection = false;
         this.backgroundView = null;
         this._data = [];
+    }
+
+    get delegate() {
+        return this._delegate ? this._delegate.target : null;
+    }
+
+    set delegate(value) {
+        this._delegate = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
+    }
+
+    get dataSource() {
+        return this._dataSource ? this._dataSource.target : null;
+    }
+
+    set dataSource(value) {
+        this._dataSource = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
     }
 
     init() {

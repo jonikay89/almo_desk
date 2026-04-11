@@ -49,6 +49,12 @@ export {
     Deque,
     PriorityQueue
 } from './Generics.js';
+export {
+    WeakRef,
+    ReferenceManager,
+    WeakMap,
+    WeakSet
+} from './WeakReference.js';
 export { default as UIResponder } from './UIResponder.js';
 export { default as UIViewController } from './UIViewController.js';
 export { default as UIView } from './UIView.js';

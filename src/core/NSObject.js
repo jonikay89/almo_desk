@@ -1,4 +1,5 @@
 import { Optional, Result } from './Generics.js';
+import { WeakRef, ReferenceManager, WeakMap } from './WeakReference.js';
 
 class NSObject {
     constructor() {
@@ -6,6 +7,9 @@ class NSObject {
         this._description = null;
         this._observers = new Map();
         this._keyPaths = new Map();
+        this._referenceManager = new ReferenceManager();
+        this._weakRefs = new WeakSet();
+        this._isDeallocated = false;
     }
 
     get hash() {
@@ -58,10 +62,12 @@ class NSObject {
     }
 
     retain() {
+        this._referenceManager.addStrongRef(this);
         return this;
     }
 
     release() {
+        this._referenceManager.removeStrongRef(this);
         return this;
     }
 
@@ -69,20 +75,37 @@ class NSObject {
         return this;
     }
 
+    get isDeallocated() {
+        return this._isDeallocated;
+    }
+
+    _addWeakRef(weakRef) {
+        this._weakRefs.add(weakRef);
+    }
+
+    _removeWeakRef(weakRef) {
+        this._weakRefs.delete(weakRef);
+    }
+
+    weakRef() {
+        return new WeakRef(this);
+    }
+
     addObserver(observer, keyPath, options = {}) {
         if (!this._observers.has(keyPath)) {
             this._observers.set(keyPath, []);
         }
         const observers = this._observers.get(keyPath);
-        if (!observers.find(o => o.observer === observer)) {
-            observers.push({
-                observer,
-                options: {
-                    newValue: true,
-                    oldValue: false,
-                    ...options
-                }
-            });
+        const observerEntry = {
+            observer: observer instanceof WeakRef ? observer : new WeakRef(observer),
+            options: {
+                newValue: true,
+                oldValue: false,
+                ...options
+            }
+        };
+        if (!observers.find(o => o.observer.target === observer)) {
+            observers.push(observerEntry);
         }
         if (!this._keyPaths.has(keyPath)) {
             this._keyPaths.set(keyPath, this._getValueForKeyPath(keyPath).orNull);
@@ -92,7 +115,7 @@ class NSObject {
     removeObserver(observer, keyPath) {
         if (this._observers.has(keyPath)) {
             this._observers.set(keyPath, 
-                this._observers.get(keyPath).filter(o => o.observer !== observer)
+                this._observers.get(keyPath).filter(o => o.observer.target !== observer)
             );
         }
     }
@@ -114,6 +137,8 @@ class NSObject {
             const observers = this._observers.get(keyPath);
             
             for (const { observer, options } of observers) {
+                if (observer.target === null) continue;
+                
                 const change = {
                     object: this,
                     keyPath,
@@ -121,10 +146,10 @@ class NSObject {
                     oldValue: options.oldValue ? oldValue : undefined
                 };
                 
-                if (observer.observeValueForKeyPath) {
-                    observer.observeValueForKeyPath(change);
-                } else if (typeof observer === 'function') {
-                    observer(change);
+                if (observer.target.observeValueForKeyPath) {
+                    observer.target.observeValueForKeyPath(change);
+                } else if (typeof observer.target === 'function') {
+                    observer.target(change);
                 }
             }
         }
@@ -169,6 +194,53 @@ class NSObject {
 
     static notificationName(name) {
         return name;
+    }
+
+    deinit() {
+        this._isDeallocated = true;
+        this._observers.clear();
+        this._keyPaths.clear();
+        for (const weakRef of this._weakRefs) {
+            weakRef.clear();
+        }
+    }
+}
+
+class WeakSet {
+    constructor() {
+        this._set = new Set();
+    }
+
+    add(value) {
+        const ref = value instanceof WeakRef ? value : new WeakRef(value);
+        this._set.add(ref);
+        return this;
+    }
+
+    delete(value) {
+        for (const ref of this._set) {
+            if (ref.target === value) {
+                this._set.delete(ref);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    get size() {
+        let count = 0;
+        for (const ref of this._set) {
+            if (ref.isValid) count++;
+        }
+        return count;
+    }
+
+    *[Symbol.iterator]() {
+        for (const ref of this._set) {
+            if (ref.isValid) {
+                yield ref.target;
+            }
+        }
     }
 }
 

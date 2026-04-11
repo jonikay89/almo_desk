@@ -1,13 +1,38 @@
 import UIResponder from './UIResponder.js';
+import { WeakRef } from './WeakReference.js';
 
 class UIViewController extends UIResponder {
     constructor() {
         super();
-        this.view = null;
-        this.isViewLoaded = false;
-        this.parentController = null;
-        this.childControllers = [];
         this._view = null;
+        this.isViewLoaded = false;
+        this._parentController = null;
+        this._childControllers = [];
+    }
+
+    get view() {
+        return this._view;
+    }
+
+    set view(view) {
+        this._view = view;
+        if (view) {
+            view._nextResponder = this;
+        }
+    }
+
+    get parentController() {
+        return this._parentController ? this._parentController.target : null;
+    }
+
+    set parentController(value) {
+        this._parentController = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
+    }
+
+    get childControllers() {
+        return this._childControllers
+            .map(ref => ref.target)
+            .filter(c => c !== null);
     }
 
     loadView() {
@@ -26,17 +51,6 @@ class UIViewController extends UIResponder {
 
     viewDidLayoutSubviews() {}
 
-    get view() {
-        return this._view;
-    }
-
-    set view(view) {
-        this._view = view;
-        if (view) {
-            view._nextResponder = this;
-        }
-    }
-
     didMove(toParentController) {
         if (toParentController) {
             toParentController.addChild(this);
@@ -47,13 +61,14 @@ class UIViewController extends UIResponder {
 
     addChild(controller) {
         controller.parentController = this;
-        this.childControllers.push(controller);
+        const weakRef = controller instanceof WeakRef ? controller : new WeakRef(controller);
+        this._childControllers.push(weakRef);
         controller.didMove(this);
     }
 
     removeChild(controller) {
         controller.parentController = null;
-        this.childControllers = this.childControllers.filter(c => c !== controller);
+        this._childControllers = this._childControllers.filter(ref => ref.target !== controller);
     }
 
     removeFromParent() {

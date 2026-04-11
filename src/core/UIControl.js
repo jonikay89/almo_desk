@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import { Optional, Result } from './Generics.js';
+import { WeakRef } from './WeakReference.js';
 
 class UIControl extends UIView {
     constructor() {
@@ -9,7 +10,7 @@ class UIControl extends UIView {
         this.highlighted = false;
         this.contentVerticalAlignment = 'center';
         this.contentHorizontalAlignment = 'center';
-        this.targetActions = [];
+        this._targetActions = [];
     }
 
     init() {
@@ -21,19 +22,23 @@ class UIControl extends UIView {
     }
 
     deinit() {
-        this.targetActions = [];
+        this._targetActions = [];
         this.element = null;
     }
 
     addTarget(target, action, eventType) {
-        this.targetActions.push({ target, action, eventType });
+        const weakRef = target instanceof WeakRef ? target : new WeakRef(target);
+        this._targetActions.push({ targetRef: weakRef, action, eventType });
         
         if (this.element) {
             const eventHandler = (e) => {
                 if (this.enabled) {
-                    const result = target[action]?.(e);
-                    if (result instanceof Result) {
-                        result.isSuccess ? this.handleSuccess(result) : this.handleFailure(result);
+                    const target = weakRef.target;
+                    if (target) {
+                        const result = target[action]?.(e);
+                        if (result instanceof Result) {
+                            result.isSuccess ? this.handleSuccess(result) : this.handleFailure(result);
+                        }
                     }
                 }
             };
@@ -43,18 +48,27 @@ class UIControl extends UIView {
     }
 
     removeTarget(target, action, eventType) {
-        this.targetActions = this.targetActions.filter(
-            ta => !(ta.target === target && ta.action === action && ta.eventType === eventType)
+        this._targetActions = this._targetActions.filter(
+            ta => {
+                const t = ta.targetRef.target;
+                return !(t === target && ta.action === action && ta.eventType === eventType);
+            }
         );
     }
 
     allTargets() {
-        return Optional.of(this.targetActions.map(ta => ta.target));
+        const targets = this._targetActions
+            .map(ta => ta.targetRef.target)
+            .filter(t => t !== null && t !== undefined);
+        return Optional.of(targets);
     }
 
     actionsForTarget(target, eventType) {
-        const actions = this.targetActions
-            .filter(ta => ta.target === target && (eventType === null || ta.eventType === eventType))
+        const actions = this._targetActions
+            .filter(ta => {
+                const t = ta.targetRef.target;
+                return t === target && (eventType === null || ta.eventType === eventType);
+            })
             .map(ta => ta.action);
         return Optional.of(actions.length > 0 ? actions : null);
     }
@@ -82,16 +96,19 @@ class UIControl extends UIView {
     }
 
     sendAction(action, eventType) {
-        const matchingTargets = this.targetActions.filter(ta => ta.eventType === eventType);
+        const matchingTargets = this._targetActions.filter(ta => ta.eventType === eventType);
         const results = [];
         
         for (const ta of matchingTargets) {
             if (this.enabled) {
-                try {
-                    const result = ta.target[ta.action]?.({ type: eventType, currentTarget: this });
-                    results.push(Result.success(result));
-                } catch (error) {
-                    results.push(Result.failure(error));
+                const target = ta.targetRef.target;
+                if (target) {
+                    try {
+                        const result = target[ta.action]?.({ type: eventType, currentTarget: this });
+                        results.push(Result.success(result));
+                    } catch (error) {
+                        results.push(Result.failure(error));
+                    }
                 }
             }
         }

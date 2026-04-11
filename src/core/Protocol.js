@@ -1,3 +1,5 @@
+import { WeakRef } from './WeakReference.js';
+
 class Protocol {
     constructor(name, requirements = {}) {
         this.name = name;
@@ -127,13 +129,15 @@ class ProtocolExtension {
 
 class DelegationManager {
     constructor() {
-        this._delegates = new WeakMap();
+        this._delegateRef = null;
+        this._delegateProtocol = null;
     }
 
     setDelegate(delegate, protocol_ = null) {
         if (delegate === null) {
-            this._delegates.delete(this);
-            return;
+            this._delegateRef = null;
+            this._delegateProtocol = null;
+            return Result.success(true);
         }
         
         if (protocol_ && protocol_ instanceof Protocol) {
@@ -141,26 +145,35 @@ class DelegationManager {
             if (!result.conforms) {
                 console.warn(`Delegate does not fully conform to protocol ${protocol_.name}`);
             }
+            this._delegateProtocol = protocol_;
         }
         
-        this._delegates.set(this, delegate);
+        this._delegateRef = delegate instanceof WeakRef ? delegate : new WeakRef(delegate);
+        return Result.success(true);
     }
 
     getDelegate() {
-        return this._delegates.get(this) || null;
+        if (this._delegateRef) {
+            const target = this._delegateRef.target;
+            if (target === null || target === undefined) {
+                this._delegateRef = null;
+                return null;
+            }
+            return target;
+        }
+        return null;
     }
 
     respondsTo(selector) {
         const delegate = this.getDelegate();
-        return delegate && typeof delegate[selector] === 'function';
+        return Optional.of(delegate).map(d => typeof d[selector] === 'function').getOrElse(false);
     }
 
     invoke(selector, ...args) {
-        const delegate = this.getDelegate();
-        if (delegate && typeof delegate[selector] === 'function') {
-            return delegate[selector](...args);
-        }
-        return null;
+        return Optional.of(this.getDelegate())
+            .filter(d => typeof d[selector] === 'function')
+            .map(d => d[selector](...args))
+            .getOrElse(null);
     }
 
     invokeIfResponds(selector, ...args) {
@@ -168,6 +181,17 @@ class DelegationManager {
         if (delegate && typeof delegate[selector] === 'function') {
             return delegate[selector](...args);
         }
+        return null;
+    }
+
+    clearDelegate() {
+        this._delegateRef = null;
+        this._delegateProtocol = null;
+        return Result.success(true);
+    }
+
+    get delegate() {
+        return this.getDelegate();
     }
 }
 

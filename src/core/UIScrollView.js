@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import { Optional, Result } from './Generics.js';
+import { WeakRef } from './WeakReference.js';
 
 class UIScrollView extends UIView {
     constructor() {
@@ -12,7 +13,15 @@ class UIScrollView extends UIView {
         this._alwaysBounceHorizontal = false;
         this._alwaysBounceVertical = false;
         this.contentInset = { top: 0, right: 0, bottom: 0, left: 0 };
-        this.delegate = null;
+        this._delegate = null;
+    }
+
+    get delegate() {
+        return this._delegate ? this._delegate.target : null;
+    }
+
+    set delegate(value) {
+        this._delegate = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
     }
 
     get contentSize() {
