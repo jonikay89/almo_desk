@@ -1057,6 +1057,95 @@ defineTypeAlias('StringConvertible', CustomStringConvertible);
 defineTypeAlias('RawRepresentableType', RawRepresentable);
 defineTypeAlias('ExpressibleBy', ExpressibleByStringLiteral, ExpressibleByNumberLiteral, ExpressibleByBooleanLiteral);
 
+NSValue.prototype.isEqual = function(other) {
+    if (!(other instanceof NSValue)) return false;
+    return this._type === other._type && JSON.stringify(this._value) === JSON.stringify(other._value);
+};
+
+NSValue.prototype.hash = function() {
+    return hashObject({ type: this._type, value: this._value });
+};
+
+NSNumber.prototype.isEqual = function(other) {
+    if (!(other instanceof NSNumber)) return false;
+    return this._numberValue === other._numberValue;
+};
+
+NSNumber.prototype.hash = function() {
+    return hashNumber(this._numberValue);
+};
+
+Data.prototype.isEqual = function(other) {
+    if (!(other instanceof Data)) return false;
+    if (this._bytes.length !== other._bytes.length) return false;
+    for (let i = 0; i < this._bytes.length; i++) {
+        if (this._bytes[i] !== other._bytes[i]) return false;
+    }
+    return true;
+};
+
+Data.prototype.hash = function() {
+    return this.hash();
+};
+
+Object.defineProperty(Data.prototype, 'isEmpty', {
+    get: function() {
+        return this._bytes.length === 0;
+    },
+    enumerable: false,
+    configurable: true
+});
+
+Data.prototype.contains = function(other) {
+    return this.rangeOfData(other) !== null;
+};
+
+Data.prototype.append = function(other) {
+    this.appendData(other);
+    return this;
+};
+
+NSURL.prototype.isEqual = function(other) {
+    if (!(other instanceof NSURL)) return false;
+    return this._urlString === other._urlString;
+};
+
+NSURL.prototype.hash = function() {
+    return hashString(this._urlString);
+};
+
+Object.defineProperty(NSURL.prototype, 'isAbsolute', {
+    get: function() {
+        return this._parsed.scheme !== '' && this._parsed.host !== '';
+    },
+    enumerable: false,
+    configurable: true
+});
+
+NSURL.prototype.appendingPath = function(component) {
+    return this.appendingPathComponent(component);
+};
+
+NSURL.prototype.deletingLastPath = function() {
+    return this.deletingLastPathComponent();
+};
+
+Object.defineProperty(Scanner.prototype, 'isAtEnd', {
+    get: function() {
+        return this._index >= this._string.length;
+    },
+    enumerable: false,
+    configurable: true
+});
+
+Scanner.prototype.scan = function(string) {
+    return this.scanString(string);
+};
+
+Scanner.prototype.scanUpTo = function(string) {
+    return this.scanUpToString(string);
+};
+
 export default {
     CustomStringConvertible,
     RawRepresentable,

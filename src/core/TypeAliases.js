@@ -1,4 +1,4 @@
-import { defineTypeAlias, composeProtocols, Protocol, AssociatedType } from './Protocol.js';
+import { defineTypeAlias, composeProtocols, Protocol, AssociatedType, extendProtocol, extendProtocolWhere } from './Protocol.js';
 import { Optional, Result, Box } from './Generics.js';
 
 export const CustomStringConvertibleAlias = defineTypeAlias('StringConvertible');
@@ -53,6 +53,27 @@ export const ScrollViewDelegate = createDelegateProtocol('ScrollViewDelegate', [
     'scrollViewDidEndDecelerating'
 ]);
 
+extendProtocol(ScrollViewDelegate, {
+    scrollViewDidScroll(scrollView) {
+        return null;
+    },
+    scrollViewDidZoom(scrollView) {
+        return null;
+    },
+    scrollViewWillBeginDragging(scrollView) {
+        return null;
+    },
+    scrollViewWillEndDragging(scrollView, velocity) {
+        return null;
+    },
+    scrollViewDidEndDragging(scrollView, decelerate) {
+        return null;
+    },
+    scrollViewDidEndDecelerating(scrollView) {
+        return null;
+    }
+});
+
 export const TableViewDelegate = createDelegateProtocol('TableViewDelegate', [
     'tableViewDidSelectRowAt',
     'tableView_titleForHeaderInSection',
@@ -62,16 +83,58 @@ export const TableViewDelegate = createDelegateProtocol('TableViewDelegate', [
     'tableView_heightForFooterInSection'
 ]);
 
+extendProtocol(TableViewDelegate, {
+    tableViewDidSelectRowAt(tableView, index, section) {
+        return null;
+    },
+    tableView_titleForHeaderInSection(tableView, section) {
+        return null;
+    },
+    tableView_titleForFooterInSection(tableView, section) {
+        return null;
+    },
+    tableView_heightForRowAt(tableView, indexPath) {
+        return tableView.rowHeight || 44;
+    },
+    tableView_heightForHeaderInSection(tableView, section) {
+        return tableView.sectionHeaderHeight || 30;
+    },
+    tableView_heightForFooterInSection(tableView, section) {
+        return tableView.sectionFooterHeight || 0;
+    }
+});
+
 export const TableViewDataSource = createDataSourceProtocol('TableViewDataSource', [
     'tableView_numberOfRowsInSection',
     'tableView_cellForRowAt',
     'numberOfSectionsInTableView'
 ]);
 
+extendProtocol(TableViewDataSource, {
+    numberOfSectionsInTableView(tableView) {
+        return 1;
+    },
+    tableView_numberOfRowsInSection(tableView, section) {
+        return 0;
+    },
+    tableView_cellForRowAt(tableView, index, section) {
+        return null;
+    }
+});
+
 export const CollectionViewDelegate = createDelegateProtocol('CollectionViewDelegate', [
     'collectionViewDidSelectItemAt',
     'collectionView_sizeForItemAt'
 ]);
+
+extendProtocol(CollectionViewDelegate, {
+    collectionViewDidSelectItemAt(collectionView, indexPath) {
+        return null;
+    },
+    collectionView_sizeForItemAt(collectionView, indexPath) {
+        return { width: 100, height: 100 };
+    }
+});
 
 export const CollectionViewDataSource = createDataSourceProtocol('CollectionViewDataSource', [
     'numberOfSectionsInCollectionView',
@@ -79,15 +142,45 @@ export const CollectionViewDataSource = createDataSourceProtocol('CollectionView
     'collectionView_cellForItemAt'
 ]);
 
+extendProtocol(CollectionViewDataSource, {
+    numberOfSectionsInCollectionView(collectionView) {
+        return 1;
+    },
+    numberOfItemsInCollectionView(collectionView, section) {
+        return 0;
+    },
+    collectionView_cellForItemAt(collectionView, indexPath) {
+        return null;
+    }
+});
+
 export const PickerViewDelegate = createDelegateProtocol('PickerViewDelegate', [
     'pickerView_titleForRow_forComponent',
     'pickerView_didSelectRow_inComponent'
 ]);
 
+extendProtocol(PickerViewDelegate, {
+    pickerView_titleForRow_forComponent(pickerView, row, component) {
+        return '';
+    },
+    pickerView_didSelectRow_inComponent(pickerView, row, component) {
+        return null;
+    }
+});
+
 export const PickerViewDataSource = createDataSourceProtocol('PickerViewDataSource', [
     'numberOfComponentsInPickerView',
     'pickerView_numberOfRowsInComponent'
 ]);
+
+extendProtocol(PickerViewDataSource, {
+    numberOfComponentsInPickerView(pickerView) {
+        return 1;
+    },
+    pickerView_numberOfRowsInComponent(pickerView, component) {
+        return 0;
+    }
+});
 
 export const TextFieldDelegate = createDelegateProtocol('TextFieldDelegate', [
     'textFieldDidBeginEditing',
@@ -96,11 +189,38 @@ export const TextFieldDelegate = createDelegateProtocol('TextFieldDelegate', [
     'textFieldShouldReturn'
 ]);
 
+extendProtocol(TextFieldDelegate, {
+    textFieldDidBeginEditing(textField) {
+        return null;
+    },
+    textFieldDidEndEditing(textField) {
+        return null;
+    },
+    textFieldDidChange(textField) {
+        return null;
+    },
+    textFieldShouldReturn(textField) {
+        return true;
+    }
+});
+
 export const TextViewDelegate = createDelegateProtocol('TextViewDelegate', [
     'textViewDidBeginEditing',
     'textViewDidEndEditing',
     'textViewDidChange'
 ]);
+
+extendProtocol(TextViewDelegate, {
+    textViewDidBeginEditing(textView) {
+        return null;
+    },
+    textViewDidEndEditing(textView) {
+        return null;
+    },
+    textViewDidChange(textView) {
+        return null;
+    }
+});
 
 export const SearchBarDelegate = createDelegateProtocol('SearchBarDelegate', [
     'searchBarTextDidChange',
@@ -108,17 +228,47 @@ export const SearchBarDelegate = createDelegateProtocol('SearchBarDelegate', [
     'searchBarCancelButtonClicked'
 ]);
 
+extendProtocol(SearchBarDelegate, {
+    searchBarTextDidChange(searchBar, text) {
+        return null;
+    },
+    searchBarSearchButtonClicked(searchBar) {
+        return null;
+    },
+    searchBarCancelButtonClicked(searchBar) {
+        return null;
+    }
+});
+
 export const NavigationBarDelegate = createDelegateProtocol('NavigationBarDelegate', [
     'navigationBarDidSelectItem'
 ]);
+
+extendProtocol(NavigationBarDelegate, {
+    navigationBarDidSelectItem(navigationBar, item) {
+        return null;
+    }
+});
 
 export const TabBarDelegate = createDelegateProtocol('TabBarDelegate', [
     'tabBarDidSelectItem'
 ]);
 
+extendProtocol(TabBarDelegate, {
+    tabBarDidSelectItem(tabBar, item) {
+        return null;
+    }
+});
+
 export const AlertDelegate = createDelegateProtocol('AlertDelegate', [
     'alertDidDismiss'
 ]);
+
+extendProtocol(AlertDelegate, {
+    alertDidDismiss(alertController, action) {
+        return null;
+    }
+});
 
 defineTypeAlias('ViewDelegate', ScrollViewDelegate);
 defineTypeAlias('TableViewDelegateBundle', TableViewDelegate, TableViewDataSource);
@@ -136,20 +286,66 @@ export const Processor = Protocol.define('Processor', {
     methods: ['transform']
 });
 
-export const StringProcessor = Protocol.define('StringProcessor', {
-    methods: ['process']
-});
-
-export const NumberProcessor = Protocol.define('NumberProcessor', {
-    methods: ['calculate']
-});
-
 export const Container = Protocol.define('Container', {
     associatedTypes: {
         Item: null
     },
     properties: {
         items: { get: true, set: true }
+    }
+});
+
+extendProtocol(Container, {
+    get count() {
+        return this.items?.length || 0;
+    },
+    append(item) {
+        if (this.items) {
+            this.items.push(item);
+        }
+        return this;
+    },
+    itemAt(index) {
+        return this.items?.[index] || null;
+    },
+    isEmpty() {
+        return this.count === 0;
+    }
+});
+
+extendProtocolWhere(Container, {
+    sum() {
+        return this.items?.reduce((acc, item) => acc + item, 0) || 0;
+    }
+}, (instance) => {
+    return instance.items?.every(item => typeof item === 'number') || false;
+});
+
+extendProtocolWhere(Container, {
+    concatenated() {
+        return this.items?.join('') || '';
+    }
+}, (instance) => {
+    return instance.items?.every(item => typeof item === 'string') || false;
+});
+
+export const StringProcessor = Protocol.define('StringProcessor', {
+    methods: ['process']
+});
+
+extendProtocol(StringProcessor, {
+    process(input) {
+        return String(input);
+    }
+});
+
+export const NumberProcessor = Protocol.define('NumberProcessor', {
+    methods: ['calculate']
+});
+
+extendProtocol(NumberProcessor, {
+    calculate(input) {
+        return Number(input) || 0;
     }
 });
 
@@ -201,11 +397,13 @@ export default {
     TabBarDelegate,
     AlertDelegate,
     Processor,
+    Container,
     StringProcessor,
     NumberProcessor,
-    Container,
     createProcessor,
     UppercaseProcessor,
     DoubleProcessor,
-    executeProcess
+    executeProcess,
+    extendProtocol,
+    extendProtocolWhere
 };

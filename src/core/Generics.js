@@ -104,14 +104,6 @@ function createGenericFunction(typeParam, fn) {
     };
 }
 
-genericTypeAlias('NetworkResponse', ['T', 'E'], (T, E) => Result);
-genericTypeAlias('NetworkCompletion', ['T', 'E'], (T, E) => (response) => {});
-genericTypeAlias('VoidResult', [], () => Result);
-genericTypeAlias('VoidCompletion', [], () => (result) => {});
-genericTypeAlias('OptionalValue', ['T'], (T) => Optional);
-genericTypeAlias('BoxedValue', ['T'], (T) => Box);
-genericTypeAlias('PairOf', ['A', 'B'], (A, B) => Pair);
-
 class Result {
     constructor(value, error = null) {
         this._value = value;
@@ -490,6 +482,38 @@ class PriorityQueue {
         }
     }
 }
+
+Result.prototype.isEqual = function(other) {
+    if (!(other instanceof Result)) return false;
+    if (this._isSuccess !== other._isSuccess) return false;
+    if (this._isSuccess) {
+        return this._value === other._value;
+    }
+    return this._error === other._error;
+};
+
+Result.prototype.toString = function() {
+    return this._isSuccess ? `Result.success(${this._value})` : `Result.failure(${this._error})`;
+};
+
+Optional.prototype.isEqual = function(other) {
+    if (!(other instanceof Optional)) return false;
+    if (this._isPresent !== other._isPresent) return false;
+    if (!this._isPresent) return true;
+    return this._value === other._value;
+};
+
+Optional.prototype.toString = function() {
+    return this._isPresent ? `Optional.some(${this._value})` : 'Optional.none';
+};
+
+genericTypeAlias('NetworkResponse', ['T', 'E'], (T, E) => Result);
+genericTypeAlias('NetworkCompletion', ['T', 'E'], (T, E) => (response) => {});
+genericTypeAlias('VoidResult', [], () => Result);
+genericTypeAlias('VoidCompletion', [], () => (result) => {});
+genericTypeAlias('OptionalValue', ['T'], (T) => Optional);
+genericTypeAlias('BoxedValue', ['T'], (T) => Box);
+genericTypeAlias('PairOf', ['A', 'B'], (A, B) => Pair);
 
 export {
     Generic,

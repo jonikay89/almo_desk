@@ -1,6 +1,8 @@
 import { WeakRef } from './WeakReference.js';
 
 const _typealiases = new Map();
+const _protocolExtensions = new Map();
+const _conditionalExtensions = [];
 
 class TypeAlias {
     constructor(name, type) {
@@ -79,6 +81,7 @@ class Protocol {
         this.requirements = requirements;
         this.extensions = [];
         this._associatedTypes = {};
+        this._defaultImplementations = new Map();
     }
 
     static define(name, definition) {
@@ -112,6 +115,23 @@ class Protocol {
     addExtension(extension_) {
         this.extensions.push(extension_);
         return this;
+    }
+
+    addDefaultImplementation(methodName, implementation) {
+        this._defaultImplementations.set(methodName, implementation);
+        return this;
+    }
+
+    getDefaultImplementation(methodName) {
+        if (this._defaultImplementations.has(methodName)) {
+            return this._defaultImplementations.get(methodName);
+        }
+        for (const ext of this.extensions) {
+            if (typeof ext[methodName] === 'function') {
+                return ext[methodName];
+            }
+        }
+        return null;
     }
 
     conformsTo(object) {
@@ -166,15 +186,6 @@ class Protocol {
             missing
         };
     }
-
-    getDefaultImplementation(methodName) {
-        for (const ext of this.extensions) {
-            if (typeof ext[methodName] === 'function') {
-                return ext[methodName];
-            }
-        }
-        return null;
-    }
 }
 
 class ProtocolExtension {
@@ -198,6 +209,67 @@ class ProtocolExtension {
     getProperty(name) {
         return this._properties[name];
     }
+}
+
+function extendProtocol(protocol_, extensionObj) {
+    if (!(protocol_ instanceof Protocol)) {
+        throw new Error('First argument must be a Protocol');
+    }
+    
+    _protocolExtensions.set(protocol_, extensionObj);
+    
+    for (const [key, value] of Object.entries(extensionObj)) {
+        if (typeof value === 'function') {
+            protocol_.addDefaultImplementation(key, value);
+        }
+    }
+    
+    return protocol_;
+}
+
+function extendProtocolWhere(protocol_, extensionObj, conditionFn) {
+    if (!(protocol_ instanceof Protocol)) {
+        throw new Error('First argument must be a Protocol');
+    }
+    
+    _conditionalExtensions.push({
+        protocol: protocol_,
+        extension: extensionObj,
+        condition: conditionFn
+    });
+    
+    return protocol_;
+}
+
+function getProtocolExtensionFor(protocol_, instance) {
+    const conditionalExt = _conditionalExtensions.find(ext => 
+        ext.protocol === protocol_ && ext.condition(instance)
+    );
+    
+    if (conditionalExt) {
+        return conditionalExt.extension;
+    }
+    
+    return _protocolExtensions.get(protocol_) || null;
+}
+
+function invokeProtocolMethod(protocol_, instance, methodName, ...args) {
+    const descriptor = Object.getOwnPropertyDescriptor(instance, methodName);
+    if (descriptor && typeof descriptor.value === 'function') {
+        return instance[methodName](...args);
+    }
+    
+    const defaultImpl = protocol_.getDefaultImplementation(methodName);
+    if (defaultImpl) {
+        return defaultImpl.call(instance, ...args);
+    }
+    
+    const ext = getProtocolExtensionFor(protocol_, instance);
+    if (ext && typeof ext[methodName] === 'function') {
+        return ext[methodName].call(instance, ...args);
+    }
+    
+    return null;
 }
 
 class DelegationManager {
@@ -283,6 +355,15 @@ function conformToProtocol(classRef, protocol_) {
             prototype[methodName] = implementation;
         }
     }
+    
+    const defaultImpls = protocol_._defaultImplementations;
+    if (defaultImpls) {
+        for (const [methodName, fn] of defaultImpls) {
+            if (!prototype[methodName]) {
+                prototype[methodName] = fn;
+            }
+        }
+    }
 
     return classRef;
 }
@@ -322,6 +403,12 @@ const Hashable = Protocol.define('Hashable', {
 
 const Comparable = Protocol.define('Comparable', {
     methods: ['compare']
+});
+
+extendProtocol(Identifiable, {
+    logId() {
+        return `ID: ${this.id}`;
+    }
 });
 
 function hashObject(obj) {
@@ -391,7 +478,11 @@ export {
     hasTypeAlias,
     resolveTypeAlias,
     composeProtocols,
-    defineTypeAlias
+    defineTypeAlias,
+    extendProtocol,
+    extendProtocolWhere,
+    getProtocolExtensionFor,
+    invokeProtocolMethod
 };
 
 export default Protocol;
