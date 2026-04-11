@@ -1,5 +1,8 @@
-class UIResponder {
+import NSObject from './NSObject.js';
+
+class UIResponder extends NSObject {
     constructor() {
+        super();
         this._nextResponder = null;
         this._userInteractionEnabled = true;
     }
