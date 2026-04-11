@@ -1,5 +1,4 @@
-import Window from './Window.js';
-import WidgetRegistry from '../widgets/index.js';
+import WindowController from './WindowController.js';
 import { storage, createElement, escapeHtml } from '../utils/index.js';
 
 const CONFIG = {
@@ -23,14 +22,14 @@ class DesktopOS {
         this.drag = null;
         this.saveTimer = null;
         this.taskbarInterval = null;
-        
         this.desktopEl = document.getElementById('webDesktop');
         this.taskbarEl = document.getElementById('taskbar');
-        
+        console.log('DesktopOS: desktopEl:', this.desktopEl, 'taskbarEl:', this.taskbarEl);
         this.#init();
     }
 
     #init() {
+        console.log('init called');
         this.#loadState();
         this.#setupGlobalListeners();
         this.#render();
@@ -41,7 +40,7 @@ class DesktopOS {
         
         if (data && Array.isArray(data.windows)) {
             this.windows = data.windows.map(w => {
-                const win = new Window({
+                const win = new WindowController({
                     id: w.id,
                     title: w.title,
                     widgetType: w.widgetType,
@@ -51,8 +50,8 @@ class DesktopOS {
                     width: w.width,
                     height: w.height,
                 });
-                win.zIndex = w.zIndex ?? 100;
-                win.minimized = !!w.minimized;
+                win.view.zIndex = w.zIndex ?? 100;
+                win.isMinimized = !!w.minimized;
                 return win;
             });
             this.nextId = data.nextId || 1;
@@ -84,10 +83,11 @@ class DesktopOS {
 
     addWindow(title, widgetType, extraData = {}, x = 100, y = 80, w = CONFIG.DEFAULT_WIDTH, h = CONFIG.DEFAULT_HEIGHT) {
         const id = this.nextId++;
-        const maxZ = this.windows.length > 0 ? Math.max(...this.windows.map(w => w.zIndex)) : 100;
+        const maxZ = this.windows.length > 0 ? Math.max(...this.windows.map(w => w.view.zIndex)) : 100;
         
-        const win = new Window({ id, title, widgetType, extraData, x, y, width: w, height: h });
-        win.zIndex = maxZ + 1;
+        const win = new WindowController({ id, title, widgetType, extraData, x, y, width: w, height: h });
+        win.os = this;
+        win.view.zIndex = maxZ + 1;
         
         this.windows.push(win);
         this.activeWindowId = id;
@@ -96,14 +96,19 @@ class DesktopOS {
     }
 
     closeWindow(id) {
-        this.windows = this.windows.filter(w => w.id !== id);
+        const win = this.windows.find(w => w.windowId === id);
+        if (win) {
+            win.viewWillDisappear();
+            win.viewDidDisappear();
+        }
+        this.windows = this.windows.filter(w => w.windowId !== id);
         if (this.activeWindowId === id) this.activeWindowId = null;
         this.saveDebounced();
         this.#render();
     }
 
     minimizeWindow(id) {
-        const win = this.windows.find(w => w.id === id);
+        const win = this.windows.find(w => w.windowId === id);
         if (!win) return;
         win.minimize();
         if (this.activeWindowId === id) this.activeWindowId = null;
@@ -112,32 +117,32 @@ class DesktopOS {
     }
 
     restoreWindow(id) {
-        const win = this.windows.find(w => w.id === id);
+        const win = this.windows.find(w => w.windowId === id);
         if (!win) return;
         win.restore();
         this.bringToFront(id);
     }
 
     bringToFront(id) {
-        const win = this.windows.find(w => w.id === id);
+        const win = this.windows.find(w => w.windowId === id);
         if (!win) return;
         
-        const maxZ = Math.max(200, ...this.windows.map(w => w.zIndex));
+        const maxZ = Math.max(200, ...this.windows.map(w => w.view.zIndex));
         win.setZIndex(maxZ + 1);
         win.restore();
         this.activeWindowId = id;
         
-        this.windows.forEach(w => w.setActive(w.id === id));
+        this.windows.forEach(w => w.setActive(w.windowId === id));
         this.saveDebounced();
     }
 
-    startDrag(element, winId, e, mode) {
+    startDrag(windowController, e, mode) {
         e.preventDefault();
         
+        const element = windowController.view.element;
         const rect = element.getBoundingClientRect();
         this.drag = {
-            element,
-            winId,
+            windowController,
             mode,
             startX: e.clientX,
             startY: e.clientY,
@@ -155,6 +160,7 @@ class DesktopOS {
             this.drag = null;
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
+            this.saveState();
         };
 
         document.addEventListener('mousemove', onMove);
@@ -164,7 +170,7 @@ class DesktopOS {
     #onDrag(e) {
         if (!this.drag) return;
         
-        const win = this.windows.find(w => w.id === this.drag.winId);
+        const win = this.drag.windowController;
         if (!win) return;
 
         const deltaX = e.clientX - this.drag.startX;
@@ -173,33 +179,34 @@ class DesktopOS {
         if (this.drag.mode === 'move') {
             const newX = Math.max(0, Math.min(this.drag.initialLeft + deltaX, window.innerWidth - CONFIG.DRAG_MARGIN));
             const newY = Math.max(0, Math.min(this.drag.initialTop + deltaY, window.innerHeight - CONFIG.TASKBAR_HEIGHT - CONFIG.DRAG_MARGIN));
-            win.updatePosition(newX, newY);
+            win.setFrame(newX, newY, win.frame.width, win.frame.height);
         } else if (this.drag.mode === 'resize') {
-            win.updateSize(this.drag.initialWidth + deltaX, this.drag.initialHeight + deltaY);
+            win.setFrame(win.frame.x, win.frame.y, this.drag.initialWidth + deltaX, this.drag.initialHeight + deltaY);
         }
-        
-        this.saveDebounced();
     }
 
     #render() {
+        console.log('render called');
         this.#renderDesktop();
         this.#renderTaskbar();
     }
 
     #renderDesktop() {
+        console.log('renderDesktop called, desktopEl:', this.desktopEl);
         if (!this.desktopEl) return;
         this.desktopEl.innerHTML = '';
         
         this.#renderDesktopIcons();
 
         const visibleWindows = this.windows
-            .filter(w => !w.minimized)
-            .sort((a, b) => a.zIndex - b.zIndex);
+            .filter(w => !w.isMinimized)
+            .sort((a, b) => a.view.zIndex - b.view.zIndex);
 
         visibleWindows.forEach(win => {
-            win.render(this, this.activeWindowId === win.id);
-            win.element.addEventListener('mousedown', () => this.bringToFront(win.id));
-            this.desktopEl.appendChild(win.element);
+            win.loadViewIfNeeded();
+            win.view.element.classList.toggle('active', this.activeWindowId === win.windowId);
+            win.view.element.addEventListener('mousedown', () => this.bringToFront(win.windowId));
+            this.desktopEl.appendChild(win.view.element);
         });
     }
 
@@ -226,8 +233,8 @@ class DesktopOS {
                 e.stopPropagation();
                 const existing = this.windows.find(w => w.widgetType === ic.type && w.title === ic.label);
                 if (existing) {
-                    if (existing.minimized) this.restoreWindow(existing.id);
-                    else this.bringToFront(existing.id);
+                    if (existing.isMinimized) this.restoreWindow(existing.windowId);
+                    else this.bringToFront(existing.windowId);
                 } else {
                     this.addWindow(ic.label, ic.type, ic.data, 100 + Math.random() * 80, 80 + Math.random() * 100);
                 }
@@ -274,13 +281,13 @@ class DesktopOS {
         
         this.windows.forEach(win => {
             const btn = createElement('div', {
-                className: `taskbar-item ${this.activeWindowId === win.id ? 'active' : ''}`
+                className: `taskbar-item ${this.activeWindowId === win.windowId ? 'active' : ''}`
             }, [createElement('span', { textContent: win.title.substring(0, 22) })]);
 
             btn.addEventListener('click', () => {
-                if (win.minimized) this.restoreWindow(win.id);
-                else if (this.activeWindowId === win.id) this.minimizeWindow(win.id);
-                else this.bringToFront(win.id);
+                if (win.isMinimized) this.restoreWindow(win.windowId);
+                else if (this.activeWindowId === win.windowId) this.minimizeWindow(win.windowId);
+                else this.bringToFront(win.windowId);
             });
 
             windowsContainer.appendChild(btn);
@@ -322,7 +329,7 @@ class DesktopOS {
             newIcon: () => this.#promptNewIcon(),
             newWeblink: () => this.#promptWeblinkIcon(),
             newHtml: () => this.#promptHtmlIcon(),
-            about: () => alert('Web Desktop OS v3.0\nModular Architecture\nDrag • Resize • Persist'),
+            about: () => alert('Web Desktop OS v4.0\niOS UIKit-Inspired Architecture\nDrag • Resize • Persist'),
         };
 
         menu.querySelectorAll('.start-menu-item').forEach(item => {
@@ -399,9 +406,9 @@ class DesktopOS {
     #setupGlobalListeners() {
         window.addEventListener('resize', () => {
             this.windows.forEach(w => {
-                w.x = Math.min(w.x, window.innerWidth - CONFIG.DRAG_MARGIN);
-                w.y = Math.min(w.y, window.innerHeight - CONFIG.TASKBAR_HEIGHT - CONFIG.DRAG_MARGIN);
-                w.updatePosition(w.x, w.y);
+                w.frame.x = Math.min(w.frame.x, window.innerWidth - CONFIG.DRAG_MARGIN);
+                w.frame.y = Math.min(w.frame.y, window.innerHeight - CONFIG.TASKBAR_HEIGHT - CONFIG.DRAG_MARGIN);
+                w.setFrame(w.frame.x, w.frame.y, w.frame.width, w.frame.height);
             });
             this.saveDebounced();
         });

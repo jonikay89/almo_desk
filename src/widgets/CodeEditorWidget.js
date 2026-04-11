@@ -1,4 +1,4 @@
-import BaseWidget from './BaseWidget.js';
+import WidgetView from './WidgetView.js';
 
 const DEFAULT_CODE = `<!DOCTYPE html>
 <html>
@@ -22,8 +22,16 @@ const DEFAULT_CODE = `<!DOCTYPE html>
 </body>
 </html>`;
 
-class CodeEditorWidget extends BaseWidget {
-    createElement() {
+class CodeEditorWidget extends WidgetView {
+    constructor(extraData, windowController) {
+        super(extraData);
+        this.windowController = windowController;
+        this.codeContent = this.extraData.codeContent || DEFAULT_CODE;
+        this.textareaElement = null;
+        this.iframeElement = null;
+    }
+
+    createView() {
         const container = document.createElement('div');
         container.className = 'widget-code-editor';
         
@@ -40,43 +48,49 @@ class CodeEditorWidget extends BaseWidget {
         toolbar.appendChild(badge);
         toolbar.appendChild(langLabel);
         
-        const textarea = document.createElement('textarea');
-        textarea.className = 'code-input';
-        textarea.spellcheck = false;
-        textarea.value = this.extraData.codeContent || DEFAULT_CODE;
+        this.textareaElement = document.createElement('textarea');
+        this.textareaElement.className = 'code-input';
+        this.textareaElement.spellcheck = false;
+        this.textareaElement.value = this.codeContent;
         
         const previewArea = document.createElement('div');
         previewArea.className = 'preview-area';
         
-        const iframe = document.createElement('iframe');
-        iframe.className = 'preview-frame';
-        iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-modals');
+        this.iframeElement = document.createElement('iframe');
+        this.iframeElement.className = 'preview-frame';
+        this.iframeElement.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-modals');
         
-        previewArea.appendChild(iframe);
+        previewArea.appendChild(this.iframeElement);
         
         container.appendChild(toolbar);
-        container.appendChild(textarea);
+        container.appendChild(this.textareaElement);
         container.appendChild(previewArea);
-        
-        const updatePreview = () => {
-            this.extraData.codeContent = textarea.value;
-            this.updateIframe(iframe, textarea.value);
-            this.os.saveDebounced();
-        };
-        
-        this.updateIframe(iframe, textarea.value);
-        textarea.addEventListener('input', updatePreview);
         
         return container;
     }
-    
-    updateIframe(iframe, code) {
+
+    viewDidLoad() {
+        this.#updatePreview();
+        
+        this.textareaElement.addEventListener('input', () => {
+            this.codeContent = this.textareaElement.value;
+            this.extraData.codeContent = this.codeContent;
+            this.#updatePreview();
+            this.windowController?.os?.saveDebounced();
+        });
+    }
+
+    #updatePreview() {
         try {
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            const doc = this.iframeElement.contentDocument || this.iframeElement.contentWindow.document;
             doc.open();
-            doc.write(code);
+            doc.write(this.codeContent);
             doc.close();
         } catch {}
+    }
+
+    layoutSubviews() {
+        super.layoutSubviews();
     }
 }
 

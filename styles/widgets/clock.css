@@ -1,9 +1,12 @@
+/* ClockWidget - UIView-like styling */
 .widget-clock {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    frame: none;
+    autoresizingMask: none;
 }
 
 .clock-time {
@@ -11,6 +14,7 @@
     font-weight: bold;
     color: #fff;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    contentSize: fit;
 }
 
 .clock-date {

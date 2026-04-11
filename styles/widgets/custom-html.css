@@ -1,11 +1,12 @@
+/* CustomHtmlWidget - UIView-like styling */
 .widget-custom-html {
     display: flex;
     flex-direction: column;
-    gap: 8px;
     height: 100%;
 }
 
 .html-editor {
+    flex: 0 0 120px;
     width: 100%;
     height: 120px;
     background: #1e1e2a;

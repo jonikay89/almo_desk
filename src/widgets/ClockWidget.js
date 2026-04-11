@@ -1,33 +1,63 @@
-import BaseWidget from './BaseWidget.js';
+import WidgetView from './WidgetView.js';
 
-class ClockWidget extends BaseWidget {
-    createElement() {
+class ClockWidget extends WidgetView {
+    constructor(extraData, windowController) {
+        super(extraData);
+        this.windowController = windowController;
+        this.timeInterval = null;
+        this.timeElement = null;
+        this.dateElement = null;
+    }
+
+    createView() {
         const container = document.createElement('div');
         container.className = 'widget-clock';
         
-        const timeEl = document.createElement('div');
-        timeEl.className = 'clock-time';
+        this.timeElement = document.createElement('div');
+        this.timeElement.className = 'clock-time';
         
-        const dateEl = document.createElement('div');
-        dateEl.className = 'clock-date';
+        this.dateElement = document.createElement('div');
+        this.dateElement.className = 'clock-date';
         
-        container.appendChild(timeEl);
-        container.appendChild(dateEl);
-
-        const update = () => {
-            const now = new Date();
-            timeEl.textContent = now.toLocaleTimeString([], { 
-                hour: '2-digit', minute: '2-digit', second: '2-digit' 
-            });
-            dateEl.textContent = now.toLocaleDateString([], { 
-                weekday: 'short', month: 'short', day: 'numeric' 
-            });
-        };
-        
-        update();
-        this.registerInterval(setInterval(update, 1000));
+        container.appendChild(this.timeElement);
+        container.appendChild(this.dateElement);
         
         return container;
+    }
+
+    viewDidLoad() {
+        this.#updateTime();
+        this.timeInterval = setInterval(() => this.#updateTime(), 1000);
+    }
+
+    viewWillDisappear() {
+        if (this.timeInterval) {
+            clearInterval(this.timeInterval);
+            this.timeInterval = null;
+        }
+    }
+
+    viewDidDisappear() {
+        if (this.timeInterval) {
+            clearInterval(this.timeInterval);
+            this.timeInterval = null;
+        }
+    }
+
+    #updateTime() {
+        if (this.timeElement && this.dateElement) {
+            const now = new Date();
+            this.timeElement.textContent = now.toLocaleTimeString([], { 
+                hour: '2-digit', minute: '2-digit', second: '2-digit' 
+            });
+            this.dateElement.textContent = now.toLocaleDateString([], { 
+                weekday: 'short', month: 'short', day: 'numeric' 
+            });
+        }
+    }
+
+    layoutSubviews() {
+        super.layoutSubviews();
     }
 }
 

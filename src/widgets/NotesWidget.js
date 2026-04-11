@@ -1,23 +1,38 @@
-import BaseWidget from './BaseWidget.js';
+import WidgetView from './WidgetView.js';
 
-class NotesWidget extends BaseWidget {
-    createElement() {
+class NotesWidget extends WidgetView {
+    constructor(extraData, windowController) {
+        super(extraData);
+        this.windowController = windowController;
+        this.textareaElement = null;
+    }
+
+    createView() {
         const container = document.createElement('div');
         container.className = 'widget-notes';
         
-        const textarea = document.createElement('textarea');
-        textarea.className = 'notes-textarea';
-        textarea.rows = 10;
-        textarea.placeholder = 'Write your notes here...';
-        textarea.value = this.extraData.notesText || '';
+        this.textareaElement = document.createElement('textarea');
+        this.textareaElement.className = 'notes-textarea';
+        this.textareaElement.rows = 10;
+        this.textareaElement.placeholder = 'Write your notes here...';
+        this.textareaElement.value = this.extraData.notesText || '';
         
-        textarea.addEventListener('input', (e) => {
+        this.textareaElement.addEventListener('input', (e) => {
             this.extraData.notesText = e.target.value;
-            this.os.saveDebounced();
+            this.windowController?.os?.saveDebounced();
         });
         
-        container.appendChild(textarea);
+        container.appendChild(this.textareaElement);
+        
         return container;
+    }
+
+    layoutSubviews() {
+        super.layoutSubviews();
+        if (this.textareaElement) {
+            this.textareaElement.style.width = '100%';
+            this.textareaElement.style.height = '100%';
+        }
     }
 }
 

@@ -4,7 +4,7 @@ import CodeEditorWidget from './CodeEditorWidget.js';
 import WebLinkWidget from './WebLinkWidget.js';
 import CustomHtmlWidget from './CustomHtmlWidget.js';
 
-const WIDGETS = {
+const WIDGET_CLASSES = {
     clock: ClockWidget,
     notes: NotesWidget,
     codeEditor: CodeEditorWidget,
@@ -13,16 +13,16 @@ const WIDGETS = {
 };
 
 class WidgetRegistry {
-    static create(type, extraData, os) {
-        const WidgetClass = WIDGETS[type];
+    static create(type, extraData, windowController) {
+        const WidgetClass = WIDGET_CLASSES[type];
         if (!WidgetClass) {
-            return new CustomHtmlWidget(os, { htmlContent: `<p>Unknown widget: ${type}</p>` }).createElement();
+            return new CustomHtmlWidget({ htmlContent: `<p>Unknown widget: ${type}</p>` }, windowController);
         }
-        return new WidgetClass(os, extraData).createElement();
+        return new WidgetClass(extraData, windowController);
     }
     
     static getAvailableTypes() {
-        return Object.keys(WIDGETS);
+        return Object.keys(WIDGET_CLASSES);
     }
 }
 
