@@ -1,6 +1,8 @@
 export { default as DesktopOS } from './DesktopOS.js';
 export { default as WindowController } from './WindowController.js';
 export { default as NSObject } from './NSObject.js';
+export { default as NSNotification } from './NSNotification.js';
+export { default as NSNotificationCenter } from './NSNotificationCenter.js';
 export { default as UIResponder } from './UIResponder.js';
 export { default as UIViewController } from './UIViewController.js';
 export { default as UIView } from './UIView.js';

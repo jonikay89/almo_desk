@@ -154,6 +154,14 @@ class NSObject {
     }
 
     static setKeysTriggeringNotificationsForKeyValueObserving(keys) {}
+
+    postNotificationName(name, userInfo = null) {
+        NSNotificationCenter.defaultCenter().postNotificationName(name, this, userInfo);
+    }
+
+    static notificationName(name) {
+        return name;
+    }
 }
 
 export default NSObject;
