@@ -1,6 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
-import { NSNumber } from './Foundation.js';
+import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
@@ -14,6 +14,10 @@ class UITableViewCell extends UIView {
         this.accessoryType = 'none';
         this.selectionStyle = 'default';
         this._selected = false;
+        this._highlighted = false;
+        this._contentView = null;
+        this.textLabel = null;
+        this.detailLabel = null;
     }
 
     init() {
@@ -28,6 +32,11 @@ class UITableViewCell extends UIView {
         this.element.style.cursor = 'pointer';
         this.element.style.userSelect = 'none';
 
+        this._contentView = new UIView();
+        this._contentView.init();
+        this._contentView.element.style.flex = '1';
+        this._contentView.element.style.overflow = 'hidden';
+
         if (this.image) {
             const img = document.createElement('img');
             img.src = this.image;
@@ -36,6 +45,8 @@ class UITableViewCell extends UIView {
             img.style.objectFit = 'cover';
             img.style.borderRadius = '4px';
             img.style.marginRight = '12px';
+            img.style.flexShrink = '0';
+            this.imageView = img;
             this.element.appendChild(img);
         }
 
@@ -47,6 +58,9 @@ class UITableViewCell extends UIView {
         textLabel.className = 'cell-text';
         textLabel.style.fontSize = '16px';
         textLabel.style.color = '#000';
+        textLabel.style.whiteSpace = 'nowrap';
+        textLabel.style.overflow = 'hidden';
+        textLabel.style.textOverflow = 'ellipsis';
         textLabel.textContent = this.text;
         this.textLabel = textLabel;
         textContainer.appendChild(textLabel);
@@ -58,16 +72,61 @@ class UITableViewCell extends UIView {
             detailLabel.style.fontSize = '13px';
             detailLabel.style.color = '#888';
             detailLabel.style.marginTop = '2px';
+            detailLabel.style.whiteSpace = 'nowrap';
+            detailLabel.style.overflow = 'hidden';
+            detailLabel.style.textOverflow = 'ellipsis';
             detailLabel.textContent = this.detailText;
             this.detailLabel = detailLabel;
             textContainer.appendChild(detailLabel);
         }
 
-        this.element.appendChild(textContainer);
+        this._contentView.element.appendChild(textContainer);
+        this.element.appendChild(this._contentView.element);
 
         this.#updateAccessory();
 
         return this;
+    }
+
+    get contentView() {
+        return this._contentView;
+    }
+
+    get isSelected() {
+        return this._selected;
+    }
+
+    set isSelected(value) {
+        this._selected = value;
+        this.#updateSelectionAppearance();
+    }
+
+    get isHighlighted() {
+        return this._highlighted;
+    }
+
+    set isHighlighted(value) {
+        this._highlighted = value;
+        this.#updateSelectionAppearance();
+    }
+
+    #updateSelectionAppearance() {
+        const style = this.selectionStyle;
+        if (style === 'none') return;
+
+        if (this._selected) {
+            this.element.style.backgroundColor = UIColor.systemBlue().css;
+            if (this.textLabel) this.textLabel.style.color = '#fff';
+            if (this.detailLabel) this.detailLabel.style.color = '#fff';
+        } else if (this._highlighted) {
+            this.element.style.backgroundColor = UIColor.colorWithWhiteAlpha(0.9, 1).css;
+            if (this.textLabel) this.textLabel.style.color = '#000';
+            if (this.detailLabel) this.detailLabel.style.color = '#666';
+        } else {
+            this.element.style.backgroundColor = UIColor.white().css;
+            if (this.textLabel) this.textLabel.style.color = '#000';
+            if (this.detailLabel) this.detailLabel.style.color = '#888';
+        }
     }
 
     #updateAccessory() {
@@ -79,6 +138,7 @@ class UITableViewCell extends UIView {
         const accessory = document.createElement('div');
         accessory.className = 'accessory';
         accessory.style.marginLeft = '8px';
+        accessory.style.flexShrink = '0';
 
         switch (this.accessoryType) {
             case 'disclosureIndicator':
@@ -96,6 +156,11 @@ class UITableViewCell extends UIView {
                 accessory.style.fontSize = '16px';
                 accessory.style.color = '#888';
                 break;
+            case 'detailDisclosureButton':
+                accessory.innerHTML = 'ⓘ›';
+                accessory.style.fontSize = '16px';
+                accessory.style.color = '#888';
+                break;
             default:
                 return;
         }
@@ -108,6 +173,7 @@ class UITableViewCell extends UIView {
         if (this.textLabel) {
             this.textLabel.textContent = text;
         }
+        return this;
     }
 
     setDetailText(text) {
@@ -115,28 +181,35 @@ class UITableViewCell extends UIView {
         if (this.detailLabel) {
             this.detailLabel.textContent = text;
         }
+        return this;
     }
 
     setImage(url) {
         this.image = url;
+        return this;
     }
 
     setAccessoryType(type) {
         this.accessoryType = type;
         this.#updateAccessory();
+        return this;
     }
 
     setSelectionStyle(style) {
         this.selectionStyle = style;
+        return this;
     }
 
     setSelected(selected, animated = false) {
         this._selected = selected;
-        if (selected) {
-            this.element.style.backgroundColor = UIColor.colorWithWhiteAlpha(0.9, 1).css;
-        } else {
-            this.element.style.backgroundColor = UIColor.white().css;
-        }
+        this.#updateSelectionAppearance();
+        return this;
+    }
+
+    setHighlighted(highlighted, animated = false) {
+        this._highlighted = highlighted;
+        this.#updateSelectionAppearance();
+        return this;
     }
 
     prepareForReuse() {
@@ -145,6 +218,8 @@ class UITableViewCell extends UIView {
         this.image = null;
         this.accessoryType = 'none';
         this._selected = false;
+        this._highlighted = false;
+        this.#updateSelectionAppearance();
     }
 
     layoutSubviews() {
@@ -216,6 +291,34 @@ class UITableViewCell extends UIView {
 
     switch() {
         return Switch(this);
+    }
+
+    matchCell(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case('selected', () => this._selected)
+            .case('highlighted', () => this._highlighted)
+            .case('empty', () => !this.text && !this.detailText && !this.image)
+            .case('hasImage', () => !!this.image)
+            .case('hasDetail', () => !!this.detailText)
+            .case({ textContains: Switch.let('t') }, (m) => this.text?.includes(m.t))
+            .case({ detailContains: Switch.let('t') }, (m) => this.detailText?.includes(m.t))
+            .case({ accessory: Switch.let('a') }, (m) => this.accessoryType === m.a)
+            .default(() => false)
+            .evaluate();
+    }
+
+    updateValue(keyPath, newValue) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        updateProperty(this, path, newValue);
+        return this;
+    }
+
+    getValue(keyPath) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return getProperty(this, path);
     }
 }
 

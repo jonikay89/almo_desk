@@ -1,6 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
-import { NSNumber } from './Foundation.js';
+import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
@@ -11,6 +11,8 @@ class UICollectionViewCell extends UIView {
         this.imageView = null;
         this.label = null;
         this._selected = false;
+        this._highlighted = false;
+        this._contentView = null;
     }
 
     init() {
@@ -26,7 +28,48 @@ class UICollectionViewCell extends UIView {
         this.element.style.cursor = 'pointer';
         this.element.style.userSelect = 'none';
 
+        this._contentView = new UIView();
+        this._contentView.init();
+        this.element.appendChild(this._contentView.element);
+
         return this;
+    }
+
+    get contentView() {
+        return this._contentView;
+    }
+
+    get isSelected() {
+        return this._selected;
+    }
+
+    set isSelected(value) {
+        this._selected = value;
+        this.#updateAppearance();
+    }
+
+    get isHighlighted() {
+        return this._highlighted;
+    }
+
+    set isHighlighted(value) {
+        this._highlighted = value;
+        this.#updateAppearance();
+    }
+
+    #updateAppearance() {
+        if (this._selected) {
+            this.element.style.borderColor = UIColor.systemBlue().css;
+            this.element.style.borderWidth = '2px';
+        } else if (this._highlighted) {
+            this.element.style.borderColor = UIColor.systemGray().css;
+            this.element.style.borderWidth = '1px';
+            this.element.style.opacity = '0.7';
+        } else {
+            this.element.style.borderColor = '#ddd';
+            this.element.style.borderWidth = '1px';
+            this.element.style.opacity = '1';
+        }
     }
 
     setImage(url) {
@@ -40,6 +83,7 @@ class UICollectionViewCell extends UIView {
             this.element.appendChild(img);
         }
         this.imageView.src = url;
+        return this;
     }
 
     setLabel(text) {
@@ -58,17 +102,19 @@ class UICollectionViewCell extends UIView {
             this.element.appendChild(label);
         }
         this.label.textContent = text;
+        return this;
     }
 
-    setSelected(selected) {
+    setSelected(selected, animated = false) {
         this._selected = selected;
-        if (selected) {
-            this.element.style.borderColor = UIColor.systemBlue().css;
-            this.element.style.borderWidth = '2px';
-        } else {
-            this.element.style.borderColor = '#ddd';
-            this.element.style.borderWidth = '1px';
-        }
+        this.#updateAppearance();
+        return this;
+    }
+
+    setHighlighted(highlighted, animated = false) {
+        this._highlighted = highlighted;
+        this.#updateAppearance();
+        return this;
     }
 
     prepareForReuse() {
@@ -79,6 +125,8 @@ class UICollectionViewCell extends UIView {
             this.label.textContent = '';
         }
         this._selected = false;
+        this._highlighted = false;
+        this.#updateAppearance();
     }
 
     layoutSubviews() {
@@ -97,7 +145,8 @@ class UICollectionViewCell extends UIView {
         return {
             reuseIdentifier: this.reuseIdentifier,
             label: this.label?.textContent || '',
-            _selected: this._selected
+            _selected: this._selected,
+            _highlighted: this._highlighted
         };
     }
 
@@ -106,7 +155,8 @@ class UICollectionViewCell extends UIView {
         if (data.label) {
             cell.setLabel(data.label);
         }
-        cell._selected = data._selected;
+        cell._selected = data._selected || false;
+        cell._highlighted = data._highlighted || false;
         return cell;
     }
 
@@ -145,6 +195,32 @@ class UICollectionViewCell extends UIView {
 
     switch() {
         return Switch(this);
+    }
+
+    matchCell(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case('selected', () => this._selected)
+            .case('highlighted', () => this._highlighted)
+            .case('empty', () => !this.imageView?.src && !this.label?.textContent)
+            .case('hasImage', () => !!this.imageView?.src)
+            .case('hasLabel', () => !!this.label?.textContent)
+            .case({ labelContains: Switch.let('text') }, (m) => this.label?.textContent?.includes(m.text))
+            .default(() => false)
+            .evaluate();
+    }
+
+    updateValue(keyPath, newValue) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        updateProperty(this, path, newValue);
+        return this;
+    }
+
+    getValue(keyPath) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return getProperty(this, path);
     }
 }
 

@@ -16,8 +16,8 @@
             UIStackView, UIProgressView, UIActivityIndicatorView, UIPageControl,
             UITableView, UITableViewCell, UICollectionView, UICollectionViewCell, UICollectionViewFlowLayout,
             UINavigationBar, UINavigationItem, UITabBar, UITabBarItem,
-            UISearchBar, UIAlertController, UIPickerView,
-            UIColor
+            UISearchBar, UIAlertController, UIPickerView, UIImageView, UIImage,
+            UIColor, CGPoint, CGSize, CGRect
         } from './src/core/index.js';
 
         class DemoViewController {
@@ -60,6 +60,8 @@
                 yOffset = this.addSection('UITabBar', [this.createTabBarDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('UISearchBar', [this.createSearchBarDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('UIAlertController', [this.createAlertControllerDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UIImageView', [this.createImageViewDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('CGGeometry', [this.createGeometryDemos()], yOffset, padding, contentWidth);
 
                 this.scrollView.setContentSize(contentWidth, yOffset + 40);
             }
@@ -696,6 +698,145 @@
                         sheet.present();
                     }
                 }, 'onShowSheet', 'click');
+
+                return container;
+            }
+
+            createImageViewDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 200 };
+
+                const imageView = new UIImageView();
+                imageView.init();
+                imageView.frame = { x: 0, y: 0, width: 100, height: 100 };
+                imageView.contentMode = 'scaleAspectFit';
+                imageView.backgroundColor = UIColor.colorWithWhiteAlpha(0.9, 1);
+                imageView.cornerRadius = 8;
+                container.addSubview(imageView);
+
+                const animateButton = new UIButton('Animate');
+                animateButton.init();
+                animateButton.frame = { x: 110, y: 0, width: 80, height: 36 };
+                animateButton.backgroundColor = UIColor.systemBlue();
+                animateButton.titleColor = UIColor.white();
+                animateButton.cornerRadius = 6;
+                container.addSubview(animateButton);
+
+                const stopButton = new UIButton('Stop');
+                stopButton.init();
+                stopButton.frame = { x: 200, y: 0, width: 80, height: 36 };
+                stopButton.backgroundColor = UIColor.systemRed();
+                stopButton.titleColor = UIColor.white();
+                stopButton.cornerRadius = 6;
+                container.addSubview(stopButton);
+
+                const statusLabel = new UILabel('Status: Idle');
+                statusLabel.init();
+                statusLabel.frame = { x: 110, y: 44, width: 170, height: 20 };
+                statusLabel.fontSize = 12;
+                statusLabel.textColor = UIColor.gray();
+                container.addSubview(statusLabel);
+
+                let isAnimating = false;
+                const frameColors = [
+                    'https://via.placeholder.com/100x100/ff6b6b/ffffff?text=1',
+                    'https://via.placeholder.com/100x100/4ecdc4/ffffff?text=2',
+                    'https://via.placeholder.com/100x100/45b7d1/ffffff?text=3',
+                    'https://via.placeholder.com/100x100/96c93d/ffffff?text=4'
+                ];
+
+                animateButton.addTarget({
+                    onAnimate: () => {
+                        if (isAnimating) return;
+                        imageView.setAnimationImages(frameColors);
+                        imageView.setAnimationDuration(2);
+                        imageView.setAnimationRepeatCount(2);
+                        imageView.startAnimating();
+                        isAnimating = true;
+                        statusLabel.text = 'Status: Animating';
+                    }
+                }, 'onAnimate', 'click');
+
+                stopButton.addTarget({
+                    onStop: () => {
+                        imageView.stopAnimating();
+                        isAnimating = false;
+                        statusLabel.text = 'Status: Stopped';
+                    }
+                }, 'onStop', 'click');
+
+                const infoLabel = new UILabel('UIImageView with animation support');
+                infoLabel.init();
+                infoLabel.frame = { x: 0, y: 74, width: 300, height: 20 };
+                infoLabel.fontSize = 12;
+                infoLabel.textColor = UIColor.gray();
+                infoLabel.textAlignment = 'center';
+                container.addSubview(infoLabel);
+
+                return container;
+            }
+
+            createGeometryDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 180 };
+
+                const point1 = new CGPoint(10, 20);
+                const point2 = new CGPoint(30, 40);
+
+                const pointLabel = new UILabel(`Point1: ${point1.toString()}`);
+                pointLabel.init();
+                pointLabel.frame = { x: 0, y: 0, width: 300, height: 20 };
+                pointLabel.fontSize = 14;
+                pointLabel.textColor = UIColor.black();
+                container.addSubview(pointLabel);
+
+                const distanceLabel = new UILabel(`Distance: ${point1.distance(point2).toFixed(2)}`);
+                distanceLabel.init();
+                distanceLabel.frame = { x: 0, y: 24, width: 300, height: 20 };
+                distanceLabel.fontSize = 14;
+                distanceLabel.textColor = UIColor.black();
+                container.addSubview(distanceLabel);
+
+                const size = new CGSize(100, 50);
+                const sizeLabel = new UILabel(`Size: ${size.toString()}, Area: ${size.area()}`);
+                sizeLabel.init();
+                sizeLabel.frame = { x: 0, y: 48, width: 300, height: 20 };
+                sizeLabel.fontSize = 14;
+                sizeLabel.textColor = UIColor.black();
+                container.addSubview(sizeLabel);
+
+                const rect = new CGRect(10, 20, 100, 80);
+                const rectLabel = new UILabel(`Rect: ${rect.toString()}`);
+                rectLabel.init();
+                rectLabel.frame = { x: 0, y: 72, width: 300, height: 20 };
+                rectLabel.fontSize = 14;
+                rectLabel.textColor = UIColor.black();
+                container.addSubview(rectLabel);
+
+                const centerLabel = new UILabel(`Rect Center: ${rect.center.toString()}, Area: ${rect.area}`);
+                centerLabel.init();
+                centerLabel.frame = { x: 0, y: 96, width: 300, height: 20 };
+                centerLabel.fontSize = 14;
+                centerLabel.textColor = UIColor.black();
+                container.addSubview(centerLabel);
+
+                const testPoint = new CGPoint(50, 60);
+                const containsLabel = new UILabel(`Rect contains (50,60): ${rect.contains(testPoint)}`);
+                containsLabel.init();
+                containsLabel.frame = { x: 0, y: 120, width: 300, height: 20 };
+                containsLabel.fontSize = 14;
+                containsLabel.textColor = UIColor.black();
+                container.addSubview(containsLabel);
+
+                const insetRect = rect.insetByAmount(10);
+                const insetLabel = new UILabel(`Inset Rect: ${insetRect.toString()}`);
+                insetLabel.init();
+                insetLabel.frame = { x: 0, y: 144, width: 300, height: 20 };
+                insetLabel.fontSize = 14;
+                insetLabel.textColor = UIColor.black();
+                container.addSubview(insetLabel);
 
                 return container;
             }

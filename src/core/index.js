@@ -61,6 +61,7 @@ export { default as UIColor } from './UIColor.js';
 export { default as UILabel } from './UILabel.js';
 export { default as UIControl } from './UIControl.js';
 export { default as UIImage } from './UIImage.js';
+export { default as UIImageView } from './UIImageView.js';
 export { default as UIButton } from './UIButton.js';
 export { default as UIScrollView } from './UIScrollView.js';
 export { default as UIStackView } from './UIStackView.js';
@@ -131,3 +132,4 @@ export {
     matchIndirect,
     extractIndirect
 } from './PatternMatching.js';
+export { CGPoint, CGSize, CGRect } from './CGGeometry.js';
