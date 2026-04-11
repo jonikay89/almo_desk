@@ -3,15 +3,90 @@ import UIView from './UIView.js';
 class UIScrollView extends UIView {
     constructor() {
         super();
-        this.contentSize = { width: 0, height: 0 };
-        this.contentOffset = { x: 0, y: 0 };
-        this.showsHorizontalScrollIndicator = true;
-        this.showsVerticalScrollIndicator = true;
-        this.bounces = true;
-        this.alwaysBounceHorizontal = false;
-        this.alwaysBounceVertical = false;
+        this._contentSize = { width: 0, height: 0 };
+        this._contentOffset = { x: 0, y: 0 };
+        this._showsHorizontalScrollIndicator = true;
+        this._showsVerticalScrollIndicator = true;
+        this._bounces = true;
+        this._alwaysBounceHorizontal = false;
+        this._alwaysBounceVertical = false;
         this.contentInset = { top: 0, right: 0, bottom: 0, left: 0 };
         this.delegate = null;
+    }
+
+    get contentSize() {
+        return this._contentSize;
+    }
+
+    set contentSize(value) {
+        this._contentSize = value;
+        if (this.contentElement) {
+            this.contentElement.style.width = `${value.width}px`;
+            this.contentElement.style.height = `${value.height}px`;
+        }
+    }
+
+    get contentOffset() {
+        return this._contentOffset;
+    }
+
+    set contentOffset(value) {
+        this._contentOffset = value;
+        if (this.element) {
+            this.element.scrollLeft = value.x;
+            this.element.scrollTop = value.y;
+        }
+    }
+
+    get showsHorizontalScrollIndicator() {
+        return this._showsHorizontalScrollIndicator;
+    }
+
+    set showsHorizontalScrollIndicator(value) {
+        this._showsHorizontalScrollIndicator = value;
+        this.#updateScrollbars();
+    }
+
+    get showsVerticalScrollIndicator() {
+        return this._showsVerticalScrollIndicator;
+    }
+
+    set showsVerticalScrollIndicator(value) {
+        this._showsVerticalScrollIndicator = value;
+        this.#updateScrollbars();
+    }
+
+    get bounces() {
+        return this._bounces;
+    }
+
+    set bounces(value) {
+        this._bounces = value;
+        if (this.element) {
+            this.element.style.overscrollBehavior = value ? 'auto' : 'none';
+        }
+    }
+
+    get alwaysBounceHorizontal() {
+        return this._alwaysBounceHorizontal;
+    }
+
+    set alwaysBounceHorizontal(value) {
+        this._alwaysBounceHorizontal = value;
+        if (this.element) {
+            this.element.style.overscrollBehaviorX = value ? 'auto' : 'none';
+        }
+    }
+
+    get alwaysBounceVertical() {
+        return this._alwaysBounceVertical;
+    }
+
+    set alwaysBounceVertical(value) {
+        this._alwaysBounceVertical = value;
+        if (this.element) {
+            this.element.style.overscrollBehaviorY = value ? 'auto' : 'none';
+        }
     }
 
     init() {
@@ -29,8 +104,7 @@ class UIScrollView extends UIView {
         this.element.appendChild(this.contentElement);
         
         this.element.addEventListener('scroll', () => {
-            this.contentOffset.x = this.element.scrollLeft;
-            this.contentOffset.y = this.element.scrollTop;
+            this._contentOffset = { x: this.element.scrollLeft, y: this.element.scrollTop };
             
             if (this.delegate && typeof this.delegate.scrollViewDidScroll === 'function') {
                 this.delegate.scrollViewDidScroll(this);
@@ -64,23 +138,15 @@ class UIScrollView extends UIView {
         }
     }
 
-    setContentSize(width, height) {
-        this.contentSize = { width, height };
-        if (this.contentElement) {
-            this.contentElement.style.width = `${width}px`;
-            this.contentElement.style.height = `${height}px`;
-        }
-    }
-
     setContentOffset(x, y, animated = false) {
         if (animated) {
             this.element.style.transition = 'scroll-behavior 0.2s ease';
         }
         this.contentOffset = { x, y };
-        if (this.element) {
-            this.element.scrollLeft = x;
-            this.element.scrollTop = y;
-        }
+    }
+
+    setContentSize(width, height) {
+        this.contentSize = { width, height };
     }
 
     scrollRectToVisible(rect, animated = false) {
@@ -90,37 +156,6 @@ class UIScrollView extends UIView {
         if (this.element) {
             this.element.scrollLeft = rect.x;
             this.element.scrollTop = rect.y;
-        }
-    }
-
-    setShowsHorizontalScrollIndicator(show) {
-        this.showsHorizontalScrollIndicator = show;
-        this.#updateScrollbars();
-    }
-
-    setShowsVerticalScrollIndicator(show) {
-        this.showsVerticalScrollIndicator = show;
-        this.#updateScrollbars();
-    }
-
-    setBounces(bounces) {
-        this.bounces = bounces;
-        if (this.element) {
-            this.element.style.overscrollBehavior = bounces ? 'auto' : 'none';
-        }
-    }
-
-    setAlwaysBounceHorizontal(alwaysBounce) {
-        this.alwaysBounceHorizontal = alwaysBounce;
-        if (this.element) {
-            this.element.style.overscrollBehaviorX = alwaysBounce ? 'auto' : 'none';
-        }
-    }
-
-    setAlwaysBounceVertical(alwaysBounce) {
-        this.alwaysBounceVertical = alwaysBounce;
-        if (this.element) {
-            this.element.style.overscrollBehaviorY = alwaysBounce ? 'auto' : 'none';
         }
     }
 

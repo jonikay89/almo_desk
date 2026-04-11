@@ -15,6 +15,8 @@ class UILabel extends UIView {
         this.minimumScaleFactor = 0.5;
         this.fontWeight = 'normal';
         this.isEnabled = true;
+        this._shadowColor = null;
+        this._shadowOffset = { width: 0, height: 0 };
     }
 
     get textColor() {
@@ -29,6 +31,54 @@ class UILabel extends UIView {
         } else {
             this._textColor = UIColor.black();
         }
+        this.#updateStyle();
+    }
+
+    get color() {
+        return this._textColor;
+    }
+
+    set color(c) {
+        this.textColor = c;
+    }
+
+    get font() {
+        return { size: this.fontSize, family: this.fontFamily, weight: this.fontWeight };
+    }
+
+    set font(f) {
+        if (typeof f === 'object') {
+            if (f.size) this.fontSize = f.size;
+            if (f.family) this.fontFamily = f.family;
+            if (f.weight) this.fontWeight = f.weight;
+        }
+        this.#updateStyle();
+    }
+
+    get fontSize() {
+        return this._fontSize || 14;
+    }
+
+    set fontSize(size) {
+        this._fontSize = size;
+        this.#updateStyle();
+    }
+
+    get textAlignment() {
+        return this._textAlignment;
+    }
+
+    set textAlignment(alignment) {
+        this._textAlignment = alignment;
+        this.#updateStyle();
+    }
+
+    get lineHeight() {
+        return this._lineHeight || this.fontSize * 1.4;
+    }
+
+    set lineHeight(height) {
+        this._lineHeight = height;
         this.#updateStyle();
     }
 
@@ -55,7 +105,7 @@ class UILabel extends UIView {
 
     #updateStyle() {
         if (this.element) {
-            this.element.style.color = this._textColor.css;
+            this.element.style.color = this._textColor ? this._textColor.css : '#000';
             this.element.style.fontSize = `${this.fontSize}px`;
             this.element.style.fontFamily = this.fontFamily;
             this.element.style.textAlign = this.textAlignment;
@@ -63,6 +113,7 @@ class UILabel extends UIView {
             this.element.style.overflow = 'hidden';
             this.element.style.textOverflow = this.lineBreakMode === 'ellipsis' ? 'ellipsis' : 'clip';
             this.element.style.opacity = this.isEnabled ? '1' : '0.5';
+            this.element.style.lineHeight = `${this.lineHeight}px`;
             
             if (this.numberOfLines === 1) {
                 this.element.style.whiteSpace = 'nowrap';
@@ -89,7 +140,6 @@ class UILabel extends UIView {
 
     setFontSize(size) {
         this.fontSize = size;
-        this.#updateStyle();
     }
 
     setFontFamily(family) {
@@ -104,7 +154,6 @@ class UILabel extends UIView {
 
     setTextAlignment(alignment) {
         this.textAlignment = alignment;
-        this.#updateStyle();
     }
 
     setNumberOfLines(lines) {
@@ -133,10 +182,6 @@ class UILabel extends UIView {
 
     layoutSubviews() {
         super.layoutSubviews();
-        if (this.element) {
-            this.element.style.width = `${this.frame.width}px`;
-            this.element.style.height = `${this.frame.height}px`;
-        }
     }
 }
 

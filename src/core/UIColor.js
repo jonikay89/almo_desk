@@ -1,9 +1,22 @@
 class UIColor {
     constructor(red, green, blue, alpha = 1) {
-        this.red = red;
-        this.green = green;
-        this.blue = blue;
-        this.alpha = alpha;
+        if (typeof red === 'string' && red.startsWith('#')) {
+            const hex = red;
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if (result) {
+                this.red = parseInt(result[1], 16) / 255;
+                this.green = parseInt(result[2], 16) / 255;
+                this.blue = parseInt(result[3], 16) / 255;
+                this.alpha = green !== undefined ? green : 1;
+            } else {
+                this.red = 0; this.green = 0; this.blue = 0; this.alpha = 1;
+            }
+        } else {
+            this.red = red !== undefined ? red : 0;
+            this.green = green !== undefined ? green : 0;
+            this.blue = blue !== undefined ? blue : 0;
+            this.alpha = alpha !== undefined ? alpha : 1;
+        }
     }
 
     static clear() {
@@ -96,6 +109,34 @@ class UIColor {
 
     static systemIndigo() {
         return new UIColor(0.345, 0.337, 0.839, 1);
+    }
+
+    static systemBackground() {
+        return new UIColor(1, 1, 1, 1);
+    }
+
+    static systemGray() {
+        return new UIColor(0.5, 0.5, 0.5, 1);
+    }
+
+    static systemGray2() {
+        return new UIColor(0.6, 0.6, 0.6, 1);
+    }
+
+    static systemGray3() {
+        return new UIColor(0.7, 0.7, 0.7, 1);
+    }
+
+    static systemGray4() {
+        return new UIColor(0.8, 0.8, 0.8, 1);
+    }
+
+    static systemGray5() {
+        return new UIColor(0.9, 0.9, 0.9, 1);
+    }
+
+    static systemGray6() {
+        return new UIColor(0.95, 0.95, 0.95, 1);
     }
 
     static colorWithRedGreenBlueAlpha(red, green, blue, alpha) {

@@ -62,7 +62,7 @@ class UIPageControl extends UIView {
             const index = i;
             if (this.enabled) {
                 dot.addEventListener('click', () => {
-                    this.setCurrentPage(index);
+                    this.currentPage = index;
                 });
             }
 
@@ -83,38 +83,6 @@ class UIPageControl extends UIView {
                 : this.pageIndicatorTintColor.css;
             dots[i].style.transform = isCurrent ? 'scale(1.3)' : 'scale(1)';
         }
-    }
-
-    setNumberOfPages(pages) {
-        this.numberOfPages = pages;
-    }
-
-    setCurrentPage(page) {
-        this._currentPage = Math.max(0, Math.min(this._numberOfPages - 1, Math.floor(page)));
-        this.#updateDots();
-    }
-
-    setPageIndicatorTintColor(color) {
-        if (color instanceof UIColor) {
-            this.pageIndicatorTintColor = color;
-        } else if (typeof color === 'string') {
-            this.pageIndicatorTintColor = UIColor.colorWithHex(color);
-        }
-        this.#updateDots();
-    }
-
-    setCurrentPageIndicatorTintColor(color) {
-        if (color instanceof UIColor) {
-            this.currentPageIndicatorTintColor = color;
-        } else if (typeof color === 'string') {
-            this.currentPageIndicatorTintColor = UIColor.colorWithHex(color);
-        }
-        this.#updateDots();
-    }
-
-    setEnabled(enabled) {
-        this.enabled = enabled;
-        this.#rebuildDots();
     }
 
     updateCurrentPageDisplay() {

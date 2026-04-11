@@ -24,12 +24,30 @@ class UIStepper extends UIControl {
         return this._minimumValue;
     }
 
+    set minimumValue(val) {
+        this._minimumValue = val;
+        if (this.element) {
+            this.element.setAttribute('aria-valuemin', val);
+        }
+    }
+
     get maximumValue() {
         return this._maximumValue;
     }
 
+    set maximumValue(val) {
+        this._maximumValue = val;
+        if (this.element) {
+            this.element.setAttribute('aria-valuemax', val);
+        }
+    }
+
     get stepValue() {
         return this._stepValue;
+    }
+
+    set stepValue(val) {
+        this._stepValue = val;
     }
 
     init() {

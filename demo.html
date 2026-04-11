@@ -14,6 +14,9 @@
             UIScrollView, UIView, UILabel, UIButton, UITextField, UITextView,
             UISwitch, UISlider, UIStepper, UISegmentedControl, UIDatePicker,
             UIStackView, UIProgressView, UIActivityIndicatorView, UIPageControl,
+            UITableView, UITableViewCell, UICollectionView, UICollectionViewCell, UICollectionViewFlowLayout,
+            UINavigationBar, UINavigationItem, UITabBar, UITabBarItem,
+            UISearchBar, UIAlertController, UIPickerView,
             UIColor
         } from './src/core/index.js';
 
@@ -21,15 +24,14 @@
             constructor() {
                 this.rootView = new UIView();
                 this.rootView.init();
-                this.rootView.setFrame(0, 0, window.innerWidth, window.innerHeight);
+                this.rootView.frame = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
                 this.rootView.backgroundColor = UIColor.white();
                 document.getElementById('rootView').appendChild(this.rootView.element);
 
                 this.scrollView = new UIScrollView();
                 this.scrollView.init();
-                this.scrollView.setFrame(0, 0, window.innerWidth, window.innerHeight);
+                this.scrollView.frame = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
                 this.scrollView.backgroundColor = UIColor.colorWithWhiteAlpha(0.97, 1);
-                this.scrollView.setShowsVerticalScrollIndicator(true);
                 this.rootView.addSubview(this.scrollView);
 
                 this.setupComponents();
@@ -51,6 +53,13 @@
                 yOffset = this.addSection('UIProgressView', [this.createProgressDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('UIActivityIndicatorView', [this.createActivityDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('UIPageControl', [this.createPageControlDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UITableView', [this.createTableViewDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UICollectionView', [this.createCollectionViewDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UIPickerView', [this.createPickerViewDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UINavigationBar', [this.createNavigationBarDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UITabBar', [this.createTabBarDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UISearchBar', [this.createSearchBarDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('UIAlertController', [this.createAlertControllerDemos()], yOffset, padding, contentWidth);
 
                 this.scrollView.setContentSize(contentWidth, yOffset + 40);
             }
@@ -58,28 +67,28 @@
             addSection(title, views, yOffset, padding, contentWidth) {
                 const sectionView = new UIView();
                 sectionView.init();
-                sectionView.setFrame(padding, yOffset, contentWidth, this.calculateSectionHeight(views));
+                sectionView.frame = { x: padding, y: yOffset, width: contentWidth, height: this.calculateSectionHeight(views) };
                 sectionView.backgroundColor = UIColor.white();
-                sectionView.element.style.borderRadius = '12px';
+                sectionView.cornerRadius = 12;
                 sectionView.element.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
 
                 const header = new UILabel(title);
                 header.init();
-                header.setFrame(20, 16, contentWidth - 40, 24);
-                header.setFontSize(18);
-                header.setFontWeight('bold');
-                header.setTextColor(UIColor.black());
+                header.frame = { x: 20, y: 16, width: contentWidth - 40, height: 24 };
+                header.fontSize = 18;
+                header.fontWeight = 'bold';
+                header.textColor = UIColor.black();
                 sectionView.addSubview(header);
 
                 const separator = new UIView();
                 separator.init();
-                separator.setFrame(20, 48, contentWidth - 40, 2);
+                separator.frame = { x: 20, y: 48, width: contentWidth - 40, height: 2 };
                 separator.backgroundColor = UIColor.systemBlue();
                 sectionView.addSubview(separator);
 
                 let componentY = 64;
                 views.forEach(comp => {
-                    comp.setFrame(20, componentY, contentWidth - 40, comp.frame.height);
+                    comp.frame = { x: 20, y: componentY, width: contentWidth - 40, height: comp.frame.height };
                     sectionView.addSubview(comp);
                     componentY += comp.frame.height + 12;
                 });
@@ -97,26 +106,26 @@
             createTextFieldDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 120);
+                container.frame = { x: 0, y: 0, width: 300, height: 120 };
 
                 const nameField = new UITextField('Enter your name');
                 nameField.init();
-                nameField.setFrame(0, 0, 260, 36);
-                nameField.setBorderStyle('rounded');
+                nameField.frame = { x: 0, y: 0, width: 260, height: 36 };
+                nameField.borderStyle = 'rounded';
                 container.addSubview(nameField);
 
                 const emailField = new UITextField('email@example.com');
                 emailField.init();
-                emailField.setFrame(0, 44, 260, 36);
-                emailField.setKeyboardType('emailAddress');
-                emailField.setBorderStyle('rounded');
+                emailField.frame = { x: 0, y: 44, width: 260, height: 36 };
+                emailField.keyboardType = 'emailAddress';
+                emailField.borderStyle = 'rounded';
                 container.addSubview(emailField);
 
                 const passwordField = new UITextField('Password');
                 passwordField.init();
-                passwordField.setFrame(0, 88, 260, 36);
-                passwordField.setSecureTextEntry(true);
-                passwordField.setBorderStyle('rounded');
+                passwordField.frame = { x: 0, y: 88, width: 260, height: 36 };
+                passwordField.isSecureTextEntry = true;
+                passwordField.borderStyle = 'rounded';
                 container.addSubview(passwordField);
 
                 return container;
@@ -125,12 +134,12 @@
             createTextViewDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 140);
+                container.frame = { x: 0, y: 0, width: 300, height: 140 };
 
                 const textView = new UITextView('This is a multi-line text view...');
                 textView.init();
-                textView.setFrame(0, 0, 300, 120);
-                textView.setEditable(true);
+                textView.frame = { x: 0, y: 0, width: 300, height: 120 };
+                textView.isEditable = true;
                 container.addSubview(textView);
 
                 return container;
@@ -139,34 +148,34 @@
             createSwitchDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 80);
+                container.frame = { x: 0, y: 0, width: 300, height: 80 };
 
                 const notifSwitch = new UISwitch();
                 notifSwitch.init();
-                notifSwitch.setFrame(0, 10, 50, 30);
-                notifSwitch.setOnTintColor(UIColor.systemGreen());
+                notifSwitch.frame = { x: 0, y: 10, width: 50, height: 30 };
+                notifSwitch.onTintColor = UIColor.systemGreen();
                 container.addSubview(notifSwitch);
 
                 const notifLabel = new UILabel('Notifications');
                 notifLabel.init();
-                notifLabel.setFrame(58, 10, 120, 30);
-                notifLabel.setFontSize(14);
-                notifLabel.setTextColor(UIColor.black());
-                notifLabel.element.style.lineHeight = '30px';
+                notifLabel.frame = { x: 58, y: 10, width: 120, height: 30 };
+                notifLabel.fontSize = 14;
+                notifLabel.textColor = UIColor.black();
+                notifLabel.lineHeight = 30;
                 container.addSubview(notifLabel);
 
                 const darkSwitch = new UISwitch();
                 darkSwitch.init();
-                darkSwitch.setFrame(0, 45, 50, 30);
-                darkSwitch.setOnTintColor(UIColor.systemIndigo());
+                darkSwitch.frame = { x: 0, y: 45, width: 50, height: 30 };
+                darkSwitch.onTintColor = UIColor.systemIndigo();
                 container.addSubview(darkSwitch);
 
                 const darkLabel = new UILabel('Dark Mode');
                 darkLabel.init();
-                darkLabel.setFrame(58, 45, 120, 30);
-                darkLabel.setFontSize(14);
-                darkLabel.setTextColor(UIColor.black());
-                darkLabel.element.style.lineHeight = '30px';
+                darkLabel.frame = { x: 58, y: 45, width: 120, height: 30 };
+                darkLabel.fontSize = 14;
+                darkLabel.textColor = UIColor.black();
+                darkLabel.lineHeight = 30;
                 container.addSubview(darkLabel);
 
                 return container;
@@ -175,34 +184,34 @@
             createSliderDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 90);
+                container.frame = { x: 0, y: 0, width: 300, height: 90 };
 
                 const volumeSlider = new UISlider();
                 volumeSlider.init();
-                volumeSlider.setFrame(0, 8, 220, 30);
-                volumeSlider.setValue(0.5);
-                volumeSlider.setMinimumTrackTintColor(UIColor.systemBlue());
+                volumeSlider.frame = { x: 0, y: 8, width: 220, height: 30 };
+                volumeSlider.value = 0.5;
+                volumeSlider.minimumTrackTintColor = UIColor.systemBlue();
                 container.addSubview(volumeSlider);
 
                 const volumeLabel = new UILabel('50%');
                 volumeLabel.init();
-                volumeLabel.setFrame(230, 12, 50, 24);
-                volumeLabel.setFontSize(14);
-                volumeLabel.setTextColor(UIColor.gray());
+                volumeLabel.frame = { x: 230, y: 8, width: 50, height: 24 };
+                volumeLabel.fontSize = 14;
+                volumeLabel.textColor = UIColor.gray();
                 container.addSubview(volumeLabel);
 
                 const brightSlider = new UISlider();
                 brightSlider.init();
-                brightSlider.setFrame(0, 50, 220, 30);
-                brightSlider.setValue(0.5);
-                brightSlider.setMinimumTrackTintColor(UIColor.systemYellow());
+                brightSlider.frame = { x: 0, y: 50, width: 220, height: 30 };
+                brightSlider.value = 0.5;
+                brightSlider.minimumTrackTintColor = UIColor.systemYellow();
                 container.addSubview(brightSlider);
 
                 const brightLabel = new UILabel('50%');
                 brightLabel.init();
-                brightLabel.setFrame(230, 54, 50, 24);
-                brightLabel.setFontSize(14);
-                brightLabel.setTextColor(UIColor.gray());
+                brightLabel.frame = { x: 230, y: 50, width: 50, height: 24 };
+                brightLabel.fontSize = 14;
+                brightLabel.textColor = UIColor.gray();
                 container.addSubview(brightLabel);
 
                 return container;
@@ -211,37 +220,37 @@
             createStepperDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 90);
+                container.frame = { x: 0, y: 0, width: 300, height: 90 };
 
                 const qtyStepper = new UIStepper();
                 qtyStepper.init();
-                qtyStepper.setFrame(0, 8, 120, 36);
-                qtyStepper.setMinimumValue(0);
-                qtyStepper.setMaximumValue(100);
-                qtyStepper.setStepValue(1);
+                qtyStepper.frame = { x: 0, y: 8, width: 120, height: 36 };
+                qtyStepper.minimumValue = 0;
+                qtyStepper.maximumValue = 100;
+                qtyStepper.stepValue = 1;
                 container.addSubview(qtyStepper);
 
                 const qtyLabel = new UILabel('Quantity: 0');
                 qtyLabel.init();
-                qtyLabel.setFrame(130, 12, 100, 24);
-                qtyLabel.setFontSize(14);
-                qtyLabel.setTextColor(UIColor.black());
+                qtyLabel.frame = { x: 130, y: 12, width: 100, height: 24 };
+                qtyLabel.fontSize = 14;
+                qtyLabel.textColor = UIColor.black();
                 container.addSubview(qtyLabel);
 
                 const tempStepper = new UIStepper();
                 tempStepper.init();
-                tempStepper.setFrame(0, 52, 120, 36);
-                tempStepper.setMinimumValue(32);
-                tempStepper.setMaximumValue(120);
-                tempStepper.setStepValue(1);
-                tempStepper.setValue(72);
+                tempStepper.frame = { x: 0, y: 52, width: 120, height: 36 };
+                tempStepper.minimumValue = 32;
+                tempStepper.maximumValue = 120;
+                tempStepper.stepValue = 1;
+                tempStepper.value = 72;
                 container.addSubview(tempStepper);
 
                 const tempLabel = new UILabel('Temperature: 72°F');
                 tempLabel.init();
-                tempLabel.setFrame(130, 56, 120, 24);
-                tempLabel.setFontSize(14);
-                tempLabel.setTextColor(UIColor.black());
+                tempLabel.frame = { x: 130, y: 56, width: 120, height: 24 };
+                tempLabel.fontSize = 14;
+                tempLabel.textColor = UIColor.black();
                 container.addSubview(tempLabel);
 
                 return container;
@@ -250,18 +259,18 @@
             createSegmentedDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 100);
+                container.frame = { x: 0, y: 0, width: 300, height: 100 };
 
                 const sizeSegment = new UISegmentedControl(['S', 'M', 'L', 'XL']);
                 sizeSegment.init();
-                sizeSegment.setFrame(0, 8, 280, 36);
-                sizeSegment.setTintColor(UIColor.systemBlue());
+                sizeSegment.frame = { x: 0, y: 8, width: 280, height: 36 };
+                sizeSegment.tintColor = UIColor.systemBlue();
                 container.addSubview(sizeSegment);
 
                 const colorSegment = new UISegmentedControl(['Blue', 'Green', 'Orange']);
                 colorSegment.init();
-                colorSegment.setFrame(0, 52, 280, 36);
-                colorSegment.setTintColor(UIColor.systemBlue());
+                colorSegment.frame = { x: 0, y: 52, width: 280, height: 36 };
+                colorSegment.tintColor = UIColor.systemBlue();
                 container.addSubview(colorSegment);
 
                 return container;
@@ -270,13 +279,12 @@
             createDatePickerDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 200);
+                container.frame = { x: 0, y: 0, width: 300, height: 200 };
 
                 const datePicker = new UIDatePicker();
                 datePicker.init();
-                datePicker.setFrame(0, 10, 300, 180);
-                datePicker.setDatePickerMode('date');
-                datePicker.setDate(new Date());
+                datePicker.frame = { x: 0, y: 10, width: 300, height: 180 };
+                datePicker.datePickerMode = 'date';
                 container.addSubview(datePicker);
 
                 return container;
@@ -285,49 +293,50 @@
             createStackViewDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 180);
+                container.frame = { x: 0, y: 0, width: 300, height: 180 };
 
                 const hStack = new UIStackView();
                 hStack.init();
-                hStack.setFrame(0, 0, 280, 50);
-                hStack.setAxis('horizontal');
-                hStack.setDistribution('fillEqually');
-                hStack.setSpacing(8);
+                hStack.frame = { x: 0, y: 0, width: 280, height: 50 };
+                hStack.axis = 'horizontal';
+                hStack.distribution = 'fillEqually';
+                hStack.spacing = 8;
                 hStack.backgroundColor = UIColor.colorWithWhiteAlpha(0.95, 1);
-                hStack.element.style.borderRadius = '8px';
+                hStack.cornerRadius = 8;
                 hStack.element.style.padding = '8px';
 
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1'];
                 for (let i = 0; i < 3; i++) {
                     const box = new UILabel('Item ' + (i + 1));
                     box.init();
-                    box.setFrame(0, 0, 80, 34);
-                    box.setTextAlignment('center');
-                    box.setBackgroundColor(UIColor.colorWithHex(['#ff6b6b', '#4ecdc4', '#45b7d1'][i]));
-                    box.setTextColor(UIColor.white());
-                    box.element.style.borderRadius = '6px';
+                    box.frame = { x: 0, y: 0, width: 80, height: 34 };
+                    box.textAlignment = 'center';
+                    box.backgroundColor = UIColor.colorWithHex(colors[i]);
+                    box.textColor = UIColor.white();
+                    box.cornerRadius = 6;
                     hStack.addArrangedSubview(box);
                 }
                 container.addSubview(hStack);
 
                 const vStack = new UIStackView();
                 vStack.init();
-                vStack.setFrame(0, 60, 280, 120);
-                vStack.setAxis('vertical');
-                vStack.setDistribution('fillEqually');
-                vStack.setSpacing(8);
-                vStack.setAlignment('fill');
+                vStack.frame = { x: 0, y: 60, width: 280, height: 120 };
+                vStack.axis = 'vertical';
+                vStack.distribution = 'fillEqually';
+                vStack.spacing = 8;
+                vStack.alignment = 'fill';
                 vStack.backgroundColor = UIColor.colorWithWhiteAlpha(0.95, 1);
-                vStack.element.style.borderRadius = '8px';
+                vStack.cornerRadius = 8;
                 vStack.element.style.padding = '8px';
 
                 for (let i = 0; i < 3; i++) {
                     const box = new UILabel('Row ' + (i + 1));
                     box.init();
-                    box.setFrame(0, 0, 264, 32);
-                    box.setTextAlignment('center');
-                    box.setBackgroundColor(UIColor.colorWithHex(`hsl(${i * 60}, 70%, 60%)`));
-                    box.setTextColor(UIColor.white());
-                    box.element.style.borderRadius = '6px';
+                    box.frame = { x: 0, y: 0, width: 264, height: 32 };
+                    box.textAlignment = 'center';
+                    box.backgroundColor = UIColor.colorWithHex(`hsl(${i * 60}, 70%, 60%)`);
+                    box.textColor = UIColor.white();
+                    box.cornerRadius = 6;
                     vStack.addArrangedSubview(box);
                 }
                 container.addSubview(vStack);
@@ -338,67 +347,67 @@
             createProgressDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 80);
+                container.frame = { x: 0, y: 0, width: 300, height: 80 };
 
                 const progressView = new UIProgressView();
                 progressView.init();
-                progressView.setFrame(0, 8, 220, 20);
-                progressView.setProgressTintColor(UIColor.systemGreen());
-                progressView.setTrackTintColor(UIColor.lightGray());
+                progressView.frame = { x: 0, y: 8, width: 220, height: 20 };
+                progressView.progressTintColor = UIColor.systemGreen();
+                progressView.trackTintColor = UIColor.lightGray();
                 container.addSubview(progressView);
 
                 const percentLabel = new UILabel('0%');
                 percentLabel.init();
-                percentLabel.setFrame(230, 8, 50, 20);
-                percentLabel.setFontSize(14);
-                percentLabel.setTextColor(UIColor.gray());
+                percentLabel.frame = { x: 230, y: 8, width: 50, height: 20 };
+                percentLabel.fontSize = 14;
+                percentLabel.textColor = UIColor.gray();
                 container.addSubview(percentLabel);
 
                 const startButton = new UIButton('Start');
                 startButton.init();
-                startButton.setFrame(0, 40, 80, 32);
-                startButton.setBackgroundColor(UIColor.systemBlue());
-                startButton.setTitleColor(UIColor.white());
-                startButton.element.style.borderRadius = '6px';
+                startButton.frame = { x: 0, y: 40, width: 80, height: 32 };
+                startButton.backgroundColor = UIColor.systemBlue();
+                startButton.titleColor = UIColor.white();
+                startButton.cornerRadius = 6;
                 container.addSubview(startButton);
 
                 const resetButton = new UIButton('Reset');
                 resetButton.init();
-                resetButton.setFrame(90, 40, 80, 32);
-                resetButton.setBackgroundColor(UIColor.gray());
-                resetButton.setTitleColor(UIColor.white());
-                resetButton.element.style.borderRadius = '6px';
+                resetButton.frame = { x: 90, y: 40, width: 80, height: 32 };
+                resetButton.backgroundColor = UIColor.gray();
+                resetButton.titleColor = UIColor.white();
+                resetButton.cornerRadius = 6;
                 container.addSubview(resetButton);
 
                 let progressInterval = null;
 
                 startButton.addTarget({
-                    onStartProgress: () => {
+                    onStart: () => {
                         if (progressInterval) return;
                         progressInterval = setInterval(() => {
                             let current = progressView.progress;
                             if (current >= 1) {
                                 clearInterval(progressInterval);
                                 progressInterval = null;
-                                startButton.setTitle('Start');
+                                startButton.title = 'Start';
                                 return;
                             }
                             progressView.setProgress(current + 0.1, true);
-                            percentLabel.setText(Math.round(progressView.progress * 100) + '%');
+                            percentLabel.text = Math.round(progressView.progress * 100) + '%';
                         }, 200);
                     }
-                }, 'onStartProgress', 'click');
+                }, 'onStart', 'click');
 
                 resetButton.addTarget({
-                    onResetProgress: () => {
+                    onReset: () => {
                         if (progressInterval) {
                             clearInterval(progressInterval);
                             progressInterval = null;
                         }
-                        progressView.setProgress(0);
-                        percentLabel.setText('0%');
+                        progressView.progress = 0;
+                        percentLabel.text = '0%';
                     }
-                }, 'onResetProgress', 'click');
+                }, 'onReset', 'click');
 
                 return container;
             }
@@ -406,38 +415,38 @@
             createActivityDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 70);
+                container.frame = { x: 0, y: 0, width: 300, height: 70 };
 
                 const indicator = new UIActivityIndicatorView();
                 indicator.init();
-                indicator.setFrame(0, 10, 40, 40);
-                indicator.setStyle('large');
-                indicator.setColor(UIColor.systemBlue());
+                indicator.frame = { x: 0, y: 10, width: 40, height: 40 };
+                indicator.style = 'large';
+                indicator.color = UIColor.systemBlue();
                 indicator.startAnimating();
                 container.addSubview(indicator);
 
                 const toggleButton = new UIButton('Stop');
                 toggleButton.init();
-                toggleButton.setFrame(50, 15, 80, 32);
-                toggleButton.setBackgroundColor(UIColor.systemBlue());
-                toggleButton.setTitleColor(UIColor.white());
-                toggleButton.element.style.borderRadius = '6px';
+                toggleButton.frame = { x: 50, y: 15, width: 80, height: 32 };
+                toggleButton.backgroundColor = UIColor.systemBlue();
+                toggleButton.titleColor = UIColor.white();
+                toggleButton.cornerRadius = 6;
                 container.addSubview(toggleButton);
 
                 let isAnimating = true;
 
                 toggleButton.addTarget({
-                    onToggleActivity: () => {
+                    onToggle: () => {
                         if (isAnimating) {
                             indicator.stopAnimating();
-                            toggleButton.setTitle('Start');
+                            toggleButton.title = 'Start';
                         } else {
                             indicator.startAnimating();
-                            toggleButton.setTitle('Stop');
+                            toggleButton.title = 'Stop';
                         }
                         isAnimating = !isAnimating;
                     }
-                }, 'onToggleActivity', 'click');
+                }, 'onToggle', 'click');
 
                 return container;
             }
@@ -445,52 +454,248 @@
             createPageControlDemos() {
                 const container = new UIView();
                 container.init();
-                container.setFrame(0, 0, 300, 70);
+                container.frame = { x: 0, y: 0, width: 300, height: 70 };
 
                 const pageControl = new UIPageControl();
                 pageControl.init();
-                pageControl.setFrame(0, 8, 150, 30);
-                pageControl.setNumberOfPages(5);
-                pageControl.setCurrentPage(0);
-                pageControl.setPageIndicatorTintColor(UIColor.lightGray());
-                pageControl.setCurrentPageIndicatorTintColor(UIColor.systemBlue());
+                pageControl.frame = { x: 0, y: 8, width: 150, height: 30 };
+                pageControl.numberOfPages = 5;
+                pageControl.currentPage = 0;
+                pageControl.pageIndicatorTintColor = UIColor.lightGray();
+                pageControl.currentPageIndicatorTintColor = UIColor.systemBlue();
                 container.addSubview(pageControl);
 
                 const prevButton = new UIButton('Prev');
                 prevButton.init();
-                prevButton.setFrame(160, 8, 60, 30);
-                prevButton.setBackgroundColor(UIColor.gray());
-                prevButton.setTitleColor(UIColor.white());
-                prevButton.element.style.borderRadius = '4px';
-                prevButton.element.style.fontSize = '12px';
+                prevButton.frame = { x: 160, y: 8, width: 60, height: 30 };
+                prevButton.backgroundColor = UIColor.gray();
+                prevButton.titleColor = UIColor.white();
+                prevButton.cornerRadius = 4;
+                prevButton.fontSize = 12;
                 container.addSubview(prevButton);
 
                 const nextButton = new UIButton('Next');
                 nextButton.init();
-                nextButton.setFrame(230, 8, 60, 30);
-                nextButton.setBackgroundColor(UIColor.gray());
-                nextButton.setTitleColor(UIColor.white());
-                nextButton.element.style.borderRadius = '4px';
-                nextButton.element.style.fontSize = '12px';
+                nextButton.frame = { x: 230, y: 8, width: 60, height: 30 };
+                nextButton.backgroundColor = UIColor.gray();
+                nextButton.titleColor = UIColor.white();
+                nextButton.cornerRadius = 4;
+                nextButton.fontSize = 12;
                 container.addSubview(nextButton);
 
                 prevButton.addTarget({
-                    onPrevPage: () => {
-                        let current = pageControl.currentPage;
-                        if (current > 0) {
-                            pageControl.setCurrentPage(current - 1);
+                    onPrev: () => {
+                        if (pageControl.currentPage > 0) {
+                            pageControl.currentPage -= 1;
                         }
                     }
-                }, 'onPrevPage', 'click');
+                }, 'onPrev', 'click');
 
                 nextButton.addTarget({
-                    onNextPage: () => {
-                        let current = pageControl.currentPage;
-                        if (current < pageControl.numberOfPages - 1) {
-                            pageControl.setCurrentPage(current + 1);
+                    onNext: () => {
+                        if (pageControl.currentPage < pageControl.numberOfPages - 1) {
+                            pageControl.currentPage += 1;
                         }
                     }
-                }, 'onNextPage', 'click');
+                }, 'onNext', 'click');
+
+                return container;
+            }
+
+            createTableViewDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 200 };
+
+                const tableView = new UITableView();
+                tableView.init();
+                tableView.frame = { x: 0, y: 0, width: 300, height: 200 };
+                tableView.rowHeight = 44;
+
+                const dataSource = {
+                    tableView_numberOfRowsInSection: (tv, section) => 5,
+                    tableView_cellForRowAt: (tv, row, section) => {
+                        const cell = new UITableViewCell();
+                        cell.text = 'Item ' + (row + 1);
+                        return cell;
+                    }
+                };
+
+                tableView.dataSource = dataSource;
+                tableView.reloadData();
+                container.addSubview(tableView);
+
+                return container;
+            }
+
+            createCollectionViewDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 220 };
+
+                const layout = new UICollectionViewFlowLayout();
+                layout.itemSize = { width: 80, height: 80 };
+                layout.minimumInteritemSpacing = 10;
+                layout.minimumLineSpacing = 10;
+                layout.sectionInset = { top: 10, right: 10, bottom: 10, left: 10 };
+
+                const collectionView = new UICollectionView({ x: 0, y: 0, width: 300, height: 220 }, layout);
+                collectionView.init();
+                collectionView.frame = { x: 0, y: 0, width: 300, height: 220 };
+
+                const dataSource = {
+                    numberOfItemsInCollectionView: (cv) => 9,
+                    collectionView_cellForItemAt: (cv, index) => {
+                        const cell = new UICollectionViewCell();
+                        cell.label = 'Item ' + (index + 1);
+                        cell.backgroundColor = UIColor.colorWithWhiteAlpha(0.5 + Math.random() * 0.5, 1);
+                        return cell;
+                    }
+                };
+
+                collectionView.dataSource = dataSource;
+                collectionView.reloadData();
+                container.addSubview(collectionView);
+
+                return container;
+            }
+
+            createPickerViewDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 180 };
+
+                const pickerView = new UIPickerView();
+                pickerView.init();
+                pickerView.frame = { x: 0, y: 10, width: 300, height: 160 };
+
+                const dataSource = {
+                    numberOfComponentsInPickerView: (pv) => 2,
+                    pickerView_numberOfRowsInComponent: (pv, component) => component === 0 ? 5 : 10,
+                    pickerView_titleForRow_forComponent: (pv, row, component) => {
+                        return component === 0 ? ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'][row] : String(row + 1);
+                    }
+                };
+
+                pickerView.dataSource = dataSource;
+                pickerView.reloadAllComponents();
+                container.addSubview(pickerView);
+
+                return container;
+            }
+
+            createNavigationBarDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 140 };
+
+                const navBar = new UINavigationBar();
+                navBar.init();
+                navBar.frame = { x: 0, y: 0, width: 300, height: 44 };
+                container.addSubview(navBar);
+
+                const item = new UINavigationItem('Title');
+                item.rightBarButtonItem = { title: 'Edit', action: () => console.log('Edit tapped') };
+                navBar.pushNavigationItem(item, false);
+
+                const infoLabel = new UILabel('Navigation bar demo');
+                infoLabel.init();
+                infoLabel.frame = { x: 0, y: 54, width: 300, height: 60 };
+                infoLabel.fontSize = 14;
+                infoLabel.textColor = UIColor.gray();
+                infoLabel.textAlignment = 'center';
+                container.addSubview(infoLabel);
+
+                return container;
+            }
+
+            createTabBarDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 120 };
+
+                const tabBar = new UITabBar();
+                tabBar.init();
+                tabBar.frame = { x: 0, y: 10, width: 300, height: 100 };
+
+                const items = [
+                    new UITabBarItem('Home'),
+                    new UITabBarItem('Search'),
+                    new UITabBarItem('Profile')
+                ];
+                items[0].emoji = '🏠';
+                items[1].emoji = '🔍';
+                items[2].emoji = '👤';
+
+                tabBar.items = items;
+                tabBar.selectedItem = items[0];
+                container.addSubview(tabBar);
+
+                return container;
+            }
+
+            createSearchBarDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 120 };
+
+                const searchBar = new UISearchBar('Search...');
+                searchBar.init();
+                searchBar.frame = { x: 0, y: 10, width: 300, height: 44 };
+                container.addSubview(searchBar);
+
+                const resultsLabel = new UILabel('Enter search term');
+                resultsLabel.init();
+                resultsLabel.frame = { x: 0, y: 64, width: 300, height: 40 };
+                resultsLabel.fontSize = 14;
+                resultsLabel.textColor = UIColor.gray();
+                resultsLabel.textAlignment = 'center';
+                container.addSubview(resultsLabel);
+
+                return container;
+            }
+
+            createAlertControllerDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 100 };
+
+                const showAlertButton = new UIButton('Show Alert');
+                showAlertButton.init();
+                showAlertButton.frame = { x: 0, y: 10, width: 140, height: 36 };
+                showAlertButton.backgroundColor = UIColor.systemBlue();
+                showAlertButton.titleColor = UIColor.white();
+                showAlertButton.cornerRadius = 6;
+                container.addSubview(showAlertButton);
+
+                showAlertButton.addTarget({
+                    onShowAlert: () => {
+                        const alert = new UIAlertController('Alert Title', 'This is an alert message.', 'alert');
+                        alert.addAction('Cancel', 'cancel');
+                        alert.addAction('OK', 'default');
+                        alert.init();
+                        alert.present();
+                    }
+                }, 'onShowAlert', 'click');
+
+                const showActionSheetButton = new UIButton('Action Sheet');
+                showActionSheetButton.init();
+                showActionSheetButton.frame = { x: 150, y: 10, width: 140, height: 36 };
+                showActionSheetButton.backgroundColor = UIColor.systemGreen();
+                showActionSheetButton.titleColor = UIColor.white();
+                showActionSheetButton.cornerRadius = 6;
+                container.addSubview(showActionSheetButton);
+
+                showActionSheetButton.addTarget({
+                    onShowSheet: () => {
+                        const sheet = new UIAlertController('Actions', 'Choose an action', 'actionSheet');
+                        sheet.addAction('Option 1');
+                        sheet.addAction('Option 2', 'destructive');
+                        sheet.addAction('Cancel', 'cancel');
+                        sheet.init();
+                        sheet.present();
+                    }
+                }, 'onShowSheet', 'click');
 
                 return container;
             }
