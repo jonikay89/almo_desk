@@ -83,3 +83,12 @@ pkill -f "node server.js" 2>/dev/null
 
 run tests:
 npm test 2>&1
+
+
+npm test 2>&1 | grep -E "(pass|fail|tests)"
+
+example:
+> node --test tests/*.test.js
+ℹ tests 135
+ℹ pass 135
+ℹ fail 0
