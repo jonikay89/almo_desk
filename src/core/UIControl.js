@@ -184,6 +184,14 @@ class UIControl extends UIView {
         return patternMatch(pattern, this);
     }
 
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
+    }
+
     matchControl(predicate) {
         if (typeof predicate === 'function') {
             return predicate(this);

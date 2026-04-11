@@ -329,6 +329,14 @@ class UIColor {
     matchOperator(pattern) {
         return patternMatch(pattern, this);
     }
+
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
+    }
 }
 
 export default UIColor;

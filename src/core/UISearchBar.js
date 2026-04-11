@@ -248,6 +248,14 @@ class UISearchBar extends UIView {
         return patternMatch(pattern, this);
     }
 
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
+    }
+
     switch() {
         return Switch(this);
     }

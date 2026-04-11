@@ -20,6 +20,28 @@ function ifCase(pattern) {
     };
 }
 
+function ifLet(value, pattern) {
+    if (value === null || value === undefined) {
+        return { matched: false, value: undefined };
+    }
+    if (patternMatch(pattern, value)) {
+        const bound = Switch.extractBoundValues(value, pattern);
+        return { matched: true, value: bound };
+    }
+    return { matched: false, value: undefined };
+}
+
+function guardLet(value, pattern) {
+    if (value === null || value === undefined) {
+        return { matched: false, value: undefined };
+    }
+    if (patternMatch(pattern, value)) {
+        const bound = Switch.extractBoundValues(value, pattern);
+        return { matched: true, value: bound };
+    }
+    return { matched: false, value: undefined };
+}
+
 function guardCase(pattern) {
     return function(value) {
         if (patternMatch(pattern, value)) {
@@ -318,6 +340,8 @@ PatternMatcher.matchIndirect = matchIndirect;
 PatternMatcher.extractIndirect = extractIndirect;
 PatternMatcher.casePattern = casePattern;
 PatternMatcher.ifCase = ifCase;
+PatternMatcher.ifLet = ifLet;
+PatternMatcher.guardLet = guardLet;
 PatternMatcher.guardCase = guardCase;
 PatternMatcher.whileCase = whileCase;
 PatternMatcher.forCase = forCase;
@@ -350,6 +374,8 @@ export {
     matchIndirect,
     extractIndirect,
     ifCase,
+    ifLet,
+    guardLet,
     guardCase,
     whileCase,
     forCase,

@@ -1,6 +1,6 @@
 import { hashObject } from './Protocol.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, forCaseLet, patternMatch } from './PatternMatching.js';
+import { ifCase, ifLet, guardLet, guardCase, whileCase, forCase, forCaseLet, patternMatch } from './PatternMatching.js';
 
 const CustomStringConvertible = {
     description: {
@@ -214,6 +214,14 @@ class NSNumber extends NSValue {
     matchOperator(pattern) {
         return patternMatch(pattern, this._numberValue);
     }
+
+    ifLet(pattern) {
+        return ifLet(this._numberValue, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this._numberValue, pattern);
+    }
 }
 
 class Data {
@@ -397,6 +405,14 @@ class Data {
 
     matchOperator(pattern) {
         return patternMatch(pattern, this);
+    }
+
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
     }
 }
 
@@ -612,6 +628,14 @@ class NSURL {
     matchOperator(pattern) {
         return patternMatch(pattern, this);
     }
+
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
+    }
 }
 
 class Scanner {
@@ -823,6 +847,14 @@ class Scanner {
 
     matchOperator(pattern) {
         return patternMatch(pattern, this);
+    }
+
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
     }
 }
 

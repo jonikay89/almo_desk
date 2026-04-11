@@ -162,6 +162,14 @@ class UIButton extends UIControl {
         return patternMatch(pattern, this);
     }
 
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
+    }
+
     matchButton(predicate) {
         if (typeof predicate === 'function') {
             return predicate(this);

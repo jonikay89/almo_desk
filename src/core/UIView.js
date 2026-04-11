@@ -278,6 +278,14 @@ class UIView extends UIResponder {
         return patternMatch(pattern, this);
     }
 
+    ifLet(pattern) {
+        return ifLet(this, pattern);
+    }
+
+    guardLet(pattern) {
+        return guardLet(this, pattern);
+    }
+
     matchView(predicate) {
         if (typeof predicate === 'function') {
             return predicate(this);
