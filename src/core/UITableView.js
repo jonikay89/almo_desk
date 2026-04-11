@@ -5,6 +5,13 @@ import { WeakRef } from './WeakReference.js';
 import { NSValue } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { defineTypeAlias } from './Protocol.js';
+import {
+    TableViewDelegate,
+    TableViewDataSource
+} from './TypeAliases.js';
+
+defineTypeAlias('TableViewDelegateBundle', TableViewDelegate, TableViewDataSource);
 
 class UITableView extends UIScrollView {
     constructor(style = 'plain') {

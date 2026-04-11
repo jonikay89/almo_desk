@@ -1,5 +1,78 @@
 import { WeakRef } from './WeakReference.js';
 
+const _typealiases = new Map();
+
+class TypeAlias {
+    constructor(name, type) {
+        this.name = name;
+        this.type = type;
+        this._isProtocolComposition = Array.isArray(type);
+    }
+
+    get isProtocolComposition() {
+        return this._isProtocolComposition;
+    }
+
+    get protocols() {
+        if (this._isProtocolComposition) {
+            return this.type.map(t => {
+                if (typeof t === 'string') {
+                    return _typealiases.get(t)?.type || t;
+                }
+                return t;
+            });
+        }
+        if (typeof this.type === 'string') {
+            return [_typealiases.get(this.type)?.type || this.type];
+        }
+        return [this.type];
+    }
+
+    conformsTo(object) {
+        for (const protocol_ of this.protocols) {
+            if (protocol_ instanceof Protocol) {
+                if (!protocol_.conformsTo(object)) {
+                    return false;
+                }
+            } else if (typeof protocol_ === 'function') {
+                if (!(object instanceof protocol_)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+function createTypeAlias(name, type) {
+    const alias = new TypeAlias(name, type);
+    _typealiases.set(name, alias);
+    return alias;
+}
+
+function getTypeAlias(name) {
+    return _typealiases.get(name);
+}
+
+function hasTypeAlias(name) {
+    return _typealiases.has(name);
+}
+
+function resolveTypeAlias(typeOrName) {
+    if (typeof typeOrName === 'string') {
+        return _typealiases.get(typeOrName) || typeOrName;
+    }
+    return typeOrName;
+}
+
+function composeProtocols(...protocols) {
+    return protocols;
+}
+
+function defineTypeAlias(name, ...protocols) {
+    return createTypeAlias(name, protocols);
+}
+
 class Protocol {
     constructor(name, requirements = {}) {
         this.name = name;
@@ -311,7 +384,14 @@ export {
     hashString,
     hashNumber,
     hashArray,
-    hashValue
+    hashValue,
+    TypeAlias,
+    createTypeAlias,
+    getTypeAlias,
+    hasTypeAlias,
+    resolveTypeAlias,
+    composeProtocols,
+    defineTypeAlias
 };
 
 export default Protocol;

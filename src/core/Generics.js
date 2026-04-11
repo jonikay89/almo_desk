@@ -1,3 +1,25 @@
+const _genericTypealiases = new Map();
+
+class GenericTypeAlias {
+    constructor(name, factory) {
+        this.name = name;
+        this.factory = factory;
+        _genericTypealiases.set(name, this);
+    }
+
+    create(...args) {
+        return this.factory(...args);
+    }
+}
+
+function genericTypeAlias(name, typeParams, factory) {
+    return new GenericTypeAlias(name, factory);
+}
+
+function getGenericTypeAlias(name) {
+    return _genericTypealiases.get(name);
+}
+
 function Generic(type) {
     return function(target) {
         target._genericType = type;
@@ -81,6 +103,14 @@ function createGenericFunction(typeParam, fn) {
         return fn(...args);
     };
 }
+
+genericTypeAlias('NetworkResponse', ['T', 'E'], (T, E) => Result);
+genericTypeAlias('NetworkCompletion', ['T', 'E'], (T, E) => (response) => {});
+genericTypeAlias('VoidResult', [], () => Result);
+genericTypeAlias('VoidCompletion', [], () => (result) => {});
+genericTypeAlias('OptionalValue', ['T'], (T) => Optional);
+genericTypeAlias('BoxedValue', ['T'], (T) => Box);
+genericTypeAlias('PairOf', ['A', 'B'], (A, B) => Pair);
 
 class Result {
     constructor(value, error = null) {
@@ -363,12 +393,10 @@ class Deque {
 
     pushFront(item) {
         this._items.unshift(item);
-        return this;
     }
 
     pushBack(item) {
         this._items.push(item);
-        return this;
     }
 
     popFront() {
@@ -479,7 +507,10 @@ export {
     Stack,
     Queue,
     Deque,
-    PriorityQueue
+    PriorityQueue,
+    GenericTypeAlias,
+    genericTypeAlias,
+    getGenericTypeAlias
 };
 
 export default {
@@ -497,5 +528,8 @@ export default {
     Stack,
     Queue,
     Deque,
-    PriorityQueue
+    PriorityQueue,
+    GenericTypeAlias,
+    genericTypeAlias,
+    getGenericTypeAlias
 };

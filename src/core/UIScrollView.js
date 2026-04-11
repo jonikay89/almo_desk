@@ -4,6 +4,10 @@ import { WeakRef } from './WeakReference.js';
 import { NSValue } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { defineTypeAlias } from './Protocol.js';
+import { ScrollViewDelegate } from './TypeAliases.js';
+
+defineTypeAlias('ScrollViewDelegateAlias', ScrollViewDelegate);
 
 class UIScrollView extends UIView {
     constructor() {

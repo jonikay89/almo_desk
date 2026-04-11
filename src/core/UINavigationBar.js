@@ -2,6 +2,10 @@ import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { defineTypeAlias } from './Protocol.js';
+import { NavigationBarDelegate } from './TypeAliases.js';
+
+defineTypeAlias('NavigationBarDelegateAlias', NavigationBarDelegate);
 
 class UINavigationBar extends UIView {
     constructor() {

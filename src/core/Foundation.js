@@ -1,4 +1,4 @@
-import { hashObject } from './Protocol.js';
+import { hashObject, defineTypeAlias } from './Protocol.js';
 import Switch from './Switch.js';
 import { ifCase, ifLet, guardLet, guardCase, whileCase, forCase, forCaseLet, patternMatch } from './PatternMatching.js';
 
@@ -1052,6 +1052,10 @@ export {
     decode,
     PropertyList
 };
+
+defineTypeAlias('StringConvertible', CustomStringConvertible);
+defineTypeAlias('RawRepresentableType', RawRepresentable);
+defineTypeAlias('ExpressibleBy', ExpressibleByStringLiteral, ExpressibleByNumberLiteral, ExpressibleByBooleanLiteral);
 
 export default {
     CustomStringConvertible,

@@ -5,6 +5,13 @@ import { WeakRef } from './WeakReference.js';
 import { NSValue } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { defineTypeAlias } from './Protocol.js';
+import {
+    CollectionViewDelegate,
+    CollectionViewDataSource
+} from './TypeAliases.js';
+
+defineTypeAlias('CollectionViewDelegateBundle', CollectionViewDelegate, CollectionViewDataSource);
 
 class UICollectionView extends UIScrollView {
     constructor(frame, collectionViewLayout) {

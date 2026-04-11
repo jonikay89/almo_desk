@@ -3,6 +3,10 @@ import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { defineTypeAlias } from './Protocol.js';
+import { TabBarDelegate } from './TypeAliases.js';
+
+defineTypeAlias('TabBarDelegateAlias', TabBarDelegate);
 
 class UITabBar extends UIView {
     constructor() {

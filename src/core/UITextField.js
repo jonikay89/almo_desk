@@ -3,6 +3,10 @@ import UIColor from './UIColor.js';
 import { Scanner, NSNumber } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { defineTypeAlias } from './Protocol.js';
+import { TextFieldDelegate } from './TypeAliases.js';
+
+defineTypeAlias('TextFieldDelegateAlias', TextFieldDelegate);
 
 class UITextField extends UIControl {
     constructor(placeholder = '') {
