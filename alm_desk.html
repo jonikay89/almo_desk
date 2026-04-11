@@ -726,16 +726,20 @@ class DesktopOS {
     }
 
     #bringToFront(id) {
+        const win = this.#findWindow(id);
+        if (!win) return;
         const maxZ = Math.max(200, ...this.#windows.map(w => w.zIndex));
-        this.#windows.forEach(w => {
-            if (w.id === id) {
-                w.zIndex = maxZ + 1;
-                w.minimized = false;
-            }
-        });
+        win.zIndex = maxZ + 1;
+        win.minimized = false;
         this.#activeWindowId = id;
+        
+        const el = document.querySelector(`[data-id="${id}"]`);
+        if (el) el.style.zIndex = win.zIndex;
+        
+        document.querySelectorAll('.window').forEach(w => w.classList.remove('active'));
+        if (el) el.classList.add('active');
+        
         this.#debouncedSave();
-        this.renderFull();
     }
 
     #findWindow(id) {
@@ -863,7 +867,9 @@ class DesktopOS {
         minimizeBtn.title = 'Minimize';
         minimizeBtn.textContent = '−';
         minimizeBtn.addEventListener('click', e => {
+            e.preventDefault();
             e.stopPropagation();
+            this.#bringToFront(win.id);
             this.minimizeWindow(win.id);
         });
         
@@ -872,7 +878,9 @@ class DesktopOS {
         closeBtn.title = 'Close';
         closeBtn.textContent = '✕';
         closeBtn.addEventListener('click', e => {
+            e.preventDefault();
             e.stopPropagation();
+            this.#bringToFront(win.id);
             this.closeWindow(win.id);
         });
         
@@ -895,19 +903,22 @@ class DesktopOS {
 
         // Event listeners
         header.addEventListener('mousedown', e => {
-            if (e.target.tagName === 'BUTTON') return;
+            if (e.target.closest('button')) return;
             e.preventDefault();
-            this.#bringToFront(win.id);
             this.#startDrag(div, win.id, e, 'move');
         });
 
         resizeHandle.addEventListener('mousedown', e => {
+            e.preventDefault();
             e.stopPropagation();
-            this.#bringToFront(win.id);
             this.#startDrag(div, win.id, e, 'resize');
         });
 
-        div.addEventListener('mousedown', () => this.#bringToFront(win.id));
+        div.addEventListener('mousedown', e => {
+            if (!e.target.closest('button')) {
+                this.#bringToFront(win.id);
+            }
+        });
 
         return div;
     }
@@ -953,20 +964,27 @@ class DesktopOS {
 
     // ── Drag & Resize System ────────────────────────────────────
     #startDrag(element, winId, e, mode) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const rect = element.getBoundingClientRect();
         this.#drag = {
             target: element,
             winId,
-            offsetX: e.clientX - element.getBoundingClientRect().left,
-            offsetY: e.clientY - element.getBoundingClientRect().top,
-            mode, // 'move' or 'resize'
-            startWidth: element.offsetWidth,
-            startHeight: element.offsetHeight,
-            startMouseX: e.clientX,
-            startMouseY: e.clientY,
+            mode,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialLeft: rect.left,
+            initialTop: rect.top,
+            initialWidth: element.offsetWidth,
+            initialHeight: element.offsetHeight,
         };
 
-        const onMove = ev => this.#onDrag(ev);
-        const onUp = () => {
+        const onMove = ev => {
+            ev.preventDefault();
+            this.#onDrag(ev);
+        };
+        const onUp = ev => {
             this.#endDrag();
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
@@ -977,18 +995,21 @@ class DesktopOS {
     }
 
     #onDrag(e) {
+        if (!this.#drag.target) return;
         const win = this.#findWindow(this.#drag.winId);
-        if (!win || !this.#drag.target) return;
+        if (!win) return;
+
+        const deltaX = e.clientX - this.#drag.startX;
+        const deltaY = e.clientY - this.#drag.startY;
 
         if (this.#drag.mode === 'move') {
-            win.x = Math.max(0, Math.min(e.clientX - this.#drag.offsetX, window.innerWidth - CONFIG.DRAG_MARGIN));
-            win.y = Math.max(0, Math.min(e.clientY - this.#drag.offsetY, window.innerHeight - CONFIG.TASKBAR_H - CONFIG.DRAG_MARGIN));
+            win.x = Math.max(0, Math.min(this.#drag.initialLeft + deltaX, window.innerWidth - CONFIG.DRAG_MARGIN));
+            win.y = Math.max(0, Math.min(this.#drag.initialTop + deltaY, window.innerHeight - CONFIG.TASKBAR_H - CONFIG.DRAG_MARGIN));
             this.#drag.target.style.left = `${win.x}px`;
             this.#drag.target.style.top = `${win.y}px`;
         } else if (this.#drag.mode === 'resize') {
-            const newWidth = Math.max(CONFIG.MIN_WIN_W, this.#drag.startWidth + (e.clientX - this.#drag.startMouseX));
-            const newHeight = Math.max(CONFIG.MIN_WIN_H, this.#drag.startHeight + (e.clientY - this.#drag.startMouseY));
-
+            const newWidth = Math.max(CONFIG.MIN_WIN_W, this.#drag.initialWidth + deltaX);
+            const newHeight = Math.max(CONFIG.MIN_WIN_H, this.#drag.initialHeight + deltaY);
             win.width = newWidth;
             win.height = newHeight;
             this.#drag.target.style.width = `${newWidth}px`;
