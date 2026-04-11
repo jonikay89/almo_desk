@@ -1,7 +1,7 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { WeakRef } from './WeakReference.js';
-import { NSNumber } from './Foundation.js';
+import { NSNumber, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
@@ -20,6 +20,7 @@ class UIPickerView extends UIView {
         this.numberOfComponents = 1;
         this.selectedRow = 0;
         this.pickers = [];
+        this._data = [];
     }
 
     get description() {

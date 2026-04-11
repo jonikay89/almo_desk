@@ -1,7 +1,7 @@
 import UIView from './UIView.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
-import { NSValue } from './Foundation.js';
+import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';

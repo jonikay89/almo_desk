@@ -3,7 +3,7 @@ import UIView from './UIView.js';
 import UILabel from './UILabel.js';
 import UIButton from './UIButton.js';
 import UIColor from './UIColor.js';
-import { NSNumber } from './Foundation.js';
+import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { invokeProtocolMethod } from './Protocol.js';
@@ -19,6 +19,7 @@ class UIAlertController extends UIViewController {
         this.textFields = [];
         this.alertView = null;
         this.delegate = null;
+        this._actionKeyPaths = [];
     }
 
     init() {
@@ -380,6 +381,112 @@ class UIAlertController extends UIViewController {
 
     guardLet(pattern) {
         return guardLet(this, pattern);
+    }
+
+    setTitle(newTitle) {
+        this.title = newTitle;
+        if (this.alertView) {
+            const titleEl = this.alertView.querySelector('.alert-title');
+            if (titleEl) titleEl.textContent = newTitle;
+        }
+        return this;
+    }
+
+    setMessage(newMessage) {
+        this.message = newMessage;
+        if (this.alertView) {
+            const msgEl = this.alertView.querySelector('.alert-message');
+            if (msgEl) msgEl.textContent = newMessage;
+        }
+        return this;
+    }
+
+    findAction(predicate) {
+        return this.actions.find(predicate) || null;
+    }
+
+    findActionBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.actions.find(action => getProperty(action, path) === value) || null;
+    }
+
+    filterActions(predicate) {
+        this.actions = this.actions.filter(predicate);
+        if (this.alertView) {
+            this.#buildContent();
+        }
+        return this;
+    }
+
+    filterActionsBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.filterActions(action => getProperty(action, path) === value);
+    }
+
+    updateAction(action, keyPath, newValue) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        updateProperty(action, path, newValue);
+        if (this.alertView) {
+            this.#buildContent();
+        }
+        return this;
+    }
+
+    getActionValue(action, keyPath) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return getProperty(action, path);
+    }
+
+    sortActionsBy(keyPath, ascending = true) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        this.actions = ascending 
+            ? this.actions.slice().sort((a, b) => {
+                const aVal = getProperty(a, path);
+                const bVal = getProperty(b, path);
+                return aVal < bVal ? -1 : (aVal > bVal ? 1 : 0);
+            })
+            : this.actions.slice().sort((a, b) => {
+                const aVal = getProperty(a, path);
+                const bVal = getProperty(b, path);
+                return aVal > bVal ? -1 : (aVal < bVal ? 1 : 0);
+            });
+        if (this.alertView) {
+            this.#buildContent();
+        }
+        return this;
+    }
+
+    addActionWith(action) {
+        return this.addAction(action.title || '', action.style || 'default');
+    }
+
+    removeAction(action) {
+        const index = this.actions.indexOf(action);
+        if (index > -1) {
+            this.actions.splice(index, 1);
+            if (this.alertView) {
+                this.#buildContent();
+            }
+        }
+        return this;
+    }
+
+    getTextFieldValue(index, keyPath) {
+        const textField = this.textFields[index];
+        if (textField) {
+            const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+            return getProperty(textField, path);
+        }
+        return null;
+    }
+
+    setTextFieldValue(index, keyPath, value) {
+        const textField = this.textFields[index];
+        if (textField) {
+            const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+            updateProperty(textField, path, value);
+        }
+        return this;
     }
 }
 

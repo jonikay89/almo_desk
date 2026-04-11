@@ -1,6 +1,6 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
-import { Scanner, NSNumber } from './Foundation.js';
+import { Scanner, NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';

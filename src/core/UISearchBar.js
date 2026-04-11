@@ -1,6 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
-import { NSNumber, Scanner } from './Foundation.js';
+import { NSNumber, Scanner, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';

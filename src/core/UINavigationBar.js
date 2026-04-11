@@ -4,6 +4,7 @@ import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
 import { NavigationBarDelegate, NavigationBarDelegate as NavigationBarDelegateProtocol } from './TypeAliases.js';
+import { kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
 
 defineTypeAlias('NavigationBarDelegateAlias', NavigationBarDelegate);
 
@@ -199,6 +200,55 @@ class UINavigationBar extends UIView {
     patternMatch(predicate) {
         return this.matchBar(predicate);
     }
+
+    sortItemsBy(keyPath, ascending = true) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        this.items = ascending 
+            ? this.items.slice().sort((a, b) => compareBy(a, b, path))
+            : this.items.slice().sort((a, b) => compareByDescending(a, b, path));
+        this.#render();
+        return this;
+    }
+
+    findItem(predicate) {
+        return this.items.find(predicate) || null;
+    }
+
+    findItemBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.items.find(item => getProperty(item, path) === value) || null;
+    }
+
+    filterItems(predicate) {
+        this.items = this.items.filter(predicate);
+        if (this.topItem && !this.items.includes(this.topItem)) {
+            this.topItem = this.items[this.items.length - 1] || null;
+        }
+        this.#render();
+        return this;
+    }
+
+    filterItemsBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.filterItems(item => getProperty(item, path) === value);
+    }
+
+    updateTopItem(keyPath, newValue) {
+        if (this.topItem) {
+            const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+            updateProperty(this.topItem, path, newValue);
+            this.#render();
+        }
+        return this;
+    }
+
+    getTopItemValue(keyPath) {
+        if (this.topItem) {
+            const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+            return getProperty(this.topItem, path);
+        }
+        return null;
+    }
 }
 
 class UINavigationItem {
@@ -298,7 +348,52 @@ class UINavigationItem {
     guardLet(pattern) {
         return guardLet(this, pattern);
     }
+
+    updateTitle(keyPath, newValue) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        updateProperty(this, path, newValue);
+        return this;
+    }
+
+    getTitle() {
+        return this.title;
+    }
+
+    getValue(keyPath) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return getProperty(this, path);
+    }
 }
+
+UINavigationItem.prototype.setTitle = function(title) {
+    this.title = title;
+    return this;
+};
+
+UINavigationItem.prototype.setLeftBarButtonItem = function(item) {
+    this.leftBarButtonItem = item;
+    return this;
+};
+
+UINavigationItem.prototype.setRightBarButtonItem = function(item) {
+    this.rightBarButtonItem = item;
+    return this;
+};
+
+UINavigationItem.prototype.updateTitle = function(keyPath, newValue) {
+    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+    updateProperty(this, path, newValue);
+    return this;
+};
+
+UINavigationItem.prototype.getTitle = function() {
+    return this.title;
+};
+
+UINavigationItem.prototype.getValue = function(keyPath) {
+    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+    return getProperty(this, path);
+};
 
 export default UINavigationBar;
 export { UINavigationItem };

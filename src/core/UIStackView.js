@@ -1,4 +1,5 @@
 import UIView from './UIView.js';
+import { kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
@@ -244,6 +245,68 @@ class UIStackView extends UIView {
 
     switch() {
         return Switch(this);
+    }
+
+    sortArrangedSubviewsBy(keyPath, ascending = true) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        this._arrangedSubviews = ascending 
+            ? this._arrangedSubviews.slice().sort((a, b) => compareBy(a, b, path))
+            : this._arrangedSubviews.slice().sort((a, b) => compareByDescending(a, b, path));
+        
+        if (this.element) {
+            this.element.innerHTML = '';
+            this._arrangedSubviews.forEach(view => {
+                if (view.element) {
+                    this.element.appendChild(view.element);
+                }
+            });
+        }
+        this.#updateLayout();
+        return this;
+    }
+
+    findArrangedSubview(predicate) {
+        return this._arrangedSubviews.find(predicate) || null;
+    }
+
+    findArrangedSubviewBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this._arrangedSubviews.find(view => getProperty(view, path) === value) || null;
+    }
+
+    filterArrangedSubviews(predicate) {
+        this._arrangedSubviews = this._arrangedSubviews.filter(predicate);
+        if (this.element) {
+            this.element.innerHTML = '';
+            this._arrangedSubviews.forEach(view => {
+                if (view.element) {
+                    this.element.appendChild(view.element);
+                }
+            });
+        }
+        this.#updateLayout();
+        return this;
+    }
+
+    filterArrangedSubviewsBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.filterArrangedSubviews(view => getProperty(view, path) === value);
+    }
+
+    updateArrangedSubview(view, keyPath, newValue) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        updateProperty(view, path, newValue);
+        this.#updateLayout();
+        return this;
+    }
+
+    getArrangedSubviewValue(view, keyPath) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return getProperty(view, path);
+    }
+
+    getArrangedSubviewIndex(view) {
+        return this._arrangedSubviews.indexOf(view);
     }
 }
 

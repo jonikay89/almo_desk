@@ -2,6 +2,84 @@ import { hashObject, defineTypeAlias } from './Protocol.js';
 import Switch from './Switch.js';
 import { ifCase, ifLet, guardLet, guardCase, whileCase, forCase, forCaseLet, patternMatch } from './PatternMatching.js';
 
+class KeyPath {
+    constructor(path, getter, setter = null) {
+        this._path = path;
+        this._getter = getter;
+        this._setter = setter;
+    }
+
+    get path() {
+        return this._path;
+    }
+
+    get isWritable() {
+        return this._setter !== null;
+    }
+
+    get rootType() {
+        return this._rootType;
+    }
+
+    get valueType() {
+        return this._valueType;
+    }
+
+    get(object) {
+        return this._getter(object);
+    }
+
+    set(object, value) {
+        if (this._setter) {
+            this._setter(object, value);
+        }
+    }
+}
+
+class WritableKeyPath extends KeyPath {
+    constructor(path, getter, setter, rootType, valueType) {
+        super(path, getter, setter);
+        this._rootType = rootType;
+        this._valueType = valueType;
+    }
+}
+
+function createKeyPath(rootType, path, getter, setter = null) {
+    return new KeyPath(path, getter, setter);
+}
+
+function createWritableKeyPath(rootType, valueType, path, getter, setter) {
+    return new WritableKeyPath(path, getter, setter, rootType, valueType);
+}
+
+function keyPathFor(root, pathString) {
+    const parts = pathString.split('.');
+    let currentType = root.constructor;
+    
+    return {
+        get(object) {
+            let value = object;
+            for (const part of parts) {
+                if (value == null) return undefined;
+                value = value[part];
+            }
+            return value;
+        },
+        set(object, value) {
+            let target = object;
+            for (let i = 0; i < parts.length - 1; i++) {
+                if (target == null) return;
+                target = target[parts[i]];
+            }
+            if (target != null) {
+                target[parts[parts.length - 1]] = value;
+            }
+        },
+        path: pathString,
+        isWritable: true
+    };
+}
+
 const CustomStringConvertible = {
     description: {
         get() {
@@ -1146,6 +1224,178 @@ Scanner.prototype.scanUpTo = function(string) {
     return this.scanUpToString(string);
 };
 
+Array.prototype.sortedBy = function(keyPath) {
+    return this.slice().sort((a, b) => {
+        const aVal = keyPath.get(a);
+        const bVal = keyPath.get(b);
+        if (aVal < bVal) return -1;
+        if (aVal > bVal) return 1;
+        return 0;
+    });
+};
+
+Array.prototype.sortedByDescending = function(keyPath) {
+    return this.slice().sort((a, b) => {
+        const aVal = keyPath.get(a);
+        const bVal = keyPath.get(b);
+        if (aVal < bVal) return 1;
+        if (aVal > bVal) return -1;
+        return 0;
+    });
+};
+
+Array.prototype.sortedByKeyPaths = function(...keyPaths) {
+    return this.slice().sort((a, b) => {
+        for (const keyPath of keyPaths) {
+            const aVal = keyPath.get(a);
+            const bVal = keyPath.get(b);
+            if (aVal < bVal) return -1;
+            if (aVal > bVal) return 1;
+        }
+        return 0;
+    });
+};
+
+Array.prototype.groupedBy = function(keyPath) {
+    return this.reduce((groups, item) => {
+        const key = keyPath.get(item);
+        if (!groups[key]) {
+            groups[key] = [];
+        }
+        groups[key].push(item);
+        return groups;
+    }, {});
+};
+
+Array.prototype.filterBy = function(keyPath, value) {
+    return this.filter(item => keyPath.get(item) === value);
+};
+
+Array.prototype.maxBy = function(keyPath) {
+    if (this.length === 0) return undefined;
+    return this.reduce((max, item) => {
+        const maxVal = keyPath.get(max);
+        const itemVal = keyPath.get(item);
+        return itemVal > maxVal ? item : max;
+    });
+};
+
+Array.prototype.minBy = function(keyPath) {
+    if (this.length === 0) return undefined;
+    return this.reduce((min, item) => {
+        const minVal = keyPath.get(min);
+        const itemVal = keyPath.get(item);
+        return itemVal < minVal ? item : min;
+    });
+};
+
+Array.prototype.uniqueBy = function(keyPath) {
+    const seen = new Set();
+    return this.filter(item => {
+        const key = JSON.stringify(keyPath.get(item));
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+};
+
+Array.prototype.mapBy = function(keyPath) {
+    return this.map(item => keyPath.get(item));
+};
+
+Array.prototype.containsBy = function(keyPath, value) {
+    return this.some(item => keyPath.get(item) === value);
+};
+
+Array.prototype.firstIndexBy = function(keyPath, value) {
+    return this.findIndex(item => keyPath.get(item) === value);
+};
+
+Array.prototype.pluck = function(keyPath) {
+    const values = this.map(item => keyPath.get(item));
+    return { keys: this.map((_, i) => i), values };
+};
+
+function createKeyPathGetter(pathString) {
+    const parts = pathString.split('.');
+    return function(object) {
+        let value = object;
+        for (const part of parts) {
+            if (value == null) return undefined;
+            value = value[part];
+        }
+        return value;
+    };
+}
+
+function createKeyPathSetter(pathString) {
+    const parts = pathString.split('.');
+    return function(object, value) {
+        let target = object;
+        for (let i = 0; i < parts.length - 1; i++) {
+            if (target == null) return;
+            target = target[parts[i]];
+        }
+        if (target != null) {
+            target[parts[parts.length - 1]] = value;
+        }
+    };
+}
+
+function kp(pathString) {
+    const getter = createKeyPathGetter(pathString);
+    const setter = createKeyPathSetter(pathString);
+    return new KeyPath(pathString, getter, setter);
+};
+
+function writablekp(rootType, valueType, pathString) {
+    const getter = createKeyPathGetter(pathString);
+    const setter = createKeyPathSetter(pathString);
+    return new WritableKeyPath(pathString, getter, setter, rootType, valueType);
+};
+
+function updateProperty(object, keyPath, newValue) {
+    if (typeof keyPath === 'string') {
+        keyPath = keyp(keyPath);
+    }
+    if (keyPath.isWritable) {
+        keyPath.set(object, newValue);
+    }
+}
+
+function getProperty(object, keyPath) {
+    if (typeof keyPath === 'string') {
+        keyPath = keyp(keyPath);
+    }
+    return keyPath.get(object);
+}
+
+function compareBy(a, b, keyPath) {
+    const aVal = typeof keyPath === 'string' ? getProperty(a, keyPath) : keyPath.get(a);
+    const bVal = typeof keyPath === 'string' ? getProperty(b, keyPath) : keyPath.get(b);
+    if (aVal < bVal) return -1;
+    if (aVal > bVal) return 1;
+    return 0;
+}
+
+function compareByDescending(a, b, keyPath) {
+    return compareBy(b, a, keyPath);
+}
+
+export {
+    KeyPath,
+    WritableKeyPath,
+    createKeyPath,
+    createWritableKeyPath,
+    keyPathFor,
+    kp,
+    writablekp,
+    updateProperty,
+    getProperty,
+    compareBy,
+    compareByDescending
+};
+
 export default {
     CustomStringConvertible,
     RawRepresentable,
@@ -1164,5 +1414,16 @@ export default {
     Codable,
     encode,
     decode,
-    PropertyList
+    PropertyList,
+    KeyPath,
+    WritableKeyPath,
+    createKeyPath,
+    createWritableKeyPath,
+    keyPathFor,
+    kp,
+    writablekp,
+    updateProperty,
+    getProperty,
+    compareBy,
+    compareByDescending
 };

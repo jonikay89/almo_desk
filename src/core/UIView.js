@@ -1,6 +1,6 @@
 import UIColor from './UIColor.js';
 import UIResponder from './UIResponder.js';
-import { NSValue } from './Foundation.js';
+import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 

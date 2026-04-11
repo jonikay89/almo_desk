@@ -1,6 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
-import { Data } from './Foundation.js';
+import { Data, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 

@@ -2,7 +2,7 @@ import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
-import { NSValue } from './Foundation.js';
+import { NSValue, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
@@ -23,7 +23,9 @@ class UICollectionView extends UIScrollView {
         this.allowsMultipleSelection = false;
         this.backgroundView = null;
         this._data = [];
+        this._sections = [];
         this.reusableCells = {};
+        this.itemSize = { width: 100, height: 100 };
     }
 
     get description() {
@@ -46,10 +48,29 @@ class UICollectionView extends UIScrollView {
         this._dataSource = value instanceof WeakRef ? value : (value ? new WeakRef(value) : null);
     }
 
+    get data() {
+        return this._data;
+    }
+
+    set data(value) {
+        this._data = value;
+        if (this._sections.length === 0) {
+            this._sections = [{ items: value }];
+        }
+    }
+
+    get sections() {
+        return this._sections;
+    }
+
+    set sections(value) {
+        this._sections = value;
+    }
+
     numberOfSections() {
         return Optional.of(this.dataSource?.numberOfSectionsInCollectionView)
             .flatMap(fn => Optional.fromNullable(fn(this)))
-            .getOrElse(1);
+            .getOrElse(this._sections.length || 1);
     }
 
     numberOfItemsInSection(section) {
@@ -347,6 +368,182 @@ class UICollectionViewFlowLayout {
 
     switch() {
         return Switch(this);
+    }
+
+    sortBy(keyPath, ascending = true) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        if (this._sections.length === 1) {
+            this._data = ascending 
+                ? this._data.slice().sort((a, b) => compareBy(a, b, path))
+                : this._data.slice().sort((a, b) => compareByDescending(a, b, path));
+            this._sections[0].items = this._data;
+        } else {
+            this._sections = this._sections.map(section => ({
+                ...section,
+                items: ascending 
+                    ? section.items.slice().sort((a, b) => compareBy(a, b, path))
+                    : section.items.slice().sort((a, b) => compareByDescending(a, b, path))
+            }));
+        }
+        this.reloadData();
+        return this;
+    }
+
+    sortByKeyPaths(...keyPaths) {
+        const paths = keyPaths.map(kp_ => typeof kp_ === 'string' ? kp(kp_) : kp_);
+        if (this._sections.length === 1) {
+            this._data = this._data.slice().sort((a, b) => {
+                for (const path of paths) {
+                    const result = compareBy(a, b, path);
+                    if (result !== 0) return result;
+                }
+                return 0;
+            });
+            this._sections[0].items = this._data;
+        } else {
+            this._sections = this._sections.map(section => ({
+                ...section,
+                items: section.items.slice().sort((a, b) => {
+                    for (const path of paths) {
+                        const result = compareBy(a, b, path);
+                        if (result !== 0) return result;
+                    }
+                    return 0;
+                })
+            }));
+        }
+        this.reloadData();
+        return this;
+    }
+
+    filterBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        if (this._sections.length === 1) {
+            this._data = this._data.filter(item => getProperty(item, path) === value);
+            this._sections[0].items = this._data;
+        } else {
+            this._sections = this._sections.map(section => ({
+                ...section,
+                items: section.items.filter(item => getProperty(item, path) === value)
+            }));
+            this._data = this._sections.flatMap(s => s.items);
+        }
+        this.reloadData();
+        return this;
+    }
+
+    filterByPredicate(predicate) {
+        if (this._sections.length === 1) {
+            this._data = this._data.filter(predicate);
+            this._sections[0].items = this._data;
+        } else {
+            this._sections = this._sections.map(section => ({
+                ...section,
+                items: section.items.filter(predicate)
+            }));
+            this._data = this._sections.flatMap(s => s.items);
+        }
+        this.reloadData();
+        return this;
+    }
+
+    updateValueAt(indexPath, keyPath, newValue) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        const section = this._sections[indexPath.section];
+        if (section && section.items[indexPath.item]) {
+            updateProperty(section.items[indexPath.item], path, newValue);
+            this.reloadItemsAtIndexPaths([indexPath]);
+        }
+        return this;
+    }
+
+    getValueAt(indexPath, keyPath) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        const section = this._sections[indexPath.section];
+        if (section && section.items[indexPath.item]) {
+            return getProperty(section.items[indexPath.item], path);
+        }
+        return null;
+    }
+
+    insertItem(item, atIndexPath, animated = true) {
+        const section = this._sections[atIndexPath.section];
+        if (section) {
+            section.items.splice(atIndexPath.item, 0, item);
+            this.reloadData();
+        }
+        return this;
+    }
+
+    removeItemAt(atIndexPath, animated = true) {
+        const section = this._sections[atIndexPath.section];
+        if (section) {
+            section.items.splice(atIndexPath.item, 1);
+            this.reloadData();
+        }
+        return this;
+    }
+
+    moveItem(fromIndexPath, toIndexPath, animated = true) {
+        const fromSection = this._sections[fromIndexPath.section];
+        const toSection = this._sections[toIndexPath.section];
+        if (fromSection && toSection) {
+            const [item] = fromSection.items.splice(fromIndexPath.item, 1);
+            toSection.items.splice(toIndexPath.item, 0, item);
+            this.reloadData();
+        }
+        return this;
+    }
+
+    appendItem(item, animated = true) {
+        if (this._sections.length === 0) {
+            this._sections = [{ items: [item] }];
+            this._data = [item];
+        } else {
+            this._sections[this._sections.length - 1].items.push(item);
+            this._data.push(item);
+        }
+        this.reloadData();
+        return this;
+    }
+
+    prependItem(item, animated = true) {
+        if (this._sections.length === 0) {
+            this._sections = [{ items: [item] }];
+            this._data = [item];
+        } else {
+            this._sections[0].items.unshift(item);
+            this._data.unshift(item);
+        }
+        this.reloadData();
+        return this;
+    }
+
+    findItem(predicate) {
+        for (let s = 0; s < this._sections.length; s++) {
+            const section = this._sections[s];
+            for (let i = 0; i < section.items.length; i++) {
+                if (predicate(section.items[i])) {
+                    return { item: i, section: s, itemData: section.items[i] };
+                }
+            }
+        }
+        return null;
+    }
+
+    findItemBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.findItem(item => getProperty(item, path) === value);
+    }
+
+    reloadData() {
+        if (this.element) {
+            this.#render();
+        }
+    }
+
+    #render() {
+        super.layoutSubviews();
     }
 }
 

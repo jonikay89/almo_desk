@@ -1,6 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
-import { NSNumber } from './Foundation.js';
+import { NSNumber, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
@@ -224,6 +224,56 @@ class UITabBar extends UIView {
     patternMatch(predicate) {
         return this.matchTab(predicate);
     }
+
+    sortItemsBy(keyPath, ascending = true) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        this.items = ascending 
+            ? this.items.slice().sort((a, b) => compareBy(a, b, path))
+            : this.items.slice().sort((a, b) => compareByDescending(a, b, path));
+        this.#render();
+        return this;
+    }
+
+    findItem(predicate) {
+        return this.items.find(predicate) || null;
+    }
+
+    findItemBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.items.find(item => getProperty(item, path) === value) || null;
+    }
+
+    filterItems(predicate) {
+        const selectedItem = this.selectedItem;
+        this.items = this.items.filter(predicate);
+        if (selectedItem && !this.items.includes(selectedItem)) {
+            this.selectedItem = this.items[0] || null;
+        }
+        this.#render();
+        return this;
+    }
+
+    filterItemsBy(keyPath, value) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return this.filterItems(item => getProperty(item, path) === value);
+    }
+
+    updateSelectedItem(keyPath, newValue) {
+        if (this.selectedItem) {
+            const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+            updateProperty(this.selectedItem, path, newValue);
+            this.#render();
+        }
+        return this;
+    }
+
+    getSelectedItemValue(keyPath) {
+        if (this.selectedItem) {
+            const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+            return getProperty(this.selectedItem, path);
+        }
+        return null;
+    }
 }
 
 class UITabBarItem {
@@ -326,7 +376,55 @@ class UITabBarItem {
     guardLet(pattern) {
         return guardLet(this, pattern);
     }
+
+    updateTitle(keyPath, newValue) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        updateProperty(this, path, newValue);
+        return this;
+    }
+
+    getTitle() {
+        return this.title;
+    }
+
+    getBadgeValue() {
+        return this.badgeValue;
+    }
+
+    getValue(keyPath) {
+        const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+        return getProperty(this, path);
+    }
 }
+
+UITabBarItem.prototype.setTitle = function(title) {
+    this.title = title;
+    return this;
+};
+
+UITabBarItem.prototype.setBadgeValue = function(badgeValue) {
+    this.badgeValue = badgeValue;
+    return this;
+};
+
+UITabBarItem.prototype.updateTitle = function(keyPath, newValue) {
+    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+    updateProperty(this, path, newValue);
+    return this;
+};
+
+UITabBarItem.prototype.getTitle = function() {
+    return this.title;
+};
+
+UITabBarItem.prototype.getBadgeValue = function() {
+    return this.badgeValue;
+};
+
+UITabBarItem.prototype.getValue = function(keyPath) {
+    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
+    return getProperty(this, path);
+};
 
 export default UITabBar;
 export { UITabBarItem };
