@@ -220,6 +220,73 @@ class UICollectionView extends UIScrollView {
         if (this.contentElement) {
             this.contentElement.style.width = `${this.frame.width}px`;
         }
+        if (this._gradientLayer || this._shapeLayers?.length > 0) {
+            this.#renderLayers();
+        }
+    }
+
+    #renderLayers() {
+        if (!this.element) return;
+        const existingCanvas = this.element.querySelector('.layer-canvas');
+        if (existingCanvas) existingCanvas.remove();
+        if (this._layer?._sublayers?.length === 0) return;
+        const canvas = document.createElement('canvas');
+        canvas.className = 'layer-canvas';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.width = this._bounds.width * 2;
+        canvas.height = this._bounds.height * 2;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        for (const sublayer of this._layer._sublayers) {
+            sublayer.renderToContext(ctx);
+        }
+        this.element.style.position = 'relative';
+        this.element.insertBefore(canvas, this.element.firstChild);
+    }
+
+    setItemSize(width, height) {
+        this.itemSize = { width, height };
+        return this;
+    }
+
+    withItemSize(width, height) {
+        return this.setItemSize(width, height);
+    }
+
+    setAllowsSelection(allow) {
+        this.allowsSelection = allow;
+        return this;
+    }
+
+    withAllowsSelection(allow) {
+        return this.setAllowsSelection(allow);
+    }
+
+    setAllowsMultipleSelection(allow) {
+        this.allowsMultipleSelection = allow;
+        return this;
+    }
+
+    withAllowsMultipleSelection(allow) {
+        return this.setAllowsMultipleSelection(allow);
+    }
+
+    withBackgroundLayer(gradient) {
+        if (gradient && this._layer) {
+            this._layer.addSublayer(gradient);
+            this.#renderLayers();
+        }
+        return this;
+    }
+
+    withShadow(color, opacity, offset, radius) {
+        this.setShadow?.(color, opacity, offset, radius);
+        return this;
     }
 
     encode() {

@@ -82,6 +82,7 @@
                 yOffset = this.addSection('Async & Locking', [this.createAsyncLockingDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('Swift-like Chainable', [this.createChainableDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('CALayer & Animations', [this.createLayerDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('CALayer on Components', [this.createLayerComponentDemos()], yOffset, padding, contentWidth);
 
                 this.scrollView.setContentSize(contentWidth, yOffset + 40);
             }
@@ -1664,6 +1665,89 @@
                     featLabel.init();
                     featLabel.frame = { x: 0, y: 245 + i * 18, width: 280, height: 16 };
                     featLabel.fontSize = 11;
+                    featLabel.textColor = UIColor.darkGray();
+                    container.addSubview(featLabel);
+                });
+
+                return container;
+            }
+
+            createLayerComponentDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 400 };
+
+                const titleLabel = new UILabel('CALayer Across All UIKit Components');
+                titleLabel.init();
+                titleLabel.frame = { x: 0, y: 0, width: 300, height: 24 };
+                titleLabel.fontSize = 14;
+                titleLabel.fontWeight = 'bold';
+                titleLabel.textColor = UIColor.black();
+                container.addSubview(titleLabel);
+
+                const tableView = new UITableView('plain')
+                    .withBackgroundColor(UIColor.colorWithWhiteAlpha(0.95, 1))
+                    .withSeparatorStyle('singleLine')
+                    .withSeparatorColor(UIColor.lightGray())
+                    .withRowHeight(44)
+                    .withShadow(UIColor.black(), 0.1, { width: 0, height: 2 }, 4);
+                tableView.init();
+                tableView.frame = { x: 0, y: 30, width: 140, height: 160 };
+                container.addSubview(tableView);
+
+                const collectionView = new UICollectionView({ x: 0, y: 0, width: 140, height: 160 }, new UICollectionViewFlowLayout())
+                    .withBackgroundColor(UIColor.colorWithWhiteAlpha(0.95, 1))
+                    .withItemSize(60, 60)
+                    .withShadow(UIColor.black(), 0.1, { width: 0, height: 2 }, 4);
+                collectionView.init();
+                collectionView.frame = { x: 150, y: 30, width: 140, height: 160 };
+                container.addSubview(collectionView);
+
+                const navBar = new UINavigationBar()
+                    .withBarTintColor(UIColor.systemBlue())
+                    .withPrefersLargeTitles(false)
+                    .withShadow(UIColor.black(), 0.3, { width: 0, height: 2 }, 4);
+                navBar.init();
+                navBar.frame = { x: 0, y: 200, width: 300, height: 44 };
+                const navItem = new UINavigationItem();
+                navItem.title = 'NavBar';
+                navBar.pushNavigationItem(navItem, false);
+                container.addSubview(navBar);
+
+                const tabBar = new UITabBar()
+                    .withTintColor(UIColor.systemBlue())
+                    .withBarTintColor(UIColor.systemBackground())
+                    .withShadow(UIColor.black(), 0.2, { width: 0, height: -2 }, 4);
+                tabBar.init();
+                tabBar.frame = { x: 0, y: 250, width: 300, height: 49 };
+                const tabItem1 = new UITabBarItem('Tab 1', null, null);
+                const tabItem2 = new UITabBarItem('Tab 2', null, null);
+                tabBar.setItems([tabItem1, tabItem2], false);
+                container.addSubview(tabBar);
+
+                const layerInfoLabel = new UILabel('All UIKit Components Support:');
+                layerInfoLabel.init();
+                layerInfoLabel.frame = { x: 0, y: 310, width: 300, height: 18 };
+                layerInfoLabel.fontSize = 12;
+                layerInfoLabel.fontWeight = '600';
+                layerInfoLabel.textColor = UIColor.black();
+                container.addSubview(layerInfoLabel);
+
+                const layerComponentFeatures = [
+                    '• Gradient backgrounds (CAGradientLayer)',
+                    '• Shadows with opacity, offset, radius',
+                    '• Corner radius & borders',
+                    '• Shape layers (CAShapeLayer)',
+                    '• Text layers (CATextLayer)',
+                    '• 3D transforms & perspective',
+                    '• Chainable with* methods'
+                ];
+
+                layerComponentFeatures.forEach((feature, i) => {
+                    const featLabel = new UILabel(feature);
+                    featLabel.init();
+                    featLabel.frame = { x: 0, y: 332 + i * 16, width: 300, height: 14 };
+                    featLabel.fontSize = 10;
                     featLabel.textColor = UIColor.darkGray();
                     container.addSubview(featLabel);
                 });

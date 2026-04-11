@@ -488,6 +488,96 @@ class UIAlertController extends UIViewController {
         }
         return this;
     }
+
+    withCornerRadius(radius) {
+        if (this.alertView) {
+            this.alertView.style.borderRadius = `${radius}px`;
+        }
+        if (this.view?._layer) {
+            this.view._layer.cornerRadius = radius;
+        }
+        return this;
+    }
+
+    withShadow(color, opacity = 0.3, offset = { width: 0, height: 4 }, radius = 20) {
+        if (this.alertView) {
+            const colorStr = typeof color === 'string' ? color : (color?.css || color);
+            this.alertView.style.boxShadow = `${offset.width}px ${offset.height}px ${radius}px rgba(0,0,0,${opacity})`;
+        }
+        if (this.view?._layer) {
+            this.view._layer.shadowColor = color;
+            this.view._layer.shadowOpacity = opacity;
+            this.view._layer.shadowOffset = offset;
+            this.view._layer.shadowRadius = radius;
+        }
+        return this;
+    }
+
+    withBackgroundColor(color) {
+        if (this.alertView) {
+            this.alertView.style.backgroundColor = color?.css || color;
+        }
+        if (this.view?._backgroundColor !== undefined) {
+            this.view.backgroundColor = color;
+        }
+        return this;
+    }
+
+    withBorder(color, width = 1) {
+        if (this.alertView) {
+            this.alertView.style.border = `${width}px solid ${color?.css || color}`;
+        }
+        if (this.view?._layer) {
+            this.view._layer.borderColor = color;
+            this.view._layer.borderWidth = width;
+        }
+        return this;
+    }
+
+    withAlpha(alpha) {
+        if (this.overlay) {
+            this.overlay.style.backgroundColor = `rgba(0,0,0,${0.4 * alpha})`;
+        }
+        return this;
+    }
+
+    setOverlayColor(color) {
+        if (this.overlay) {
+            this.overlay.style.backgroundColor = color?.css || color;
+        }
+        return this;
+    }
+
+    withOverlayColor(color) {
+        return this.setOverlayColor(color);
+    }
+
+    dismiss(callback) {
+        if (this.overlay && this.overlay.parentNode) {
+            this.overlay.style.transition = 'opacity 0.2s ease';
+            this.overlay.style.opacity = '0';
+            setTimeout(() => {
+                this.overlay.remove();
+                if (callback) callback();
+            }, 200);
+        }
+        return this;
+    }
+
+    show(animated = true) {
+        if (this.overlay) {
+            if (animated) {
+                this.overlay.style.transition = 'opacity 0.2s ease';
+                this.overlay.style.opacity = '0';
+                requestAnimationFrame(() => {
+                    this.overlay.style.opacity = '1';
+                });
+            } else {
+                this.overlay.style.opacity = '1';
+            }
+        }
+        return this;
+    }
 }
 
 export default UIAlertController;

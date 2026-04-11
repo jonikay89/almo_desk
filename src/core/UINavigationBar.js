@@ -138,10 +138,85 @@ class UINavigationBar extends UIView {
     setPrefersLargeTitles(prefersLarge) {
         this.prefersLargeTitles = prefersLarge;
         this.#render(false);
+        return this;
+    }
+
+    setBarTintColor(color) {
+        this.barTintColor = color;
+        if (this.element) {
+            this.element.style.backgroundColor = color?.css || color;
+        }
+        return this;
+    }
+
+    setTitleTextAttributes(attributes) {
+        this.titleTextAttributes = attributes;
+        this.#render(false);
+        return this;
     }
 
     layoutSubviews() {
         super.layoutSubviews();
+        if (this._gradientLayer || this._shapeLayers?.length > 0) {
+            this.#renderLayers();
+        }
+    }
+
+    #renderLayers() {
+        if (!this.element) return;
+        const existingCanvas = this.element.querySelector('.layer-canvas');
+        if (existingCanvas) existingCanvas.remove();
+        if (this._layer?._sublayers?.length === 0) return;
+        const canvas = document.createElement('canvas');
+        canvas.className = 'layer-canvas';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.width = this._bounds.width * 2;
+        canvas.height = this._bounds.height * 2;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        for (const sublayer of this._layer._sublayers) {
+            sublayer.renderToContext(ctx);
+        }
+        this.element.style.position = 'relative';
+        this.element.insertBefore(canvas, this.element.firstChild);
+    }
+
+    withBarTintColor(color) {
+        return this.setBarTintColor(color);
+    }
+
+    withTitleTextAttributes(attributes) {
+        return this.setTitleTextAttributes(attributes);
+    }
+
+    withPrefersLargeTitles(prefersLarge) {
+        return this.setPrefersLargeTitles(prefersLarge);
+    }
+
+    withShadow(color, opacity, offset, radius) {
+        this.setShadow?.(color, opacity, offset, radius);
+        return this;
+    }
+
+    withGradient(colors, locations, startPoint, endPoint) {
+        if (this._layer) {
+            const { CAGradientLayer } = require('./CALayer.js');
+            const gradient = CAGradientLayer.layer();
+            gradient.colors = colors;
+            gradient.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+            if (locations) gradient.locations = locations;
+            if (startPoint) gradient.startPoint = startPoint;
+            if (endPoint) gradient.endPoint = endPoint;
+            gradient.name = 'navGradientLayer';
+            this._layer.addSublayer(gradient);
+            this.#renderLayers();
+        }
+        return this;
     }
 
     encode() {
