@@ -104,3 +104,30 @@ export {
     decode,
     PropertyList
 } from './Foundation.js';
+export {
+    Switch,
+    RangePattern,
+    TuplePattern,
+    TypePattern,
+    ValueBindingPattern
+} from './Switch.js';
+export {
+    PatternMatcher,
+    range,
+    halfOpenRange,
+    Range,
+    HalfOpenRange,
+    registerMatcher,
+    match,
+    casePattern,
+    wildcard,
+    any,
+    isType,
+    asType,
+    valueCase,
+    valueCasePattern,
+    extractValueCase,
+    indirect,
+    matchIndirect,
+    extractIndirect
+} from './PatternMatching.js';
