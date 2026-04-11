@@ -104,6 +104,62 @@ class UIPageControl extends UIView {
         this.#updateDots();
     }
 
+    setNumberOfPages(value) {
+        this.numberOfPages = value;
+        return this;
+    }
+
+    setCurrentPage(value) {
+        this.currentPage = value;
+        return this;
+    }
+
+    setPageIndicatorTintColor(color) {
+        if (color instanceof UIColor) {
+            this.pageIndicatorTintColor = color;
+        } else if (typeof color === 'string') {
+            this.pageIndicatorTintColor = UIColor.colorWithHex(color);
+        }
+        this.#updateDots();
+        return this;
+    }
+
+    setCurrentPageIndicatorTintColor(color) {
+        if (color instanceof UIColor) {
+            this.currentPageIndicatorTintColor = color;
+        } else if (typeof color === 'string') {
+            this.currentPageIndicatorTintColor = UIColor.colorWithHex(color);
+        }
+        this.#updateDots();
+        return this;
+    }
+
+    setEnabled(enabled) {
+        this.enabled = enabled;
+        this.#rebuildDots();
+        return this;
+    }
+
+    withNumberOfPages(value) {
+        return this.setNumberOfPages(value);
+    }
+
+    withCurrentPage(value) {
+        return this.setCurrentPage(value);
+    }
+
+    withPageIndicatorTintColor(color) {
+        return this.setPageIndicatorTintColor(color);
+    }
+
+    withCurrentPageIndicatorTintColor(color) {
+        return this.setCurrentPageIndicatorTintColor(color);
+    }
+
+    withEnabled(enabled) {
+        return this.setEnabled(enabled);
+    }
+
     layoutSubviews() {
         super.layoutSubviews();
         if (this.element) {

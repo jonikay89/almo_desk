@@ -139,6 +139,7 @@ class UITextField extends UIControl {
         if (this.inputElement) {
             this.inputElement.value = text;
         }
+        return this;
     }
 
     setPlaceholder(text) {
@@ -146,10 +147,12 @@ class UITextField extends UIControl {
         if (this.inputElement) {
             this.inputElement.placeholder = text;
         }
+        return this;
     }
 
     setTextColor(color) {
         this.textColor = color;
+        return this;
     }
 
     setFontSize(size) {
@@ -157,11 +160,21 @@ class UITextField extends UIControl {
         if (this.inputElement) {
             this.inputElement.style.fontSize = `${size}px`;
         }
+        return this;
+    }
+
+    setFontFamily(family) {
+        this.fontFamily = family;
+        if (this.inputElement) {
+            this.inputElement.style.fontFamily = family;
+        }
+        return this;
     }
 
     setTextAlignment(alignment) {
         this.textAlignment = alignment;
         this.#updateStyle();
+        return this;
     }
 
     setSecureTextEntry(secure) {
@@ -169,6 +182,7 @@ class UITextField extends UIControl {
         if (this.inputElement) {
             this.inputElement.type = secure ? 'password' : 'text';
         }
+        return this;
     }
 
     setKeyboardType(type) {
@@ -183,15 +197,58 @@ class UITextField extends UIControl {
         if (this.inputElement && !this.isSecureTextEntry) {
             this.inputElement.type = typeMap[type] || 'text';
         }
+        return this;
     }
 
     setBorderStyle(style) {
         this.borderStyle = style;
         this.#applyBorderStyle();
+        return this;
     }
 
     setClearButtonMode(mode) {
         this.clearButtonMode = mode;
+        return this;
+    }
+
+    withText(text) {
+        return this.setText(text);
+    }
+
+    withPlaceholder(text) {
+        return this.setPlaceholder(text);
+    }
+
+    withTextColor(color) {
+        return this.setTextColor(color);
+    }
+
+    withFontSize(size) {
+        return this.setFontSize(size);
+    }
+
+    withFontFamily(family) {
+        return this.setFontFamily(family);
+    }
+
+    withTextAlignment(alignment) {
+        return this.setTextAlignment(alignment);
+    }
+
+    withSecureTextEntry(secure) {
+        return this.setSecureTextEntry(secure);
+    }
+
+    withKeyboardType(type) {
+        return this.setKeyboardType(type);
+    }
+
+    withBorderStyle(style) {
+        return this.setBorderStyle(style);
+    }
+
+    withClearButtonMode(mode) {
+        return this.setClearButtonMode(mode);
     }
 
     becomeFirstResponder() {

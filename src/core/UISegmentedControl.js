@@ -230,7 +230,7 @@ class UISegmentedControl extends UIControl {
     }
 
     setSelectedSegmentIndex(index, animated = false) {
-        if (index < 0 || index >= this.segments.length) return;
+        if (index < 0 || index >= this.segments.length) return this;
         
         if (animated) {
             this.segmentElements.forEach(el => {
@@ -240,32 +240,36 @@ class UISegmentedControl extends UIControl {
 
         this._selectedSegmentIndex = index;
         this.#updateAppearance();
+        return this;
     }
 
     setTitle(title, index) {
-        if (index < 0 || index >= this.segments.length) return;
+        if (index < 0 || index >= this.segments.length) return this;
         this.segments[index].title = title;
         this.segments[index].image = null;
         
         if (this.segmentElements[index]) {
             this.segmentElements[index].textContent = title;
         }
+        return this;
     }
 
     setImage(image, index) {
-        if (index < 0 || index >= this.segments.length) return;
+        if (index < 0 || index >= this.segments.length) return this;
         this.segments[index].image = image;
         this.segments[index].title = '';
         
         if (this.segmentElements[index]) {
             this.segmentElements[index].innerHTML = image;
         }
+        return this;
     }
 
     setEnabled(enabled, index) {
-        if (index < 0 || index >= this.segments.length) return;
+        if (index < 0 || index >= this.segments.length) return this;
         this.segments[index].enabled = enabled;
         this.#updateAppearance();
+        return this;
     }
 
     setTintColor(color) {
@@ -275,6 +279,7 @@ class UISegmentedControl extends UIControl {
             this.tintColor = UIColor.colorWithHex(color);
         }
         this.#updateAppearance();
+        return this;
     }
 
     setSelectedSegmentTintColor(color) {
@@ -286,6 +291,7 @@ class UISegmentedControl extends UIControl {
             this.selectedSegmentTintColor = null;
         }
         this.#updateAppearance();
+        return this;
     }
 
     setApportionsSegmentWidthsByContent(apportions) {
@@ -293,6 +299,35 @@ class UISegmentedControl extends UIControl {
         this.segmentElements.forEach(el => {
             el.style.flex = apportions ? '0 auto' : '1';
         });
+        return this;
+    }
+
+    withSelectedSegmentIndex(index, animated) {
+        return this.setSelectedSegmentIndex(index, animated);
+    }
+
+    withTitle(title, index) {
+        return this.setTitle(title, index);
+    }
+
+    withImage(image, index) {
+        return this.setImage(image, index);
+    }
+
+    withEnabled(enabled, index) {
+        return this.setEnabled(enabled, index);
+    }
+
+    withTintColor(color) {
+        return this.setTintColor(color);
+    }
+
+    withSelectedSegmentTintColor(color) {
+        return this.setSelectedSegmentTintColor(color);
+    }
+
+    withApportionsSegmentWidthsByContent(apportions) {
+        return this.setApportionsSegmentWidthsByContent(apportions);
     }
 
     numberOfSegments() {

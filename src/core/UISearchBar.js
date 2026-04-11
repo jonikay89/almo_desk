@@ -139,6 +139,7 @@ class UISearchBar extends UIView {
             this.inputElement.value = text;
             this.clearButton.style.display = text.length > 0 ? 'block' : 'none';
         }
+        return this;
     }
 
     setPlaceholder(placeholder) {
@@ -146,6 +147,7 @@ class UISearchBar extends UIView {
         if (this.inputElement) {
             this.inputElement.placeholder = placeholder;
         }
+        return this;
     }
 
     setShowsCancelButton(show, animated = true) {
@@ -154,18 +156,46 @@ class UISearchBar extends UIView {
             this.cancelButton.style.transition = 'display 0.2s ease';
         }
         this.cancelButton.style.display = show && this._isFirstResponder ? 'block' : 'none';
+        return this;
     }
 
     setShowsScopeBar(show) {
         this.showsScopeBar = show;
+        return this;
     }
 
     setScopeButtonTitles(titles) {
         this.scopeButtonTitles = titles;
+        return this;
     }
 
     setSelectedScopeButtonIndex(index) {
         this.selectedScopeButtonIndex = index;
+        return this;
+    }
+
+    withText(text) {
+        return this.setText(text);
+    }
+
+    withPlaceholder(placeholder) {
+        return this.setPlaceholder(placeholder);
+    }
+
+    withShowsCancelButton(show, animated) {
+        return this.setShowsCancelButton(show, animated);
+    }
+
+    withShowsScopeBar(show) {
+        return this.setShowsScopeBar(show);
+    }
+
+    withScopeButtonTitles(titles) {
+        return this.setScopeButtonTitles(titles);
+    }
+
+    withSelectedScopeButtonIndex(index) {
+        return this.setSelectedScopeButtonIndex(index);
     }
 
     becomeFirstResponder() {

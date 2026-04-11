@@ -178,28 +178,35 @@ class UISlider extends UIControl {
     setValue(value, animated = false) {
         const clampedValue = Math.max(this._minimumValue, Math.min(this._maximumValue, value));
         
-        if (animated) {
-            this.minimumTrackElement.style.transition = 'width 0.2s ease';
-            this.thumbElement.style.transition = 'left 0.2s ease';
-        } else {
-            this.minimumTrackElement.style.transition = 'none';
-            this.thumbElement.style.transition = 'none';
+        if (this.minimumTrackElement && this.thumbElement) {
+            if (animated) {
+                this.minimumTrackElement.style.transition = 'width 0.2s ease';
+                this.thumbElement.style.transition = 'left 0.2s ease';
+            } else {
+                this.minimumTrackElement.style.transition = 'none';
+                this.thumbElement.style.transition = 'none';
+            }
         }
 
         this._value = clampedValue;
-        this.#updateAppearance();
+        if (this.minimumTrackElement && this.thumbElement) {
+            this.#updateAppearance();
+        }
+        return this;
     }
 
     setMinimumValue(min) {
         this._minimumValue = min;
         if (this._value < min) this._value = min;
         this.#updateAppearance();
+        return this;
     }
 
     setMaximumValue(max) {
         this._maximumValue = max;
         if (this._value > max) this._value = max;
         this.#updateAppearance();
+        return this;
     }
 
     setMinimumTrackTintColor(color) {
@@ -211,6 +218,7 @@ class UISlider extends UIControl {
         if (this.minimumTrackElement) {
             this.minimumTrackElement.style.backgroundColor = this.minimumTrackTintColor.css;
         }
+        return this;
     }
 
     setMaximumTrackTintColor(color) {
@@ -222,6 +230,7 @@ class UISlider extends UIControl {
         if (this.trackElement) {
             this.trackElement.style.backgroundColor = this.maximumTrackTintColor.css;
         }
+        return this;
     }
 
     setThumbTintColor(color) {
@@ -233,6 +242,40 @@ class UISlider extends UIControl {
         if (this.thumbElement) {
             this.thumbElement.style.backgroundColor = this.thumbTintColor.css;
         }
+        return this;
+    }
+
+    setContinuous(continuous) {
+        this.isContinuous = continuous;
+        return this;
+    }
+
+    withValue(value, animated) {
+        return this.setValue(value, animated);
+    }
+
+    withMinimumValue(min) {
+        return this.setMinimumValue(min);
+    }
+
+    withMaximumValue(max) {
+        return this.setMaximumValue(max);
+    }
+
+    withMinimumTrackTintColor(color) {
+        return this.setMinimumTrackTintColor(color);
+    }
+
+    withMaximumTrackTintColor(color) {
+        return this.setMaximumTrackTintColor(color);
+    }
+
+    withThumbTintColor(color) {
+        return this.setThumbTintColor(color);
+    }
+
+    withContinuous(continuous) {
+        return this.setContinuous(continuous);
     }
 
     layoutSubviews() {

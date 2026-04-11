@@ -170,18 +170,38 @@ class UIStackView extends UIView {
 
     setAxis(axis) {
         this.axis = axis;
+        return this;
     }
 
     setDistribution(dist) {
         this.distribution = dist;
+        return this;
     }
 
     setAlignment(align) {
         this.alignment = align;
+        return this;
     }
 
     setSpacing(spacing) {
         this.spacing = spacing;
+        return this;
+    }
+
+    withAxis(axis) {
+        return this.setAxis(axis);
+    }
+
+    withDistribution(dist) {
+        return this.setDistribution(dist);
+    }
+
+    withAlignment(align) {
+        return this.setAlignment(align);
+    }
+
+    withSpacing(spacing) {
+        return this.setSpacing(spacing);
     }
 
     layoutSubviews() {

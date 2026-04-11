@@ -280,28 +280,58 @@ class UIDatePicker extends UIControl {
             this.#updateDisplay();
             this.sendAction('valueChanged', 'change');
         }
+        return this;
     }
 
     setMinimumDate(date) {
         this._minimumDate = date instanceof Date ? date : null;
+        return this;
     }
 
     setMaximumDate(date) {
         this._maximumDate = date instanceof Date ? date : null;
+        return this;
     }
 
     setDatePickerMode(mode) {
         this.datePickerMode = mode;
         this.#createWheelsView();
+        return this;
     }
 
     setPreferredDatePickerStyle(style) {
         this.preferredDatePickerStyle = style;
         this.#createWheelsView();
+        return this;
     }
 
     setMinuteInterval(interval) {
         this.minuteInterval = Math.max(1, Math.min(60, interval));
+        return this;
+    }
+
+    withDate(date) {
+        return this.setDate(date);
+    }
+
+    withMinimumDate(date) {
+        return this.setMinimumDate(date);
+    }
+
+    withMaximumDate(date) {
+        return this.setMaximumDate(date);
+    }
+
+    withDatePickerMode(mode) {
+        return this.setDatePickerMode(mode);
+    }
+
+    withPreferredDatePickerStyle(style) {
+        return this.setPreferredDatePickerStyle(style);
+    }
+
+    withMinuteInterval(interval) {
+        return this.setMinuteInterval(interval);
     }
 
     layoutSubviews() {

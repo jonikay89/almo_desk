@@ -63,13 +63,15 @@ class UIProgressView extends UIView {
     setProgress(value, animated = false) {
         this._progress = Math.max(0, Math.min(1, value));
         
-        if (animated) {
-            this.progressElement.style.transition = 'width 0.3s ease';
-        } else {
-            this.progressElement.style.transition = 'none';
+        if (this.progressElement) {
+            if (animated) {
+                this.progressElement.style.transition = 'width 0.3s ease';
+            } else {
+                this.progressElement.style.transition = 'none';
+            }
+            this.#updateProgress();
         }
-        
-        this.#updateProgress();
+        return this;
     }
 
     setProgressTintColor(color) {
@@ -81,6 +83,7 @@ class UIProgressView extends UIView {
         if (this.progressElement) {
             this.progressElement.style.backgroundColor = this.progressTintColor.css;
         }
+        return this;
     }
 
     setTrackTintColor(color) {
@@ -92,6 +95,19 @@ class UIProgressView extends UIView {
         if (this.element) {
             this.element.style.backgroundColor = this.trackTintColor.css;
         }
+        return this;
+    }
+
+    withProgress(value, animated) {
+        return this.setProgress(value, animated);
+    }
+
+    withProgressTintColor(color) {
+        return this.setProgressTintColor(color);
+    }
+
+    withTrackTintColor(color) {
+        return this.setTrackTintColor(color);
     }
 
     layoutSubviews() {

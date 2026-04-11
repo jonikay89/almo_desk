@@ -1,3 +1,6 @@
+import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+
 class SwiftSet extends Set {
     constructor(iterable = []) {
         if (iterable instanceof SwiftSet) {
@@ -262,6 +265,51 @@ class SwiftSet extends Set {
 
     get description() {
         return this.toString();
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        if (typeof predicate === 'object' && predicate !== null) {
+            return Switch(predicate)
+                .case({ count: Switch.let('n') }, (m) => this.size === m.n)
+                .case({ isEmpty: true }, () => this.size === 0)
+                .case({ isEmpty: false }, () => this.size > 0)
+                .case({ contains: Switch.let('item') }, (m) => this.has(m.item))
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
     }
 }
 

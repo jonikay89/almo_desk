@@ -56,26 +56,31 @@ class UIButton extends UIControl {
         if (this.titleElement) {
             this.titleElement.textContent = title;
         }
+        return this;
     }
 
     setTitleColor(color) {
         this.titleColor = color;
         this.#updateAppearance();
+        return this;
     }
 
     setHighlightedTitleColor(color) {
         this.highlightedTitleColor = color;
         this.#updateAppearance();
+        return this;
     }
 
     setSelectedTitleColor(color) {
         this.selectedTitleColor = color;
         this.#updateAppearance();
+        return this;
     }
 
     setBackgroundColor(color) {
         this.backgroundColor = color;
         this.#updateAppearance();
+        return this;
     }
 
     setBorder(color, width = 1, radius = 4) {
@@ -86,6 +91,63 @@ class UIButton extends UIControl {
             this.element.style.border = `${width}px solid ${color}`;
             this.element.style.borderRadius = `${radius}px`;
         }
+        return this;
+    }
+
+    withTitle(title) {
+        return this.setTitle(title);
+    }
+
+    withTitleColor(color) {
+        return this.setTitleColor(color);
+    }
+
+    withHighlightedTitleColor(color) {
+        return this.setHighlightedTitleColor(color);
+    }
+
+    withSelectedTitleColor(color) {
+        return this.setSelectedTitleColor(color);
+    }
+
+    withBackgroundColor(color) {
+        return this.setBackgroundColor(color);
+    }
+
+    withBorder(color, width, radius) {
+        return this.setBorder(color, width, radius);
+    }
+
+    withFontSize(size) {
+        this.fontSize = size;
+        if (this.element) {
+            this.element.style.fontSize = `${size}px`;
+        }
+        return this;
+    }
+
+    withFontFamily(family) {
+        this.fontFamily = family;
+        if (this.element) {
+            this.element.style.fontFamily = family;
+        }
+        return this;
+    }
+
+    withFontWeight(weight) {
+        this.fontWeight = weight;
+        if (this.element) {
+            this.element.style.fontWeight = weight;
+        }
+        return this;
+    }
+
+    withCornerRadius(radius) {
+        this.borderRadius = radius;
+        if (this.element) {
+            this.element.style.borderRadius = `${radius}px`;
+        }
+        return this;
     }
 
     #updateAppearance() {

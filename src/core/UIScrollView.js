@@ -190,6 +190,70 @@ class UIScrollView extends UIView {
         return Result.success(true);
     }
 
+    setShowsHorizontalScrollIndicator(show) {
+        this.showsHorizontalScrollIndicator = show;
+        return this;
+    }
+
+    setShowsVerticalScrollIndicator(show) {
+        this.showsVerticalScrollIndicator = show;
+        return this;
+    }
+
+    setBounces(bounces) {
+        this.bounces = bounces;
+        return this;
+    }
+
+    setAlwaysBounceHorizontal(alwaysBounce) {
+        this.alwaysBounceHorizontal = alwaysBounce;
+        return this;
+    }
+
+    setAlwaysBounceVertical(alwaysBounce) {
+        this.alwaysBounceVertical = alwaysBounce;
+        return this;
+    }
+
+    setContentInset(inset) {
+        this.contentInset = inset;
+        return this;
+    }
+
+    withContentOffset(x, y) {
+        this.contentOffset = { x, y };
+        return this;
+    }
+
+    withContentSize(width, height) {
+        this.contentSize = { width, height };
+        return this;
+    }
+
+    withShowsHorizontalScrollIndicator(show) {
+        return this.setShowsHorizontalScrollIndicator(show);
+    }
+
+    withShowsVerticalScrollIndicator(show) {
+        return this.setShowsVerticalScrollIndicator(show);
+    }
+
+    withBounces(bounces) {
+        return this.setBounces(bounces);
+    }
+
+    withAlwaysBounceHorizontal(alwaysBounce) {
+        return this.setAlwaysBounceHorizontal(alwaysBounce);
+    }
+
+    withAlwaysBounceVertical(alwaysBounce) {
+        return this.setAlwaysBounceVertical(alwaysBounce);
+    }
+
+    withContentInset(inset) {
+        return this.setContentInset(inset);
+    }
+
     scrollRectToVisible(rect, animated = false) {
         if (animated) {
             this.element.style.transition = 'scroll-behavior 0.2s ease';

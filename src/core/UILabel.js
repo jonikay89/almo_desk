@@ -139,43 +139,105 @@ class UILabel extends UIView {
     setText(text) {
         this.text = text;
         this.#updateText();
+        return this;
     }
 
     setTextColor(color) {
         this.textColor = color;
+        return this;
     }
 
     setFontSize(size) {
         this.fontSize = size;
+        return this;
     }
 
     setFontFamily(family) {
         this.fontFamily = family;
         this.#updateStyle();
+        return this;
     }
 
     setFontWeight(weight) {
         this.fontWeight = weight;
         this.#updateStyle();
+        return this;
     }
 
     setTextAlignment(alignment) {
         this.textAlignment = alignment;
+        return this;
     }
 
     setNumberOfLines(lines) {
         this.numberOfLines = lines;
         this.#updateStyle();
+        return this;
     }
 
     setLineBreakMode(mode) {
         this.lineBreakMode = mode;
         this.#updateStyle();
+        return this;
     }
 
     setEnabled(enabled) {
         this.isEnabled = enabled;
         this.#updateStyle();
+        return this;
+    }
+
+    withText(text) {
+        return this.setText(text);
+    }
+
+    withTextColor(color) {
+        return this.setTextColor(color);
+    }
+
+    withFontSize(size) {
+        return this.setFontSize(size);
+    }
+
+    withFontFamily(family) {
+        return this.setFontFamily(family);
+    }
+
+    withFontWeight(weight) {
+        return this.setFontWeight(weight);
+    }
+
+    withTextAlignment(alignment) {
+        return this.setTextAlignment(alignment);
+    }
+
+    withNumberOfLines(lines) {
+        return this.setNumberOfLines(lines);
+    }
+
+    withLineBreakMode(mode) {
+        return this.setLineBreakMode(mode);
+    }
+
+    withEnabled(enabled) {
+        return this.setEnabled(enabled);
+    }
+
+    withShadowColor(color) {
+        this._shadowColor = color;
+        this.#updateStyle();
+        return this;
+    }
+
+    withShadowOffset(offset) {
+        this._shadowOffset = offset;
+        this.#updateStyle();
+        return this;
+    }
+
+    withLineHeight(height) {
+        this.lineHeight = height;
+        return this;
     }
 
     sizeToFit() {

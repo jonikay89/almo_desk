@@ -79,6 +79,7 @@
                 yOffset = this.addSection('Collections', [this.createCollectionDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('Regex & Predicate', [this.createRegexPredicateDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('Async & Locking', [this.createAsyncLockingDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('Swift-like Chainable', [this.createChainableDemos()], yOffset, padding, contentWidth);
 
                 this.scrollView.setContentSize(contentWidth, yOffset + 40);
             }
@@ -1499,6 +1500,87 @@
                 rwLockLabel.fontSize = 14;
                 rwLockLabel.textColor = UIColor.black();
                 container.addSubview(rwLockLabel);
+
+                return container;
+            }
+
+            createChainableDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 320 };
+
+                const chainedLabel = new UILabel('Chained Label')
+                    .withFontSize(16)
+                    .withFontWeight('bold')
+                    .withTextColor(UIColor.systemBlue())
+                    .withTextAlignment('center')
+                    .withNumberOfLines(1);
+                chainedLabel.init();
+                chainedLabel.frame = { x: 0, y: 0, width: 280, height: 30 };
+                container.addSubview(chainedLabel);
+
+                const chainedButton = new UIButton('Chained Button')
+                    .withBackgroundColor(UIColor.systemBlue())
+                    .withTitleColor(UIColor.white())
+                    .withCornerRadius(8)
+                    .withBorder(UIColor.systemBlue(), 1, 8);
+                chainedButton.init();
+                chainedButton.frame = { x: 0, y: 40, width: 150, height: 44 };
+                container.addSubview(chainedButton);
+
+                const chainedTextField = new UITextField('Chained TextField')
+                    .withPlaceholder('Enter text...')
+                    .withTextColor(UIColor.black())
+                    .withFontSize(14)
+                    .withTextAlignment('center')
+                    .withBorderStyle('rounded');
+                chainedTextField.init();
+                chainedTextField.frame = { x: 0, y: 94, width: 260, height: 36 };
+                container.addSubview(chainedTextField);
+
+                const chainedSlider = new UISlider()
+                    .withValue(0.5)
+                    .withMinimumTrackTintColor(UIColor.systemBlue())
+                    .withMaximumTrackTintColor(UIColor.lightGray())
+                    .withThumbTintColor(UIColor.white());
+                chainedSlider.init();
+                chainedSlider.frame = { x: 0, y: 140, width: 260, height: 30 };
+                container.addSubview(chainedSlider);
+
+                const chainedSwitch = new UISwitch()
+                    .withOn(false)
+                    .withOnTintColor(UIColor.systemGreen())
+                    .withThumbTintColor(UIColor.white());
+                chainedSwitch.init();
+                chainedSwitch.frame = { x: 0, y: 180, width: 50, height: 30 };
+                container.addSubview(chainedSwitch);
+
+                const chainedStepper = new UIStepper()
+                    .withMinimumValue(0)
+                    .withMaximumValue(100)
+                    .withStepValue(1)
+                    .withValue(50)
+                    .withTintColor(UIColor.systemBlue());
+                chainedStepper.init();
+                chainedStepper.frame = { x: 0, y: 220, width: 120, height: 36 };
+                container.addSubview(chainedStepper);
+
+                const chainedProgress = new UIProgressView()
+                    .withProgress(0.6)
+                    .withProgressTintColor(UIColor.systemBlue())
+                    .withTrackTintColor(UIColor.lightGray());
+                chainedProgress.init();
+                chainedProgress.frame = { x: 0, y: 266, width: 200, height: 10 };
+                container.addSubview(chainedProgress);
+
+                const chainedStack = new UIStackView()
+                    .withAxis('horizontal')
+                    .withDistribution('fillEqually')
+                    .withSpacing(8)
+                    .withAlignment('center');
+                chainedStack.init();
+                chainedStack.frame = { x: 0, y: 286, width: 200, height: 34 };
+                container.addSubview(chainedStack);
 
                 return container;
             }

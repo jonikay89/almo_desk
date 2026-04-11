@@ -93,8 +93,11 @@ class UIActivityIndicatorView extends UIView {
             const size = sizes[style] || 24;
             this.element.style.width = `${size}px`;
             this.element.style.height = `${size}px`;
-            this.spinnerElement.style.borderWidth = `${size / 6}px`;
+            if (this.spinnerElement) {
+                this.spinnerElement.style.borderWidth = `${size / 6}px`;
+            }
         }
+        return this;
     }
 
     setColor(color) {
@@ -106,6 +109,7 @@ class UIActivityIndicatorView extends UIView {
         if (this.spinnerElement) {
             this.spinnerElement.style.borderTopColor = this.color.css;
         }
+        return this;
     }
 
     setHidesWhenStopped(hides) {
@@ -113,6 +117,19 @@ class UIActivityIndicatorView extends UIView {
         if (!this._isAnimating && hides && this.element) {
             this.element.style.display = 'none';
         }
+        return this;
+    }
+
+    withStyle(style) {
+        return this.setStyle(style);
+    }
+
+    withColor(color) {
+        return this.setColor(color);
+    }
+
+    withHidesWhenStopped(hides) {
+        return this.setHidesWhenStopped(hides);
     }
 
     layoutSubviews() {

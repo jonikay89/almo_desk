@@ -360,6 +360,34 @@ class UIImageView extends UIView {
         this._animationRepeatCount = count;
         return this;
     }
+
+    withImage(url) {
+        return this.setImage(url);
+    }
+
+    withHighlightedImage(url) {
+        return this.setHighlightedImage(url);
+    }
+
+    withContentMode(mode) {
+        return this.setContentMode(mode);
+    }
+
+    withAnimationImages(images) {
+        return this.setAnimationImages(images);
+    }
+
+    withAnimationDuration(duration) {
+        return this.setAnimationDuration(duration);
+    }
+
+    withAnimationRepeatCount(count) {
+        return this.setAnimationRepeatCount(count);
+    }
+
+    withTintColor(color) {
+        return this.tintColor(color);
+    }
 }
 
 export default UIImageView;

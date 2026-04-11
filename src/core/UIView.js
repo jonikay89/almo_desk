@@ -207,6 +207,95 @@ class UIView extends UIResponder {
 
     setFrame(x, y, width, height) {
         this.frame = { x, y, width, height };
+        return this;
+    }
+
+    setBackgroundColor(color) {
+        this.backgroundColor = color;
+        return this;
+    }
+
+    setAlpha(alpha) {
+        this.alpha = alpha;
+        return this;
+    }
+
+    setHidden(hidden) {
+        this.hidden = hidden;
+        return this;
+    }
+
+    setCornerRadius(radius) {
+        this.cornerRadius = radius;
+        return this;
+    }
+
+    setBorderColor(color) {
+        this.borderColor = color;
+        return this;
+    }
+
+    setBorderWidth(width) {
+        this.borderWidth = width;
+        return this;
+    }
+
+    setClipsToBounds(clips) {
+        this.clipsToBounds = clips;
+        return this;
+    }
+
+    setTag(tag) {
+        this.tag = tag;
+        return this;
+    }
+
+    setZIndex(zIndex) {
+        this.zIndex = zIndex;
+        if (this.element) {
+            this.element.style.zIndex = zIndex;
+        }
+        return this;
+    }
+
+    withFrame(x, y, width, height) {
+        return this.setFrame(x, y, width, height);
+    }
+
+    withBackgroundColor(color) {
+        return this.setBackgroundColor(color);
+    }
+
+    withAlpha(alpha) {
+        return this.setAlpha(alpha);
+    }
+
+    withHidden(hidden) {
+        return this.setHidden(hidden);
+    }
+
+    withCornerRadius(radius) {
+        return this.setCornerRadius(radius);
+    }
+
+    withBorderColor(color) {
+        return this.setBorderColor(color);
+    }
+
+    withBorderWidth(width) {
+        return this.setBorderWidth(width);
+    }
+
+    withClipsToBounds(clips) {
+        return this.setClipsToBounds(clips);
+    }
+
+    withTag(tag) {
+        return this.setTag(tag);
+    }
+
+    withZIndex(zIndex) {
+        return this.setZIndex(zIndex);
     }
 
     addSubview(view) {

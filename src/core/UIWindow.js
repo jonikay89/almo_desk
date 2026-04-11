@@ -45,6 +45,7 @@ class UIWindow extends UIView {
             viewController.viewWillAppear();
             viewController.viewDidAppear();
         }
+        return this;
     }
 
     makeKeyWindow() {
@@ -52,14 +53,17 @@ class UIWindow extends UIView {
         if (this.element) {
             this.element.style.zIndex = 9999;
         }
+        return this;
     }
 
     resignKeyWindow() {
         this.isKeyWindow = false;
+        return this;
     }
 
     becomeKeyWindow() {
         this.isKeyWindow = true;
+        return this;
     }
 
     setWindowLevel(level) {
@@ -67,11 +71,25 @@ class UIWindow extends UIView {
         if (this.element) {
             this.element.style.zIndex = level;
         }
+        return this;
     }
 
     setHidden(hidden) {
         this.isVisible = !hidden;
         super.setHidden(hidden);
+        return this;
+    }
+
+    withRootViewController(viewController) {
+        return this.setRootViewController(viewController);
+    }
+
+    withWindowLevel(level) {
+        return this.setWindowLevel(level);
+    }
+
+    withHidden(hidden) {
+        return this.setHidden(hidden);
     }
 
     layoutSubviews() {

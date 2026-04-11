@@ -139,25 +139,30 @@ class UITextView extends UIScrollView {
         if (this.textElement) {
             this.textElement.value = text;
         }
+        return this;
     }
 
     setTextColor(color) {
         this.textColor = color;
+        return this;
     }
 
     setFontSize(size) {
         this.fontSize = size;
         this.#updateStyle();
+        return this;
     }
 
     setFontFamily(family) {
         this.fontFamily = family;
         this.#updateStyle();
+        return this;
     }
 
     setTextAlignment(alignment) {
         this.textAlignment = alignment;
         this.#updateStyle();
+        return this;
     }
 
     setEditable(editable) {
@@ -166,6 +171,7 @@ class UITextView extends UIScrollView {
             this.textElement.readOnly = !editable;
             this.textElement.style.cursor = editable ? 'text' : 'default';
         }
+        return this;
     }
 
     setScrollEnabled(enabled) {
@@ -173,6 +179,35 @@ class UITextView extends UIScrollView {
         if (this.textElement) {
             this.textElement.style.overflow = enabled ? 'auto' : 'hidden';
         }
+        return this;
+    }
+
+    withText(text) {
+        return this.setText(text);
+    }
+
+    withTextColor(color) {
+        return this.setTextColor(color);
+    }
+
+    withFontSize(size) {
+        return this.setFontSize(size);
+    }
+
+    withFontFamily(family) {
+        return this.setFontFamily(family);
+    }
+
+    withTextAlignment(alignment) {
+        return this.setTextAlignment(alignment);
+    }
+
+    withEditable(editable) {
+        return this.setEditable(editable);
+    }
+
+    withScrollEnabled(enabled) {
+        return this.setScrollEnabled(enabled);
     }
 
     becomeFirstResponder() {

@@ -86,6 +86,7 @@ class UIControl extends UIView {
             this.element.style.cursor = enabled ? 'pointer' : 'default';
             this.element.style.opacity = enabled ? '1' : '0.5';
         }
+        return this;
     }
 
     setSelected(selected) {
@@ -93,6 +94,7 @@ class UIControl extends UIView {
         if (this.element) {
             this.element.classList.toggle('selected', selected);
         }
+        return this;
     }
 
     setHighlighted(highlighted) {
@@ -100,6 +102,37 @@ class UIControl extends UIView {
         if (this.element) {
             this.element.classList.toggle('highlighted', highlighted);
         }
+        return this;
+    }
+
+    setContentVerticalAlignment(alignment) {
+        this.contentVerticalAlignment = alignment;
+        return this;
+    }
+
+    setContentHorizontalAlignment(alignment) {
+        this.contentHorizontalAlignment = alignment;
+        return this;
+    }
+
+    withEnabled(enabled) {
+        return this.setEnabled(enabled);
+    }
+
+    withSelected(selected) {
+        return this.setSelected(selected);
+    }
+
+    withHighlighted(highlighted) {
+        return this.setHighlighted(highlighted);
+    }
+
+    withContentVerticalAlignment(alignment) {
+        return this.setContentVerticalAlignment(alignment);
+    }
+
+    withContentHorizontalAlignment(alignment) {
+        return this.setContentHorizontalAlignment(alignment);
     }
 
     sendAction(action, eventType) {

@@ -1,5 +1,7 @@
 import NSObject from './NSObject.js';
 import NSArray from './NSArray.js';
+import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
 class NSSet extends NSObject {
     constructor(objects = []) {
@@ -208,6 +210,51 @@ class NSSet extends NSObject {
 
     [Symbol.iterator]() {
         return this._objects[Symbol.iterator]();
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        if (typeof predicate === 'object' && predicate !== null) {
+            return Switch(predicate)
+                .case({ count: Switch.let('n') }, (m) => this.count === m.n)
+                .case({ isEmpty: true }, () => this.count === 0)
+                .case({ isEmpty: false }, () => this.count > 0)
+                .case({ contains: Switch.let('item') }, (m) => this.containsObject(m.item))
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
     }
 }
 

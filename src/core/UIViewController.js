@@ -67,17 +67,20 @@ class UIViewController extends UIResponder {
         const weakRef = controller instanceof WeakRef ? controller : new WeakRef(controller);
         this._childControllers.push(weakRef);
         controller.didMove(this);
+        return this;
     }
 
     removeChild(controller) {
         controller.parentController = null;
         this._childControllers = this._childControllers.filter(ref => ref.target !== controller);
+        return this;
     }
 
     removeFromParent() {
         if (this.parentController) {
             this.removeChild(this);
         }
+        return this;
     }
 
     loadViewIfNeeded() {

@@ -210,6 +210,11 @@ class UIPickerView extends UIView {
                 scrollArea.scrollTop = row * 40;
             }
         }
+        return this;
+    }
+
+    withSelectRow(row, inComponent, animated) {
+        return this.selectRow(row, inComponent, animated);
     }
 
     selectedRowInComponent(component) {

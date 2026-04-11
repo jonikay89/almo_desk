@@ -110,15 +110,20 @@ class UISwitch extends UIControl {
     setOn(on, animated = false) {
         this._isOn = !!on;
         
-        if (animated) {
-            this.trackElement.style.transition = 'background-color 0.2s ease';
-            this.thumbElement.style.transition = 'transform 0.2s ease, background-color 0.2s ease';
-        } else {
-            this.trackElement.style.transition = 'none';
-            this.thumbElement.style.transition = 'none';
+        if (this.trackElement && this.thumbElement) {
+            if (animated) {
+                this.trackElement.style.transition = 'background-color 0.2s ease';
+                this.thumbElement.style.transition = 'transform 0.2s ease, background-color 0.2s ease';
+            } else {
+                this.trackElement.style.transition = 'none';
+                this.thumbElement.style.transition = 'none';
+            }
         }
 
-        this.#updateAppearance();
+        if (this.trackElement && this.thumbElement) {
+            this.#updateAppearance();
+        }
+        return this;
     }
 
     setOnTintColor(color) {
@@ -127,7 +132,10 @@ class UISwitch extends UIControl {
         } else if (typeof color === 'string') {
             this.onTintColor = UIColor.colorWithHex(color);
         }
-        this.#updateAppearance();
+        if (this.trackElement && this.thumbElement) {
+            this.#updateAppearance();
+        }
+        return this;
     }
 
     setThumbTintColor(color) {
@@ -136,7 +144,38 @@ class UISwitch extends UIControl {
         } else if (typeof color === 'string') {
             this.thumbTintColor = UIColor.colorWithHex(color);
         }
-        this.#updateAppearance();
+        if (this.trackElement && this.thumbElement) {
+            this.#updateAppearance();
+        }
+        return this;
+    }
+
+    setTrackOffColor(color) {
+        if (color instanceof UIColor) {
+            this.trackOffColor = color;
+        } else if (typeof color === 'string') {
+            this.trackOffColor = UIColor.colorWithHex(color);
+        }
+        if (this.trackElement && this.thumbElement) {
+            this.#updateAppearance();
+        }
+        return this;
+    }
+
+    withOn(on, animated) {
+        return this.setOn(on, animated);
+    }
+
+    withOnTintColor(color) {
+        return this.setOnTintColor(color);
+    }
+
+    withThumbTintColor(color) {
+        return this.setThumbTintColor(color);
+    }
+
+    withTrackOffColor(color) {
+        return this.setTrackOffColor(color);
     }
 
     layoutSubviews() {

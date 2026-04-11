@@ -237,33 +237,54 @@ class UIStepper extends UIControl {
 
     setValue(value, animated = false) {
         this._value = Math.max(this._minimumValue, Math.min(this._maximumValue, value));
-        this.#updateValueLabel();
-        this.#updateButtonStates();
+        if (this.valueLabel) {
+            this.#updateValueLabel();
+        }
+        if (this.incrementButton) {
+            this.#updateButtonStates();
+        }
+        return this;
     }
 
     setMinimumValue(min) {
         this._minimumValue = min;
         if (this._value < min) this._value = min;
-        this.#updateValueLabel();
-        this.#updateButtonStates();
-        this.element.setAttribute('aria-valuemin', min);
+        if (this.valueLabel) {
+            this.#updateValueLabel();
+        }
+        if (this.incrementButton) {
+            this.#updateButtonStates();
+        }
+        if (this.element) {
+            this.element.setAttribute('aria-valuemin', min);
+        }
+        return this;
     }
 
     setMaximumValue(max) {
         this._maximumValue = max;
         if (this._value > max) this._value = max;
-        this.#updateValueLabel();
-        this.#updateButtonStates();
-        this.element.setAttribute('aria-valuemax', max);
+        if (this.valueLabel) {
+            this.#updateValueLabel();
+        }
+        if (this.incrementButton) {
+            this.#updateButtonStates();
+        }
+        if (this.element) {
+            this.element.setAttribute('aria-valuemax', max);
+        }
+        return this;
     }
 
     setStepValue(step) {
         this._stepValue = step;
+        return this;
     }
 
     setWraps(wraps) {
         this.wraps = wraps;
         this.#updateButtonStates();
+        return this;
     }
 
     setTintColor(color) {
@@ -276,6 +297,31 @@ class UIStepper extends UIControl {
             this.incrementButton.style.color = this.tintColor.css;
             this.decrementButton.style.color = this.tintColor.css;
         }
+        return this;
+    }
+
+    withValue(value) {
+        return this.setValue(value);
+    }
+
+    withMinimumValue(min) {
+        return this.setMinimumValue(min);
+    }
+
+    withMaximumValue(max) {
+        return this.setMaximumValue(max);
+    }
+
+    withStepValue(step) {
+        return this.setStepValue(step);
+    }
+
+    withWraps(wraps) {
+        return this.setWraps(wraps);
+    }
+
+    withTintColor(color) {
+        return this.setTintColor(color);
     }
 
     layoutSubviews() {
