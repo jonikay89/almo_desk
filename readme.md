@@ -1,8 +1,8 @@
-# ALmo Desk
+# Almo Desk
 
 <img src="./logo.png" width="48" height="48" align="left" style="margin-right: 12px;">
 
-**ALmo desk** - a web-based desktop operating system built with vanilla JavaScript that brings Apple's UIKit patterns to the web.
+**Almo desk** - a web-based desktop operating system built with vanilla JavaScript that brings Apple's UIKit patterns to the web.
 
 [![GitHub](https://img.shields.io/badge/GitHub-jonikay89/almo_desk-181717?style=flat-square&logo=github)](https://github.com/jonikay89/almo_desk)
 
@@ -293,7 +293,7 @@ Expected output:
 
 MIT License
 
-Copyright (c) 2024 ALmo Desk
+Copyright (c) 2024 Almo Desk
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
