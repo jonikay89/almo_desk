@@ -1,6 +1,6 @@
 # ALmo Desk
 
-![ALmo Desk](./logo.png)
+<img src="./logo.png" width="48" height="48" align="left" style="margin-right: 12px;">
 
 **ALmo desk** - a web-based desktop operating system built with vanilla JavaScript that brings Apple's UIKit patterns to the web.
 
