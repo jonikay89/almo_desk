@@ -10,6 +10,7 @@ const createElement = (tag, attrs = {}, children = []) => {
     Object.entries(attrs).forEach(([key, value]) => {
         if (key === 'className') el.className = value;
         else if (key === 'style' && typeof value === 'object') Object.assign(el.style, value);
+        else if (key === 'textContent') el.textContent = value;
         else if (key.startsWith('on')) el.addEventListener(key.slice(2).toLowerCase(), value);
         else el.setAttribute(key, value);
     });

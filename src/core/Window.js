@@ -21,9 +21,11 @@ class Window {
         this.element = null;
         this.contentElement = null;
         this.widget = null;
+        this.os = null;
     }
 
     render(os, isActive) {
+        this.os = os;
         this.element = document.createElement('div');
         this.element.className = `window ${isActive ? 'active' : ''}`;
         this.element.setAttribute('data-id', this.id);
@@ -97,7 +99,7 @@ class Window {
         handle.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.element.os.startDrag(this.element, this.id, e, 'resize');
+            this.os.startDrag(this.element, this.id, e, 'resize');
         });
         return handle;
     }

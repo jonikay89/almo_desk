@@ -73,3 +73,12 @@ example:
     <script type="module" src="./src/index.js"></script>
 </body>
 </html>
+
+
+
+
+cd /Users/yonik/proj/web_desk && timeout 5 node server.js &
+sleep 2
+curl -s http://localhost:3000/styles/main.css | head -5
+curl -s http://localhost:3000/src/index.js | head -5
+pkill -f "node server.js" 2>/dev/null
