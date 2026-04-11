@@ -850,12 +850,34 @@ class DesktopOS {
         // Header
         const header = document.createElement('div');
         header.className = 'window-header';
-        header.innerHTML = `
-            <span class="window-title">${escapeHtml(win.title)}</span>
-            <div class="window-controls">
-                <button class="minimize-btn" title="Minimize">−</button>
-                <button class="close-btn" title="Close">✕</button>
-            </div>`;
+        
+        const title = document.createElement('span');
+        title.className = 'window-title';
+        title.textContent = win.title;
+        
+        const controls = document.createElement('div');
+        controls.className = 'window-controls';
+        
+        const minimizeBtn = document.createElement('button');
+        minimizeBtn.className = 'minimize-btn';
+        minimizeBtn.title = 'Minimize';
+        minimizeBtn.textContent = '−';
+        minimizeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            this.minimizeWindow(win.id);
+        });
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-btn';
+        closeBtn.title = 'Close';
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            this.closeWindow(win.id);
+        });
+        
+        controls.append(minimizeBtn, closeBtn);
+        header.append(title, controls);
 
         // Content
         const contentDiv = document.createElement('div');
@@ -872,15 +894,6 @@ class DesktopOS {
         div.append(header, contentDiv, resizeHandle);
 
         // Event listeners
-        header.querySelector('.close-btn').addEventListener('click', e => {
-            e.stopPropagation();
-            this.closeWindow(win.id);
-        });
-        header.querySelector('.minimize-btn').addEventListener('click', e => {
-            e.stopPropagation();
-            this.minimizeWindow(win.id);
-        });
-
         header.addEventListener('mousedown', e => {
             if (e.target.tagName === 'BUTTON') return;
             e.preventDefault();
