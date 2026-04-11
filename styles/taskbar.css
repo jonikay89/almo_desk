@@ -1,0 +1,106 @@
+.taskbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    background: linear-gradient(180deg, #245edb 0%, #0f3a8a 100%);
+    border-top: 1px solid #3c78e0;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    z-index: 1000;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+}
+
+.start-button {
+    background: linear-gradient(180deg, #3c8c40 0%, #1e5e22 100%);
+    border-radius: 6px;
+    padding: 6px 16px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 2px black;
+    margin-right: 16px;
+}
+
+.start-button:hover {
+    background: linear-gradient(180deg, #4ca050 0%, #2a6e2e 100%);
+}
+
+.taskbar-windows {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    overflow-x: auto;
+}
+
+.taskbar-item {
+    background: rgba(0,0,0,0.5);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.taskbar-item.active {
+    background: rgba(255,255,255,0.25);
+    border-left: 3px solid #ffcc00;
+}
+
+.taskbar-item:hover {
+    background: rgba(255,255,255,0.35);
+}
+
+.clock-area {
+    background: rgba(0,0,0,0.6);
+    padding: 6px 14px;
+    border-radius: 8px;
+    color: white;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.start-menu {
+    position: fixed;
+    bottom: 52px;
+    left: 8px;
+    width: 260px;
+    background: rgba(30,30,40,0.98);
+    backdrop-filter: blur(16px);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 20px black;
+    z-index: 1001;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.start-menu-item {
+    padding: 10px;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.1s;
+}
+
+.start-menu-item:hover {
+    background: rgba(100,150,255,0.4);
+}

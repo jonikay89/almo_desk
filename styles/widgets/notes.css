@@ -1,0 +1,25 @@
+.widget-notes {
+    height: 100%;
+}
+
+.notes-textarea {
+    width: 100%;
+    height: 100%;
+    background: #2a2a34;
+    color: #eee;
+    border-radius: 8px;
+    padding: 12px;
+    border: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.notes-textarea:focus {
+    outline: 2px solid rgba(100, 150, 255, 0.5);
+}
+
+.notes-textarea::placeholder {
+    color: #888;
+}

@@ -1,0 +1,32 @@
+.widget-custom-html {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
+.html-editor {
+    width: 100%;
+    height: 120px;
+    background: #1e1e2a;
+    color: #eee;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+}
+
+.html-editor:focus {
+    outline: 2px solid rgba(100, 150, 255, 0.5);
+}
+
+.html-preview {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    overflow: auto;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}

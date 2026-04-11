@@ -1,0 +1,13 @@
+{
+  "name": "web-desktop-os",
+  "version": "3.0.0",
+  "description": "Web Desktop OS - JIT Code Studio",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Static files ready in root directory'"
+  },
+  "keywords": ["desktop", "os", "web", "jit", "code-studio"],
+  "author": "",
+  "license": "MIT"
+}
