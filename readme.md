@@ -1,9 +1,10 @@
-Here's the fixed README.md file with proper GitHub Markdown formatting:
-
-```markdown
 # ALmo Desk
 
+![ALmo Desk](./logo.png)
+
 **ALmo desk** - a web-based desktop operating system built with vanilla JavaScript that brings Apple's UIKit patterns to the web.
+
+[![GitHub](https://img.shields.io/badge/GitHub-jonikay89/almo_desk-181717?style=flat-square&logo=github)](https://github.com/jonikay89/almo_desk)
 
 ## What It Is
 
@@ -290,19 +291,63 @@ Expected output:
 
 ## License
 
-[Your license information here]
+MIT License
+
+Copyright (c) 2024 ALmo Desk
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Contributing
 
-[Your contributing guidelines here]
-```
+Contributions are welcome! Here's how you can help:
 
-The key changes made:
-1. Added proper Markdown headers (`##`, `###`, etc.)
-2. Used backticks for code blocks with language specification
-3. Formatted command blocks with `bash` language tags
-4. Fixed the tree structure with consistent indentation
-5. Added proper table formatting
-6. Added section separators (`---`) for better visual hierarchy
-7. Improved inline code formatting with backticks
-8. Added placeholder sections for License and Contributing (you can fill these in)
+### Ways to Contribute
+
+- Report bugs and suggest features via GitHub Issues
+- Submit pull requests to fix bugs or add new features
+- Improve documentation
+- Share the project with others
+
+### Development Setup
+
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/your-username/almo_desk.git`
+3. Install dependencies: `npm install`
+4. Create a branch: `git checkout -b feature/your-feature-name`
+
+### Pull Request Guidelines
+
+- Follow the existing code style and conventions
+- Include tests for new features or bug fixes
+- Ensure all tests pass: `npm test`
+- Keep commits atomic and well-described
+- Update documentation as needed
+
+### Code of Conduct
+
+- Be respectful and inclusive
+- Provide constructive feedback
+- Focus on what is best for the community
+
+### Reporting Bugs
+
+Before submitting a bug report:
+1. Search existing issues to avoid duplicates
+2. Include a minimal reproducible example
+3. Specify your environment (browser, Node.js version, etc.)
