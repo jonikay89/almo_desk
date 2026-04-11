@@ -251,16 +251,6 @@ const Comparable = Protocol.define('Comparable', {
     methods: ['compare']
 });
 
-const CustomStringConvertible = Protocol.define('CustomStringConvertible', {
-    properties: {
-        description: { get: true }
-    }
-});
-
-const Codable = Protocol.define('Codable', {
-    methods: ['encode', 'decode']
-});
-
 function hashObject(obj) {
     if (obj === null || obj === undefined) return 0;
     if (typeof obj.hash === 'function') return obj.hash();
@@ -317,8 +307,6 @@ export {
     Equatable,
     Hashable,
     Comparable,
-    CustomStringConvertible,
-    Codable,
     hashObject,
     hashString,
     hashNumber,

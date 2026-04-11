@@ -24,8 +24,6 @@ export {
     Equatable,
     Hashable,
     Comparable,
-    CustomStringConvertible,
-    Codable,
     hashObject,
     hashString,
     hashNumber,
@@ -85,3 +83,24 @@ export { default as UITabBar, UITabBarItem } from './UITabBar.js';
 export { default as UISearchBar } from './UISearchBar.js';
 export { default as UIAlertController } from './UIAlertController.js';
 export { default as UIPickerView } from './UIPickerView.js';
+export {
+    CustomStringConvertible,
+    RawRepresentable,
+    createRawRepresentable,
+    ExpressibleByStringLiteral,
+    ExpressibleByNumberLiteral,
+    ExpressibleByBooleanLiteral,
+    ExpressibleByArrayLiteral,
+    ExpressibleByDictionaryLiteral,
+    NSValue,
+    NSNumber,
+    Data,
+    NSURL,
+    Scanner,
+    CodableEncoder,
+    CodableDecoder,
+    Codable,
+    encode,
+    decode,
+    PropertyList
+} from './Foundation.js';
