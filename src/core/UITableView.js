@@ -1,5 +1,6 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
+import { Optional, Result } from './Generics.js';
 
 class UITableView extends UIScrollView {
     constructor(style = 'plain') {
@@ -45,58 +46,74 @@ class UITableView extends UIScrollView {
                 const section = parseInt(row.dataset.section, 10) || 0;
                 
                 if (this.delegate && typeof this.delegate.tableViewDidSelectRowAt === 'function') {
-                    this.delegate.tableViewDidSelectRowAt(this, index, section);
+                    const result = this.delegate.tableViewDidSelectRowAt(this, index, section);
+                    if (result instanceof Result) {
+                        result.isFailure ? console.error(result.error) : null;
+                    }
                 }
             }
         });
     }
 
     reloadData() {
-        if (!this.dataSource) return;
+        if (!this.dataSource) return Result.failure(new Error('No dataSource'));
 
         this.contentElement.innerHTML = '';
 
-        const numberOfSections = this.dataSource.numberOfSectionsInTableView ? 
-            this.dataSource.numberOfSectionsInTableView(this) : 1;
+        const numberOfSections = Optional.of(this.dataSource.numberOfSectionsInTableView)
+            .flatMap(fn => Optional.fromNullable(fn(this)))
+            .getOrElse(1);
 
         let currentY = 0;
+        const results = [];
 
         for (let section = 0; section < numberOfSections; section++) {
             const numberOfRows = this.dataSource.tableView_numberOfRowsInSection(this, section);
 
-            if (this.delegate && typeof this.delegate.tableView_titleForHeaderInSection === 'function') {
-                const headerTitle = this.delegate.tableView_titleForHeaderInSection(this, section);
-                if (headerTitle) {
-                    const header = this.#createSectionHeader(headerTitle);
-                    header.style.top = `${currentY}px`;
-                    this.contentElement.appendChild(header);
-                    currentY += this.sectionHeaderHeight;
-                }
+            const headerTitle = Optional.of(this.delegate?.tableView_titleForHeaderInSection)
+                .flatMap(fn => Optional.fromNullable(fn(this, section)))
+                .getOrElse(null);
+            
+            if (headerTitle) {
+                const header = this.#createSectionHeader(headerTitle);
+                header.style.top = `${currentY}px`;
+                this.contentElement.appendChild(header);
+                currentY += this.sectionHeaderHeight;
             }
 
             for (let row = 0; row < numberOfRows; row++) {
-                const cell = this.dataSource.tableView_cellForRowAt(this, row, section);
-                cell.init();
-                cell.setFrame(0, currentY, this.frame.width, this.rowHeight);
-                cell.element.dataset.index = row;
-                cell.element.dataset.section = section;
-                cell.element.classList.add('ui-tableview-cell');
-                this.contentElement.appendChild(cell.element);
-                currentY += this.rowHeight;
+                const cellResult = Optional.of(this.dataSource?.tableView_cellForRowAt)
+                    .flatMap(fn => Optional.fromNullable(fn(this, row, section)));
+                
+                if (cellResult.isPresent) {
+                    const cell = cellResult.value;
+                    cell.init();
+                    cell.frame = { x: 0, y: currentY, width: this.frame.width, height: this.rowHeight };
+                    cell.element.dataset.index = row;
+                    cell.element.dataset.section = section;
+                    cell.element.classList.add('ui-tableview-cell');
+                    this.contentElement.appendChild(cell.element);
+                    currentY += this.rowHeight;
+                    results.push(Result.success(cell));
+                } else {
+                    results.push(Result.failure(new Error(`Failed to create cell at ${row}, ${section}`)));
+                }
             }
 
-            if (this.delegate && typeof this.delegate.tableView_titleForFooterInSection === 'function') {
-                const footerTitle = this.delegate.tableView_titleForFooterInSection(this, section);
-                if (footerTitle) {
-                    const footer = this.#createSectionFooter(footerTitle);
-                    footer.style.top = `${currentY}px`;
-                    this.contentElement.appendChild(footer);
-                    currentY += this.sectionFooterHeight;
-                }
+            const footerTitle = Optional.of(this.delegate?.tableView_titleForFooterInSection)
+                .flatMap(fn => Optional.fromNullable(fn(this, section)))
+                .getOrElse(null);
+            
+            if (footerTitle) {
+                const footer = this.#createSectionFooter(footerTitle);
+                footer.style.top = `${currentY}px`;
+                this.contentElement.appendChild(footer);
+                currentY += this.sectionFooterHeight;
             }
         }
 
         this.setContentSize(this.frame.width, currentY);
+        return results.every(r => r.isSuccess) ? Result.success(true) : Result.failure(new Error('Some cells failed'));
     }
 
     #createSectionHeader(title) {
@@ -138,10 +155,7 @@ class UITableView extends UIScrollView {
 
     dequeueReusableCellWithIdentifier(identifier) {
         const cached = this.reusableCells?.[identifier];
-        if (cached) {
-            return cached;
-        }
-        return null;
+        return Optional.fromNullable(cached);
     }
 
     selectRowAtIndexPath(index, animated, scrollPosition) {
@@ -152,7 +166,9 @@ class UITableView extends UIScrollView {
             if (scrollPosition === 'middle') {
                 targetCell.scrollIntoView({ block: 'center', behavior: animated ? 'smooth' : 'auto' });
             }
+            return Result.success(targetCell);
         }
+        return Result.failure(new Error('Cell not found'));
     }
 
     deselectRowAtIndexPath(index, animated) {
@@ -160,7 +176,22 @@ class UITableView extends UIScrollView {
         const targetCell = cells[index];
         if (targetCell) {
             targetCell.classList.remove('selected');
+            return Result.success(true);
         }
+        return Result.failure(new Error('Cell not found'));
+    }
+
+    cellForRowAt(index) {
+        const cells = this.contentElement.querySelectorAll('.ui-tableview-cell');
+        return Optional.fromNullable(cells[index]);
+    }
+
+    headerViewForSection(section) {
+        return Optional.empty();
+    }
+
+    footerViewForSection(section) {
+        return Optional.empty();
     }
 
     layoutSubviews() {

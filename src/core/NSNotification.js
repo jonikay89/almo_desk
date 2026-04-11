@@ -1,4 +1,5 @@
 import NSObject from './NSObject.js';
+import { Optional } from './Generics.js';
 
 class NSNotification extends NSObject {
     constructor(name, object = null, userInfo = null) {
@@ -13,11 +14,11 @@ class NSNotification extends NSObject {
     }
 
     get object() {
-        return this._object;
+        return Optional.fromNullable(this._object);
     }
 
     get userInfo() {
-        return this._userInfo;
+        return Optional.fromNullable(this._userInfo);
     }
 
     static notificationWithName(name, object, userInfo) {

@@ -1,5 +1,6 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
+import { Optional, Result } from './Generics.js';
 
 class UICollectionView extends UIScrollView {
     constructor(frame, collectionViewLayout) {
@@ -31,13 +32,14 @@ class UICollectionView extends UIScrollView {
     }
 
     reloadData() {
-        if (!this.dataSource) return;
+        if (!this.dataSource) return Result.failure(new Error('No dataSource'));
 
         this.contentElement.innerHTML = '';
 
         const layout = this.collectionViewLayout;
-        const numberOfItems = this.dataSource.numberOfItemsInCollectionView ? 
-            this.dataSource.numberOfItemsInCollectionView(this) : 0;
+        const numberOfItems = Optional.of(this.dataSource.numberOfItemsInCollectionView)
+            .flatMap(fn => Optional.fromNullable(fn(this)))
+            .getOrElse(0);
 
         let currentX = 0;
         let currentY = 0;
@@ -50,6 +52,7 @@ class UICollectionView extends UIScrollView {
         const sectionInset = layout.sectionInset || { top: 10, right: 10, bottom: 10, left: 10 };
 
         currentX = sectionInset.left;
+        const results = [];
 
         for (let item = 0; item < numberOfItems; item++) {
             if (currentX + itemWidth > maxWidth - sectionInset.right && itemsInRow > 0) {
@@ -58,11 +61,19 @@ class UICollectionView extends UIScrollView {
                 itemsInRow = 0;
             }
 
-            const cell = this.dataSource.collectionView_cellForItemAt(this, item);
-            cell.init();
-            cell.setFrame(currentX, currentY, itemWidth, itemHeight);
-            cell.element.classList.add('ui-collectionview-cell');
-            this.contentElement.appendChild(cell.element);
+            const cellResult = Optional.of(this.dataSource?.collectionView_cellForItemAt)
+                .flatMap(fn => Optional.fromNullable(fn(this, item)));
+
+            if (cellResult.isPresent) {
+                const cell = cellResult.value;
+                cell.init();
+                cell.frame = { x: currentX, y: currentY, width: itemWidth, height: itemHeight };
+                cell.element.classList.add('ui-collectionview-cell');
+                this.contentElement.appendChild(cell.element);
+                results.push(Result.success(cell));
+            } else {
+                results.push(Result.failure(new Error(`Failed to create cell at index ${item}`)));
+            }
 
             currentX += itemWidth + spacing;
             itemsInRow++;
@@ -70,10 +81,16 @@ class UICollectionView extends UIScrollView {
 
         const totalHeight = currentY + itemHeight + sectionInset.bottom;
         this.setContentSize(maxWidth, totalHeight);
+        return results.every(r => r.isSuccess) ? Result.success(true) : Result.failure(new Error('Some cells failed'));
     }
 
     dequeueReusableCellWithReuseIdentifier(identifier, index) {
-        return null;
+        return Optional.empty();
+    }
+
+    cellForItemAt(index) {
+        const cells = this.contentElement.querySelectorAll('.ui-collectionview-cell');
+        return Optional.fromNullable(cells[index]);
     }
 
     selectItemAtIndexPath(index, animated, scrollPosition) {
@@ -81,7 +98,9 @@ class UICollectionView extends UIScrollView {
         const targetCell = cells[index];
         if (targetCell) {
             targetCell.classList.add('selected');
+            return Result.success(targetCell);
         }
+        return Result.failure(new Error('Cell not found'));
     }
 
     deselectItemAtIndexPath(index, animated) {
@@ -89,7 +108,17 @@ class UICollectionView extends UIScrollView {
         const targetCell = cells[index];
         if (targetCell) {
             targetCell.classList.remove('selected');
+            return Result.success(true);
         }
+        return Result.failure(new Error('Cell not found'));
+    }
+
+    supplementaryViewForKind(elementKind, atIndex) {
+        return Optional.empty();
+    }
+
+    indexPathForItemAt(point) {
+        return Optional.empty();
     }
 
     layoutSubviews() {

@@ -32,6 +32,23 @@ export {
     hashArray,
     hashValue
 } from './Protocol.js';
+export {
+    Generic,
+    TypeConstraint,
+    GenericBuilder,
+    createGenericClass,
+    createGenericFunction,
+    Result,
+    Optional,
+    Tuple,
+    Pair,
+    Box,
+    Lazy,
+    Stack,
+    Queue,
+    Deque,
+    PriorityQueue
+} from './Generics.js';
 export { default as UIResponder } from './UIResponder.js';
 export { default as UIViewController } from './UIViewController.js';
 export { default as UIView } from './UIView.js';

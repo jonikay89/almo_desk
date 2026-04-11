@@ -1,3 +1,5 @@
+import { Optional, Result } from './Generics.js';
+
 class NSObject {
     constructor() {
         this._hash = NSObject._nextHash++;
@@ -83,7 +85,7 @@ class NSObject {
             });
         }
         if (!this._keyPaths.has(keyPath)) {
-            this._keyPaths.set(keyPath, this._getValueForKeyPath(keyPath));
+            this._keyPaths.set(keyPath, this._getValueForKeyPath(keyPath).orNull);
         }
     }
 
@@ -101,13 +103,13 @@ class NSObject {
 
     willChangeValue(keyPath) {
         if (this._observers.has(keyPath)) {
-            this._keyPaths.set(keyPath, this._getValueForKeyPath(keyPath));
+            this._keyPaths.set(keyPath, this._getValueForKeyPath(keyPath).orNull);
         }
     }
 
     didChangeValue(keyPath) {
         if (this._observers.has(keyPath)) {
-            const newValue = this._getValueForKeyPath(keyPath);
+            const newValueOpt = this._getValueForKeyPath(keyPath);
             const oldValue = this._keyPaths.get(keyPath);
             const observers = this._observers.get(keyPath);
             
@@ -115,7 +117,7 @@ class NSObject {
                 const change = {
                     object: this,
                     keyPath,
-                    newValue: options.newValue ? newValue : undefined,
+                    newValue: options.newValue ? newValueOpt.orNull : undefined,
                     oldValue: options.oldValue ? oldValue : undefined
                 };
                 
@@ -130,10 +132,10 @@ class NSObject {
 
     _getValueForKeyPath(keyPath) {
         const keys = keyPath.split('.');
-        let value = this;
+        let value = Optional.of(this);
         for (const key of keys) {
-            if (value === null || value === undefined) return undefined;
-            value = value[key];
+            if (value.isEmpty) return Optional.empty();
+            value = Optional.fromNullable(value.value[key]);
         }
         return value;
     }
@@ -141,16 +143,18 @@ class NSObject {
     _setValueForKeyPath(keyPath, value) {
         const keys = keyPath.split('.');
         const lastKey = keys.pop();
-        let target = this;
+        let target = Optional.of(this);
         
         for (const key of keys) {
-            if (target === null || target === undefined) return;
-            target = target[key];
+            if (target.isEmpty) return Result.failure(new Error('Path is nil'));
+            target = Optional.fromNullable(target.value[key]);
         }
         
-        if (target !== null && target !== undefined) {
-            target[lastKey] = value;
+        if (target.isPresent) {
+            target.value[lastKey] = value;
+            return Result.success(target.value);
         }
+        return Result.failure(new Error('Target is nil'));
     }
 
     static keyPathsForValuesAffecting(keyPath) {

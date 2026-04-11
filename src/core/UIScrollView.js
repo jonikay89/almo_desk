@@ -1,4 +1,5 @@
 import UIView from './UIView.js';
+import { Optional, Result } from './Generics.js';
 
 class UIScrollView extends UIView {
     constructor() {
@@ -106,8 +107,11 @@ class UIScrollView extends UIView {
         this.element.addEventListener('scroll', () => {
             this._contentOffset = { x: this.element.scrollLeft, y: this.element.scrollTop };
             
-            if (this.delegate && typeof this.delegate.scrollViewDidScroll === 'function') {
-                this.delegate.scrollViewDidScroll(this);
+            const result = Optional.of(this.delegate?.scrollViewDidScroll)
+                .flatMap(fn => Optional.fromNullable(fn(this)));
+            
+            if (result.isFailure) {
+                console.error(result.error);
             }
         });
         
@@ -143,10 +147,12 @@ class UIScrollView extends UIView {
             this.element.style.transition = 'scroll-behavior 0.2s ease';
         }
         this.contentOffset = { x, y };
+        return Result.success(true);
     }
 
     setContentSize(width, height) {
         this.contentSize = { width, height };
+        return Result.success(true);
     }
 
     scrollRectToVisible(rect, animated = false) {
@@ -156,7 +162,9 @@ class UIScrollView extends UIView {
         if (this.element) {
             this.element.scrollLeft = rect.x;
             this.element.scrollTop = rect.y;
+            return Result.success(true);
         }
+        return Result.failure(new Error('Element not found'));
     }
 
     addSubview(view) {
@@ -167,10 +175,19 @@ class UIScrollView extends UIView {
             this.contentElement.appendChild(view.element);
         }
         view.didMoveToSuperview();
+        return Result.success(view);
     }
 
     removeFromSuperview() {
         super.removeFromSuperview();
+    }
+
+    isDragging() {
+        return Optional.fromNullable(this.element?.classList.contains('dragging')).getOrElse(false);
+    }
+
+    isDecelerating() {
+        return Optional.fromNullable(this.element?.classList.contains('decelerating')).getOrElse(false);
     }
 
     layoutSubviews() {

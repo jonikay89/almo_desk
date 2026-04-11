@@ -1,4 +1,5 @@
 import UIView from './UIView.js';
+import { Optional, Result } from './Generics.js';
 
 class UIControl extends UIView {
     constructor() {
@@ -30,17 +31,32 @@ class UIControl extends UIView {
         if (this.element) {
             const eventHandler = (e) => {
                 if (this.enabled) {
-                    target[action](e);
+                    const result = target[action]?.(e);
+                    if (result instanceof Result) {
+                        result.isSuccess ? this.handleSuccess(result) : this.handleFailure(result);
+                    }
                 }
             };
             this.element.addEventListener(eventType, eventHandler);
         }
+        return this;
     }
 
     removeTarget(target, action, eventType) {
         this.targetActions = this.targetActions.filter(
             ta => !(ta.target === target && ta.action === action && ta.eventType === eventType)
         );
+    }
+
+    allTargets() {
+        return Optional.of(this.targetActions.map(ta => ta.target));
+    }
+
+    actionsForTarget(target, eventType) {
+        const actions = this.targetActions
+            .filter(ta => ta.target === target && (eventType === null || ta.eventType === eventType))
+            .map(ta => ta.action);
+        return Optional.of(actions.length > 0 ? actions : null);
     }
 
     setEnabled(enabled) {
@@ -67,11 +83,29 @@ class UIControl extends UIView {
 
     sendAction(action, eventType) {
         const matchingTargets = this.targetActions.filter(ta => ta.eventType === eventType);
+        const results = [];
+        
         for (const ta of matchingTargets) {
             if (this.enabled) {
-                ta.target[ta.action]({ type: eventType, currentTarget: this });
+                try {
+                    const result = ta.target[ta.action]?.({ type: eventType, currentTarget: this });
+                    results.push(Result.success(result));
+                } catch (error) {
+                    results.push(Result.failure(error));
+                }
             }
         }
+        
+        return results.length > 0 ? results[results.length - 1] : Result.failure(new Error('No action sent'));
+    }
+
+    handleSuccess(result) {
+        return result;
+    }
+
+    handleFailure(result) {
+        console.error('Action failed:', result.error);
+        return result;
     }
 
     layoutSubviews() {
