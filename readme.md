@@ -84,4 +84,4 @@ curl -s http://localhost:3000/src/index.js | head -5
 pkill -f "node server.js" 2>/dev/null
 
 run tests:
-npm test
+npm test 2>&1
