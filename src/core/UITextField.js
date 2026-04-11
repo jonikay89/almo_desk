@@ -1,6 +1,7 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
 import { Scanner, NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UITextField extends UIControl {
     constructor(placeholder = '') {
@@ -237,6 +238,44 @@ class UITextField extends UIControl {
         textField.isSecureTextEntry = data.isSecureTextEntry || false;
         textField.keyboardType = data.keyboardType || 'default';
         return textField;
+    }
+
+    static textPattern(text, pattern) {
+        return Switch(pattern)
+            .case('email', () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text))
+            .case('url', () => /^https?:\/\/.+/.test(text))
+            .case('phone', () => /^[\d\s\-\+\(\)]+$/.test(text))
+            .case('number', () => !isNaN(parseFloat(text)) && isFinite(text))
+            .case('integer', () => /^\-?\d+$/.test(text))
+            .case('alphanumeric', () => /^[a-zA-Z0-9]+$/.test(text))
+            .case('alpha', () => /^[a-zA-Z]+$/.test(text))
+            .case('empty', () => text.length === 0)
+            .case('whitespace', () => /^\s+$/.test(text))
+            .case('lowercase', () => text === text.toLowerCase())
+            .case('uppercase', () => text === text.toUpperCase())
+            .case(Switch.let('prefix'), (m) => text.startsWith(m.prefix))
+            .case(Switch.let('suffix'), (m) => text.endsWith(m.suffix))
+            .case(Switch.let('contains'), (m) => text.includes(m.contains))
+            .case(Switch.let('regex'), (m) => new RegExp(m.regex).test(text))
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchText(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this.text);
+        }
+        return UITextField.textPattern(this.text, predicate);
+    }
+
+    validate(validation) {
+        if (typeof validation === 'string') {
+            return UITextField.textPattern(this.text, validation);
+        }
+        if (typeof validation === 'function') {
+            return validation(this.text);
+        }
+        return false;
     }
 }
 

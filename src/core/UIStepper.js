@@ -1,6 +1,7 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIStepper extends UIControl {
     constructor() {
@@ -302,6 +303,26 @@ class UIStepper extends UIControl {
         stepper._stepValue = data.stepValue || 1;
         stepper.wraps = data.wraps || false;
         return stepper;
+    }
+
+    matchValue(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this._value);
+        }
+        return Switch(predicate)
+            .case({ min: Switch.let('min'), max: Switch.let('max') }, 
+                  (m) => this._value >= m.min && this._value <= m.max)
+            .case({ at: Switch.let('v') }, (m) => this._value === m.v)
+            .case({ above: Switch.let('v') }, (m) => this._value > m.v)
+            .case({ below: Switch.let('v') }, (m) => this._value < m.v)
+            .case({ even: true }, () => this._value % 2 === 0)
+            .case({ odd: true }, () => this._value % 2 !== 0)
+            .case({ zero: true }, () => this._value === 0)
+            .case({ positive: true }, () => this._value > 0)
+            .case({ negative: true }, () => this._value < 0)
+            .case(Switch.let('value'), (m) => this._value === m.value)
+            .default(() => false)
+            .evaluate();
     }
 }
 

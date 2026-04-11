@@ -1,6 +1,7 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIPageControl extends UIView {
     constructor() {
@@ -122,6 +123,24 @@ class UIPageControl extends UIView {
         pc._currentPage = data.currentPage || 0;
         pc._numberOfPages = data.numberOfPages || 0;
         return pc;
+    }
+
+    matchPage(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate({ currentPage: this._currentPage, numberOfPages: this._numberOfPages });
+        }
+        return Switch(predicate)
+            .case({ currentPage: Switch.let('p') }, (m) => this._currentPage === m.p)
+            .case({ numberOfPages: Switch.let('n') }, (m) => this._numberOfPages === m.n)
+            .case({ at: Switch.let('p'), total: Switch.let('n') }, 
+                  (m) => this._currentPage === m.p && this._numberOfPages === m.n)
+            .case({ first: true }, () => this._currentPage === 0)
+            .case({ last: true }, () => this._currentPage === this._numberOfPages - 1)
+            .case({ middle: true }, () => this._currentPage > 0 && this._currentPage < this._numberOfPages - 1)
+            .case({ empty: true }, () => this._numberOfPages === 0)
+            .case({ singlePage: true }, () => this._numberOfPages === 1)
+            .default(() => false)
+            .evaluate();
     }
 }
 

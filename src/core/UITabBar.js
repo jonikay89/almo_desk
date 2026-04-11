@@ -162,6 +162,58 @@ class UITabBar extends UIView {
         }
         return tabBar;
     }
+
+    matchTab(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ itemCount: Switch.let('n') }, (m) => this.items.length === m.n)
+            .case({ hasSelectedItem: true }, () => this.selectedItem !== null)
+            .case({ hasSelectedItem: false }, () => this.selectedItem === null)
+            .case({ selectedIndex: Switch.let('i') }, (m) => {
+                const idx = typeof m.i === 'number' ? m.i : parseInt(m.i);
+                return this.items[idx] === this.selectedItem;
+            })
+            .case({ selectedItem: Switch.let('item') }, (m) => {
+                if (!this.selectedItem) return false;
+                if (typeof m.item === 'string') return this.selectedItem.title === m.item;
+                if (m.item && typeof m.item === 'object') return this.selectedItem.matchItem(m.item);
+                return false;
+            })
+            .case({ itemAt: Switch.let('i'), titled: Switch.let('title') }, (m) => {
+                const idx = typeof m.i === 'number' ? m.i : parseInt(m.i);
+                return this.items[idx] && this.items[idx].title === m.title;
+            })
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchSelection(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        const tabBar = this;
+        return Switch(predicate)
+            .case({ index: Switch.let('i') }, (m) => {
+                const idx = typeof m.i === 'number' ? m.i : parseInt(m.i);
+                return tabBar.items[idx] === tabBar.selectedItem;
+            })
+            .case({ title: Switch.let('t') }, (m) => tabBar.selectedItem?.title === m.t)
+            .case({ tagged: Switch.let('tag') }, (m) => tabBar.selectedItem?.tag === m.tag)
+            .case({ hasBadge: true }, () => tabBar.selectedItem?.badgeValue != null)
+            .case({ hasBadge: false }, () => tabBar.selectedItem?.badgeValue == null)
+            .default(() => false)
+            .evaluate();
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        return this.matchTab(predicate);
+    }
 }
 
 class UITabBarItem {
@@ -216,6 +268,20 @@ class UITabBarItem {
             downloads: { title: 'Downloads', emoji: '⬇️' },
         };
         return new UITabBarItem(items[systemItem]?.title, null, null);
+    }
+
+    matchItem(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ title: Switch.let('t') }, (m) => this.title === m.t)
+            .case({ badge: Switch.let('b') }, (m) => this.badgeValue === m.b)
+            .case({ hasBadge: true }, () => this.badgeValue != null)
+            .case({ hasBadge: false }, () => this.badgeValue == null)
+            .case({ tagged: Switch.let('tag') }, (m) => this.tag === m.tag)
+            .default(() => false)
+            .evaluate();
     }
 }
 

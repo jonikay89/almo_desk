@@ -4,6 +4,7 @@ import UILabel from './UILabel.js';
 import UIButton from './UIButton.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIAlertController extends UIViewController {
     constructor(title, message, preferredStyle = 'alert') {
@@ -262,6 +263,72 @@ class UIAlertController extends UIViewController {
             cfg.placeholder = f.placeholder;
         }));
         return alert;
+    }
+
+    matchAlert(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ title: Switch.let('t') }, (m) => this.title === m.t)
+            .case({ message: Switch.let('msg') }, (m) => this.message === m.msg)
+            .case({ preferredStyle: 'alert' }, () => this.preferredStyle === 'alert')
+            .case({ preferredStyle: 'actionSheet' }, () => this.preferredStyle === 'actionSheet')
+            .case({ hasActions: true }, () => this.actions.length > 0)
+            .case({ hasActions: false }, () => this.actions.length === 0)
+            .case({ actionCount: Switch.let('n') }, (m) => this.actions.length === m.n)
+            .case({ hasTextFields: true }, () => this.textFields.length > 0)
+            .case({ hasTextFields: false }, () => this.textFields.length === 0)
+            .case({ textFieldCount: Switch.let('n') }, (m) => this.textFields.length === m.n)
+            .case({ empty: true }, () => !this.title && !this.message && this.actions.length === 0)
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchAction(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        const self = this;
+        return Switch(predicate)
+            .case({ style: 'default' }, () => self.actions.some(a => a.style === 'default'))
+            .case({ style: 'cancel' }, () => self.actions.some(a => a.style === 'cancel'))
+            .case({ style: 'destructive' }, () => self.actions.some(a => a.style === 'destructive'))
+            .case({ titled: Switch.let('title') }, (m) => self.actions.some(a => a.title === m.title))
+            .case({ atIndex: Switch.let('i'), title: Switch.let('t') }, (m) => {
+                const idx = typeof m.i === 'number' ? m.i : parseInt(m.i);
+                return self.actions[idx] && self.actions[idx].title === m.t;
+            })
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchTextField(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        const self = this;
+        return Switch(predicate)
+            .case({ type: 'text' }, () => self.textFields.some(f => f.type === 'text'))
+            .case({ type: 'number' }, () => self.textFields.some(f => f.type === 'number'))
+            .case({ type: 'email' }, () => self.textFields.some(f => f.type === 'email'))
+            .case({ type: 'password' }, () => self.textFields.some(f => f.type === 'password'))
+            .case({ placeholder: Switch.let('p') }, (m) => self.textFields.some(f => f.placeholder === m.p))
+            .case({ atIndex: Switch.let('i') }, (m) => {
+                const idx = typeof m.i === 'number' ? m.i : parseInt(m.i);
+                return idx >= 0 && idx < self.textFields.length;
+            })
+            .case({ empty: true }, () => self.textFields.length === 0)
+            .default(() => false)
+            .evaluate();
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        return this.matchAlert(predicate);
     }
 }
 

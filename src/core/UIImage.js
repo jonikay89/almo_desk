@@ -1,6 +1,7 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { Data } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIImage extends UIView {
     constructor(imageUrl = '') {
@@ -131,6 +132,30 @@ class UIImage extends UIView {
             image.backgroundColor = UIColor.colorWithHex(data.backgroundColor);
         }
         return image;
+    }
+
+    matchImage(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case('empty', () => !this.imageUrl || this.imageUrl.length === 0)
+            .case('loaded', () => !!this.imageUrl && !!this.imageElement?.src)
+            .case('hasData', () => !!this._imageData)
+            .case({ contentMode: Switch.let('mode') }, (m) => this.contentMode === m.mode)
+            .case({ url: Switch.let('url') }, (m) => this.imageUrl === m.url)
+            .case({ urlContains: Switch.let('str') }, (m) => this.imageUrl?.includes(m.str))
+            .case({ extension: Switch.let('ext') }, (m) => {
+                const ext = this.imageUrl?.split('.').pop()?.toLowerCase();
+                return ext === m.ext?.toLowerCase();
+            })
+            .case({ type: 'png' }, () => this.imageUrl?.endsWith('.png'))
+            .case({ type: 'jpg' }, () => this.imageUrl?.endsWith('.jpg') || this.imageUrl?.endsWith('.jpeg'))
+            .case({ type: 'gif' }, () => this.imageUrl?.endsWith('.gif'))
+            .case({ type: 'svg' }, () => this.imageUrl?.endsWith('.svg'))
+            .case({ type: 'webp' }, () => this.imageUrl?.endsWith('.webp'))
+            .default(() => false)
+            .evaluate();
     }
 }
 

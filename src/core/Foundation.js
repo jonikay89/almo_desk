@@ -1,4 +1,5 @@
 import { hashObject } from './Protocol.js';
+import Switch from './Switch.js';
 
 const CustomStringConvertible = {
     description: {
@@ -148,6 +149,45 @@ class NSNumber extends NSValue {
     toString() {
         return `NSNumber(${this._numberValue})`;
     }
+
+    static of(value) {
+        if (value instanceof NSNumber) return value;
+        return new NSNumber(value);
+    }
+
+    patternMatch(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this._numberValue);
+        }
+        if (typeof predicate === 'number') {
+            return this._numberValue === predicate;
+        }
+        if (typeof predicate === 'object' && predicate !== null) {
+            return Switch(predicate)
+                .case({ even: true }, () => this._numberValue % 2 === 0)
+                .case({ odd: true }, () => this._numberValue % 2 !== 0)
+                .case({ positive: true }, () => this._numberValue > 0)
+                .case({ negative: true }, () => this._numberValue < 0)
+                .case({ zero: true }, () => this._numberValue === 0)
+                .case({ integer: true }, () => Number.isInteger(this._numberValue))
+                .case({ float: true }, () => !Number.isInteger(this._numberValue))
+                .case({ range: Switch.let('r') }, (m) => m.r.contains(this._numberValue))
+                .case(Switch.let('value'), (m) => this._numberValue === m.value)
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
+    }
+
+    match(predicate) {
+        return this.patternMatch(predicate);
+    }
+
+    switch(pattern) {
+        return Switch(this._numberValue)
+            .case(pattern)
+            .evaluate();
+    }
 }
 
 class Data {
@@ -256,6 +296,56 @@ class Data {
 
     toString() {
         return `Data(${this._bytes.length} bytes)`;
+    }
+
+    static empty() {
+        return new Data(new Uint8Array(0));
+    }
+
+    static fromString(str) {
+        return new Data(new TextEncoder().encode(str));
+    }
+
+    static fromArray(arr) {
+        return new Data(new Uint8Array(arr));
+    }
+
+    patternMatch(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        if (typeof predicate === 'object' && predicate !== null) {
+            return Switch(predicate)
+                .case({ empty: true }, () => this._bytes.length === 0)
+                .case({ length: Switch.let('len') }, (m) => this._bytes.length === m.len)
+                .case({ startsWith: Switch.let('prefix') }, (m) => {
+                    const prefix = m.prefix instanceof Data ? m.prefix._bytes : m.prefix;
+                    if (this._bytes.length < prefix.length) return false;
+                    for (let i = 0; i < prefix.length; i++) {
+                        if (this._bytes[i] !== prefix[i]) return false;
+                    }
+                    return true;
+                })
+                .case({ endsWith: Switch.let('suffix') }, (m) => {
+                    const suffix = m.suffix instanceof Data ? m.suffix._bytes : m.suffix;
+                    if (this._bytes.length < suffix.length) return false;
+                    for (let i = 0; i < suffix.length; i++) {
+                        if (this._bytes[this._bytes.length - suffix.length + i] !== suffix[i]) return false;
+                    }
+                    return true;
+                })
+                .case({ contains: Switch.let('data') }, (m) => {
+                    const searchData = m.data instanceof Data ? m.data._bytes : m.data;
+                    return this.rangeOfData(searchData) !== null;
+                })
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
+    }
+
+    match(predicate) {
+        return this.patternMatch(predicate);
     }
 }
 
@@ -374,6 +464,77 @@ class NSURL {
 
     toString() {
         return this._urlString;
+    }
+
+    static fileURLWithPath(path) {
+        if (path.startsWith('file://')) {
+            return new NSURL(path);
+        }
+        return new NSURL(`file://${path}`);
+    }
+
+    static parse(urlString) {
+        try {
+            const url = new globalThis.URL(urlString);
+            return {
+                scheme: url.protocol.replace(':', ''),
+                host: url.hostname,
+                port: url.port,
+                path: url.pathname,
+                query: url.search,
+                fragment: url.hash,
+                username: url.username,
+                password: url.password,
+                isValid: true
+            };
+        } catch (e) {
+            return {
+                scheme: '',
+                host: '',
+                port: '',
+                path: urlString,
+                query: '',
+                fragment: '',
+                username: '',
+                password: '',
+                isValid: false,
+                error: e.message
+            };
+        }
+    }
+
+    patternMatch(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        if (typeof predicate === 'string') {
+            return Switch(predicate)
+                .case('file', () => this._parsed.scheme === 'file')
+                .case('http', () => this._parsed.scheme === 'http')
+                .case('https', () => this._parsed.scheme === 'https')
+                .case('valid', () => this._parsed.isValid)
+                .case('invalid', () => !this._parsed.isValid)
+                .case(Switch.let('scheme'), (m) => this._parsed.scheme === m.scheme)
+                .case(Switch.let('host'), (m) => this._parsed.host === m.host)
+                .default(() => false)
+                .evaluate();
+        }
+        if (typeof predicate === 'object' && predicate !== null) {
+            return Switch(predicate)
+                .case({ scheme: Switch.let('s') }, (m) => this._parsed.scheme === m.s)
+                .case({ host: Switch.let('h') }, (m) => this._parsed.host === m.h)
+                .case({ path: Switch.let('p') }, (m) => this._parsed.path === m.p)
+                .case({ isFileURL: true }, () => this._parsed.scheme === 'file')
+                .case({ isValid: true }, () => this._parsed.isValid)
+                .case({ isValid: false }, () => !this._parsed.isValid)
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
+    }
+
+    match(predicate) {
+        return this.patternMatch(predicate);
     }
 }
 
@@ -525,6 +686,42 @@ class Scanner {
 
     toString() {
         return `Scanner(${this._index}/${this._string.length}) "${this._string.substring(0, 50)}..."`;
+    }
+
+    match(pattern) {
+        if (typeof pattern === 'string') {
+            return this.scanString(pattern) !== null;
+        }
+        if (typeof pattern === 'function') {
+            const savedIndex = this._index;
+            const result = pattern(this);
+            if (result) {
+                return true;
+            }
+            this._index = savedIndex;
+            return false;
+        }
+        if (typeof pattern === 'object' && pattern !== null) {
+            return Switch(pattern)
+                .case({ type: 'int' }, () => this.scanInt() !== null)
+                .case({ type: 'double' }, () => this.scanDouble() !== null)
+                .case({ type: 'hex' }, () => this.scanHexInt() !== null)
+                .case({ type: 'string', value: Switch.let('v') }, (m) => this.scanString(m.v) !== null)
+                .case({ atEnd: true }, () => this.isAtEnd)
+                .case({ notAtEnd: true }, () => !this.isAtEnd)
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
+    }
+
+    expect(pattern) {
+        const savedIndex = this._index;
+        if (this.match(pattern)) {
+            return true;
+        }
+        this._index = savedIndex;
+        return false;
     }
 }
 

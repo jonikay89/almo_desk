@@ -1,6 +1,7 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UISegmentedControl extends UIControl {
     constructor(items = []) {
@@ -120,31 +121,44 @@ class UISegmentedControl extends UIControl {
 
         this.segmentElements.forEach((el, index) => {
             const segment = this.segments[index];
+            const isSelected = index === this._selectedSegmentIndex;
             
-            if (!segment.enabled) {
-                el.style.opacity = '0.5';
-                el.style.cursor = 'default';
-            } else {
-                el.style.opacity = '1';
-                el.style.cursor = 'pointer';
-            }
+            const { opacity, cursor } = Switch({ enabled: segment.enabled })
+                .case({ enabled: false }, () => ({ opacity: '0.5', cursor: 'default' }))
+                .default(() => ({ opacity: '1', cursor: 'pointer' }))
+                .evaluate();
+            el.style.opacity = opacity;
+            el.style.cursor = cursor;
 
-            if (index === this._selectedSegmentIndex) {
-                el.style.backgroundColor = this.selectedSegmentTintColor 
-                    ? this.selectedSegmentTintColor.css 
-                    : this.tintColor.css;
-                el.style.color = '#ffffff';
-                el.style.fontWeight = '600';
-                el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-                el.setAttribute('aria-selected', 'true');
-            } else {
-                el.style.backgroundColor = 'transparent';
-                el.style.color = '#333';
-                el.style.fontWeight = 'normal';
-                el.style.boxShadow = 'none';
-                el.setAttribute('aria-selected', 'false');
-            }
+            const selectedState = Switch({ isSelected, enabled: segment.enabled })
+                .case({ isSelected: true, enabled: true }, () => ({
+                    backgroundColor: this.selectedSegmentTintColor?.css || this.tintColor.css,
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    ariaSelected: 'true'
+                }))
+                .case({ isSelected: false, enabled: true }, () => ({
+                    backgroundColor: 'transparent',
+                    color: '#333',
+                    fontWeight: 'normal',
+                    boxShadow: 'none',
+                    ariaSelected: 'false'
+                }))
+                .default(() => ({
+                    backgroundColor: 'transparent',
+                    color: '#333',
+                    fontWeight: 'normal',
+                    boxShadow: 'none',
+                    ariaSelected: 'false'
+                }))
+                .evaluate();
 
+            el.style.backgroundColor = selectedState.backgroundColor;
+            el.style.color = selectedState.color;
+            el.style.fontWeight = selectedState.fontWeight;
+            el.style.boxShadow = selectedState.boxShadow;
+            el.setAttribute('aria-selected', selectedState.ariaSelected);
             el.setAttribute('tabindex', segment.enabled ? '0' : '-1');
         });
     }

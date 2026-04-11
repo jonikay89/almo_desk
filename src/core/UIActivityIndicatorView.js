@@ -1,6 +1,7 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIActivityIndicatorView extends UIView {
     constructor() {
@@ -129,6 +130,20 @@ class UIActivityIndicatorView extends UIView {
         indicator.style = data.style || 'medium';
         indicator.hidesWhenStopped = data.hidesWhenStopped !== false;
         return indicator;
+    }
+
+    matchState(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this._isAnimating);
+        }
+        return Switch(predicate)
+            .case('animating', () => this._isAnimating === true)
+            .case('stopped', () => this._isAnimating === false)
+            .case('hidden', () => this._isAnimating === false && this.hidesWhenStopped)
+            .case(true, () => this._isAnimating === true)
+            .case(false, () => this._isAnimating === false)
+            .default(() => false)
+            .evaluate();
     }
 }
 

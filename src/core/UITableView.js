@@ -3,6 +3,7 @@ import UIColor from './UIColor.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UITableView extends UIScrollView {
     constructor(style = 'plain') {
@@ -290,6 +291,50 @@ class UITableView extends UIScrollView {
         tableView.allowsMultipleSelection = data.allowsMultipleSelection || false;
         tableView.editing = data.editing || false;
         return tableView;
+    }
+
+    matchSelection(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ style: Switch.let('s') }, (m) => this.style === m.s)
+            .case({ editing: true }, () => this.editing === true)
+            .case({ editing: false }, () => this.editing === false)
+            .case({ allowsSelection: true }, () => this.allowsSelection === true)
+            .case({ allowsSelection: false }, () => this.allowsSelection === false)
+            .case({ allowsMultipleSelection: true }, () => this.allowsMultipleSelection === true)
+            .case({ allowsMultipleSelection: false }, () => this.allowsMultipleSelection === false)
+            .case({ empty: true }, () => this._data.length === 0)
+            .case({ empty: false }, () => this._data.length > 0)
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchRow(atIndexPath, predicate) {
+        const { row, section } = atIndexPath;
+        const state = {
+            row,
+            section,
+            isFirst: row === 0,
+            isLast: row === this.numberOfRowsInSection(section) - 1,
+            isEven: row % 2 === 0,
+            isOdd: row % 2 !== 0
+        };
+        if (typeof predicate === 'function') {
+            return predicate(state);
+        }
+        return Switch(predicate)
+            .case({ first: true }, () => state.isFirst)
+            .case({ last: true }, () => state.isLast)
+            .case({ even: true }, () => state.isEven)
+            .case({ odd: true }, () => state.isOdd)
+            .case({ at: Switch.let('r'), section: Switch.let('s') }, 
+                  (m) => state.row === m.r && state.section === m.s)
+            .case({ row: Switch.let('r') }, (m) => state.row === m.r)
+            .case({ section: Switch.let('s') }, (m) => state.section === m.s)
+            .default(() => false)
+            .evaluate();
     }
 }
 

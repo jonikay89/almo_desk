@@ -1,6 +1,7 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
 import { Scanner, NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UITextView extends UIScrollView {
     constructor(text = '') {
@@ -212,6 +213,47 @@ class UITextView extends UIScrollView {
         textView.isEditable = data.isEditable !== false;
         textView.isScrollEnabled = data.isScrollEnabled !== false;
         return textView;
+    }
+
+    static textPattern(text, pattern) {
+        return Switch(pattern)
+            .case('email', () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text))
+            .case('url', () => /^https?:\/\/.+/.test(text))
+            .case('phone', () => /^[\d\s\-\+\(\)]+$/.test(text))
+            .case('number', () => !isNaN(parseFloat(text)) && isFinite(text))
+            .case('integer', () => /^\-?\d+$/.test(text))
+            .case('alphanumeric', () => /^[a-zA-Z0-9]+$/.test(text))
+            .case('alpha', () => /^[a-zA-Z]+$/.test(text))
+            .case('empty', () => text.length === 0)
+            .case('whitespace', () => /^\s+$/.test(text))
+            .case('lowercase', () => text === text.toLowerCase())
+            .case('uppercase', () => text === text.toUpperCase())
+            .case('contains', () => text.length > 0)
+            .case(Switch.let('prefix'), (m) => text.startsWith(m.prefix))
+            .case(Switch.let('suffix'), (m) => text.endsWith(m.suffix))
+            .case(Switch.let('containsStr'), (m) => text.includes(m.containsStr))
+            .case(Switch.let('regex'), (m) => new RegExp(m.regex).test(text))
+            .case(Switch.let('length'), (m) => text.length === m.length)
+            .case(Switch.tuple(Switch.let('min'), Switch.let('max')), (m) => text.length >= m.min && text.length <= m.max)
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchText(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this.text);
+        }
+        return UITextView.textPattern(this.text, predicate);
+    }
+
+    validate(validation) {
+        if (typeof validation === 'string') {
+            return UITextView.textPattern(this.text, validation);
+        }
+        if (typeof validation === 'function') {
+            return validation(this.text);
+        }
+        return false;
     }
 }
 

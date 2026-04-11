@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import Switch from './Switch.js';
 
 class UINavigationBar extends UIView {
     constructor() {
@@ -138,6 +139,50 @@ class UINavigationBar extends UIView {
         navBar.prefersLargeTitles = data.prefersLargeTitles || false;
         return navBar;
     }
+
+    matchBar(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ prefersLargeTitles: true }, () => this.prefersLargeTitles === true)
+            .case({ prefersLargeTitles: false }, () => this.prefersLargeTitles === false)
+            .case({ hasTopItem: true }, () => this.topItem !== null)
+            .case({ hasTopItem: false }, () => this.topItem === null)
+            .case({ hasBackItem: true }, () => this.backItem !== null)
+            .case({ hasBackItem: false }, () => this.backItem === null)
+            .case({ itemCount: Switch.let('n') }, (m) => this.items.length === m.n)
+            .case({ topItem: Switch.let('item') }, (m) => {
+                if (!this.topItem) return false;
+                if (typeof m.item === 'string') return this.topItem.title === m.item;
+                if (m.item && typeof m.item === 'object') return this.topItem.matchItem(m.item);
+                return false;
+            })
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchItem(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ title: Switch.let('t') }, (m) => this.topItem?.title === m.t)
+            .case({ hasLeftBarButtonItem: true }, () => this.topItem?.leftBarButtonItem !== null)
+            .case({ hasLeftBarButtonItem: false }, () => !this.topItem?.leftBarButtonItem)
+            .case({ hasRightBarButtonItem: true }, () => this.topItem?.rightBarButtonItem !== null)
+            .case({ hasRightBarButtonItem: false }, () => !this.topItem?.rightBarButtonItem)
+            .default(() => false)
+            .evaluate();
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        return this.matchBar(predicate);
+    }
 }
 
 class UINavigationItem {
@@ -171,6 +216,38 @@ class UINavigationItem {
 
     static decode(data) {
         return new UINavigationItem(data.title || '');
+    }
+
+    matchItem(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ title: Switch.let('t') }, (m) => this.title === m.t)
+            .case({ hasLeftBarButtonItem: true }, () => this.leftBarButtonItem !== null)
+            .case({ hasLeftBarButtonItem: false }, () => this.leftBarButtonItem === null)
+            .case({ hasRightBarButtonItem: true }, () => this.rightBarButtonItem !== null)
+            .case({ hasRightBarButtonItem: false }, () => this.rightBarButtonItem === null)
+            .case({ leftItem: Switch.let('item') }, (m) => {
+                if (!this.leftBarButtonItem) return false;
+                if (typeof m.item === 'string') return this.leftBarButtonItem.title === m.item;
+                return false;
+            })
+            .case({ rightItem: Switch.let('item') }, (m) => {
+                if (!this.rightBarButtonItem) return false;
+                if (typeof m.item === 'string') return this.rightBarButtonItem.title === m.item;
+                return false;
+            })
+            .default(() => false)
+            .evaluate();
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        return this.matchItem(predicate);
     }
 }
 

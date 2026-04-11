@@ -1,4 +1,5 @@
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIColor {
     constructor(red, green, blue, alpha = 1) {
@@ -184,6 +185,76 @@ class UIColor {
 
     static colorWithWhiteAlpha(white, alpha) {
         return new UIColor(white, white, white, alpha);
+    }
+
+    static colorMatching(pattern) {
+        return Switch(pattern)
+            .case('clear', () => UIColor.clear())
+            .case('black', () => UIColor.black())
+            .case('white', () => UIColor.white())
+            .case('red', () => UIColor.red())
+            .case('green', () => UIColor.green())
+            .case('blue', () => UIColor.blue())
+            .case('yellow', () => UIColor.yellow())
+            .case('orange', () => UIColor.orange())
+            .case('purple', () => UIColor.purple())
+            .case('cyan', () => UIColor.cyan())
+            .case('magenta', () => UIColor.magenta())
+            .case('systemBlue', () => UIColor.systemBlue())
+            .case('systemGreen', () => UIColor.systemGreen())
+            .case('systemRed', () => UIColor.systemRed())
+            .case('systemOrange', () => UIColor.systemOrange())
+            .case('systemYellow', () => UIColor.systemYellow())
+            .case('systemPurple', () => UIColor.systemPurple())
+            .case('systemPink', () => UIColor.systemPink())
+            .case('systemTeal', () => UIColor.systemTeal())
+            .case('systemIndigo', () => UIColor.systemIndigo())
+            .case('systemBackground', () => UIColor.systemBackground())
+            .case('systemGray', () => UIColor.systemGray())
+            .case('gray', () => UIColor.gray())
+            .case('lightGray', () => UIColor.lightGray())
+            .case('darkGray', () => UIColor.darkGray())
+            .case(Switch.let('hex'), (m) => UIColor.colorWithHex(m))
+            .default(() => UIColor.black())
+            .evaluate();
+    }
+
+    static fromPattern(pattern) {
+        if (typeof pattern === 'string') {
+            return UIColor.colorMatching(pattern);
+        }
+        if (pattern && typeof pattern === 'object') {
+            if (pattern.red !== undefined && pattern.green !== undefined && pattern.blue !== undefined) {
+                return new UIColor(pattern.red, pattern.green, pattern.blue, pattern.alpha || 1);
+            }
+            if (pattern.hex) {
+                return UIColor.colorWithHex(pattern.hex);
+            }
+            if (pattern.白色) return UIColor.white();
+            if (pattern.黑色) return UIColor.black();
+            if (pattern.红色) return UIColor.red();
+            if (pattern.绿色) return UIColor.green();
+            if (pattern.蓝色) return UIColor.blue();
+        }
+        return UIColor.black();
+    }
+
+    patternMatch(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        if (typeof predicate === 'object') {
+            return Switch(predicate)
+                .case({ alpha: 0 }, () => this.alpha === 0)
+                .case({ alpha: Switch.let('a') }, (m) => Math.abs(this.alpha - m.a) < 0.001)
+                .case({ red: Switch.let('r'), green: Switch.let('g'), blue: Switch.let('b') }, 
+                      (m) => Math.abs(this.red - m.r) < 0.001 && 
+                             Math.abs(this.green - m.g) < 0.001 && 
+                             Math.abs(this.blue - m.b) < 0.001)
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
     }
 
     toString() {

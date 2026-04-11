@@ -1,6 +1,7 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UISwitch extends UIControl {
     constructor() {
@@ -155,6 +156,19 @@ class UISwitch extends UIControl {
         const sw = new UISwitch();
         sw._isOn = data.isOn || false;
         return sw;
+    }
+
+    matchState(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this._isOn);
+        }
+        return Switch(predicate)
+            .case('on', () => this._isOn === true)
+            .case('off', () => this._isOn === false)
+            .case(true, () => this._isOn === true)
+            .case(false, () => this._isOn === false)
+            .default(() => false)
+            .evaluate();
     }
 }
 

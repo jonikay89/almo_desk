@@ -2,6 +2,7 @@ import UIView from './UIView.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIScrollView extends UIView {
     constructor() {
@@ -153,19 +154,22 @@ class UIScrollView extends UIView {
     }
 
     #updateScrollbars() {
-        if (this.element) {
-            if (this.showsHorizontalScrollIndicator) {
-                this.element.style.overflowX = 'auto';
-            } else {
-                this.element.style.overflowX = 'hidden';
-            }
-            
-            if (this.showsVerticalScrollIndicator) {
-                this.element.style.overflowY = 'auto';
-            } else {
-                this.element.style.overflowY = 'hidden';
-            }
-        }
+        if (!this.element) return;
+
+        const overflowX = Switch(this.showsHorizontalScrollIndicator)
+            .case(true, () => 'auto')
+            .case(false, () => 'hidden')
+            .default(() => 'auto')
+            .evaluate();
+
+        const overflowY = Switch(this.showsVerticalScrollIndicator)
+            .case(true, () => 'auto')
+            .case(false, () => 'hidden')
+            .default(() => 'auto')
+            .evaluate();
+
+        this.element.style.overflowX = overflowX;
+        this.element.style.overflowY = overflowY;
     }
 
     setContentOffset(x, y, animated = false) {

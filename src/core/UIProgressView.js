@@ -1,6 +1,7 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIProgressView extends UIView {
     constructor() {
@@ -110,6 +111,24 @@ class UIProgressView extends UIView {
         const progressView = new UIProgressView();
         progressView._progress = data.progress;
         return progressView;
+    }
+
+    matchProgress(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this._progress);
+        }
+        return Switch(predicate)
+            .case({ complete: true }, () => this._progress >= 1)
+            .case({ complete: false }, () => this._progress < 1)
+            .case({ empty: true }, () => this._progress <= 0)
+            .case({ at: Switch.let('p') }, (m) => Math.abs(this._progress - m.p) < 0.001)
+            .case({ above: Switch.let('p') }, (m) => this._progress > m.p)
+            .case({ below: Switch.let('p') }, (m) => this._progress < m.p)
+            .case({ range: Switch.tuple(Switch.let('min'), Switch.let('max')) }, 
+                  (m) => this._progress >= m.min && this._progress <= m.max)
+            .case(Switch.let('value'), (m) => Math.abs(this._progress - m.value) < 0.001)
+            .default(() => false)
+            .evaluate();
     }
 }
 

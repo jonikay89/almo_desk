@@ -1,4 +1,5 @@
 import UIControl from './UIControl.js';
+import Switch from './Switch.js';
 
 class UIButton extends UIControl {
     constructor(title = '') {
@@ -87,22 +88,34 @@ class UIButton extends UIControl {
 
     #updateAppearance() {
         if (!this.element) return;
-        
-        if (this.highlighted && this.highlightedBackgroundColor) {
-            this.element.style.backgroundColor = this.highlightedBackgroundColor;
-        } else if (this.selected && this.selectedBackgroundColor) {
-            this.element.style.backgroundColor = this.selectedBackgroundColor;
-        } else {
-            this.element.style.backgroundColor = this.backgroundColor;
-        }
-        
-        if (this.highlighted && this.highlightedTitleColor) {
-            this.element.style.color = this.highlightedTitleColor;
-        } else if (this.selected && this.selectedTitleColor) {
-            this.element.style.color = this.selectedTitleColor;
-        } else {
-            this.element.style.color = this.titleColor;
-        }
+
+        const bgResult = Switch({ highlighted: this.highlighted, selected: this.selected })
+            .case({ highlighted: true, selected: Switch.Wildcard }, 
+                  () => this.highlightedBackgroundColor || this.backgroundColor)
+            .case({ highlighted: false, selected: true }, 
+                  () => this.selectedBackgroundColor || this.backgroundColor)
+            .default(() => this.backgroundColor)
+            .evaluate();
+        this.element.style.backgroundColor = bgResult;
+
+        const colorResult = Switch({ highlighted: this.highlighted, selected: this.selected })
+            .case({ highlighted: true, selected: Switch.Wildcard }, 
+                  () => this.highlightedTitleColor || this.titleColor)
+            .case({ highlighted: false, selected: true }, 
+                  () => this.selectedTitleColor || this.titleColor)
+            .default(() => this.titleColor)
+            .evaluate();
+        this.element.style.color = colorResult;
+    }
+
+    #getStateDescription() {
+        return Switch({ highlighted: this.highlighted, selected: this.selected, enabled: this.enabled })
+            .case({ highlighted: true, selected: true }, () => 'highlighted+selected')
+            .case({ highlighted: true, selected: false }, () => 'highlighted')
+            .case({ highlighted: false, selected: true }, () => 'selected')
+            .case({ enabled: false }, () => 'disabled')
+            .default(() => 'normal')
+            .evaluate();
     }
 
     setHighlighted(highlighted) {

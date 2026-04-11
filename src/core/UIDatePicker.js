@@ -1,5 +1,6 @@
 import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
+import Switch from './Switch.js';
 
 class UIDatePicker extends UIControl {
     constructor() {
@@ -327,6 +328,52 @@ class UIDatePicker extends UIControl {
         picker.datePickerMode = data.datePickerMode || 'date';
         picker.minuteInterval = data.minuteInterval || 1;
         return picker;
+    }
+
+    static datePattern(date, pattern) {
+        return Switch(pattern)
+            .case('year', () => date.getFullYear())
+            .case('month', () => date.getMonth() + 1)
+            .case('day', () => date.getDate())
+            .case('hours', () => date.getHours())
+            .case('minutes', () => date.getMinutes())
+            .case('seconds', () => date.getSeconds())
+            .case('milliseconds', () => date.getMilliseconds())
+            .case('dayOfWeek', () => date.getDay())
+            .case('iso', () => date.toISOString())
+            .case('dateString', () => date.toDateString())
+            .case('timeString', () => date.toTimeString())
+            .default(() => date.toISOString())
+            .evaluate();
+    }
+
+    matchDate(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this._date);
+        }
+        if (typeof predicate === 'string') {
+            return Switch(predicate)
+                .case('past', () => this._date < new Date())
+                .case('future', () => this._date > new Date())
+                .case('today', () => this._date.toDateString() === new Date().toDateString())
+                .case('tomorrow', () => {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    return this._date.toDateString() === tomorrow.toDateString();
+                })
+                .case('yesterday', () => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return this._date.toDateString() === yesterday.toDateString();
+                })
+                .case(Switch.let('year'), (y) => this._date.getFullYear() === y)
+                .case(Switch.let('month'), (m) => this._date.getMonth() + 1 === m)
+                .case(Switch.tuple(Switch.let('year'), Switch.let('month')), 
+                      (y, m) => this._date.getFullYear() === y && this._date.getMonth() + 1 === m)
+                .default(() => false)
+                .evaluate();
+        }
+        return false;
     }
 }
 

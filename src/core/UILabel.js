@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import Switch from './Switch.js';
 
 class UILabel extends UIView {
     constructor(text = '') {
@@ -209,6 +210,46 @@ class UILabel extends UIView {
         label.numberOfLines = data.numberOfLines || 1;
         label.isEnabled = data.isEnabled !== false;
         return label;
+    }
+
+    matchText(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this.text);
+        }
+        return Switch(predicate)
+            .case('empty', () => this.text.length === 0)
+            .case('nonEmpty', () => this.text.length > 0)
+            .case(Switch.let('value'), (m) => this.text === m.value)
+            .case(Switch.let('prefix'), (m) => this.text.startsWith(m.prefix))
+            .case(Switch.let('suffix'), (m) => this.text.endsWith(m.suffix))
+            .case(Switch.let('contains'), (m) => this.text.includes(m.contains))
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchStyle(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate({
+                fontSize: this.fontSize,
+                fontWeight: this.fontWeight,
+                textAlignment: this.textAlignment,
+                numberOfLines: this.numberOfLines,
+                isEnabled: this.isEnabled
+            });
+        }
+        return Switch(predicate)
+            .case({ bold: true }, () => this.fontWeight === 'bold' || this.fontWeight === '700')
+            .case({ light: true }, () => this.fontWeight === 'light' || this.fontWeight === '300')
+            .case({ centered: true }, () => this.textAlignment === 'center')
+            .case({ left: true }, () => this.textAlignment === 'left')
+            .case({ right: true }, () => this.textAlignment === 'right')
+            .case({ multiline: true }, () => this.numberOfLines > 1)
+            .case({ singleLine: true }, () => this.numberOfLines === 1)
+            .case({ disabled: true }, () => !this.isEnabled)
+            .case({ enabled: true }, () => this.isEnabled)
+            .case({ fontSize: Switch.let('size') }, (m) => this.fontSize === m.size)
+            .default(() => false)
+            .evaluate();
     }
 }
 

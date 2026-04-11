@@ -2,6 +2,7 @@ import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { WeakRef } from './WeakReference.js';
 import { NSNumber } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UIPickerView extends UIView {
     constructor() {
@@ -247,6 +248,23 @@ class UIPickerView extends UIView {
         picker.numberOfComponents = data.numberOfComponents || 1;
         picker.selectedRow = data.selectedRow || 0;
         return picker;
+    }
+
+    matchSelection(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate({ selectedRow: this.selectedRow, numberOfComponents: this.numberOfComponents });
+        }
+        return Switch(predicate)
+            .case({ row: Switch.let('r') }, (m) => this.selectedRow === m.r)
+            .case({ component: Switch.let('c') }, (m) => this.numberOfComponents === m.c)
+            .case({ row: Switch.let('r'), component: Switch.let('c') }, 
+                  (m) => this.selectedRow === m.r && this.numberOfComponents === m.c)
+            .case({ first: true }, () => this.selectedRow === 0)
+            .case({ last: true }, () => this.selectedRow === this.pickers.length - 1)
+            .case({ empty: true }, () => this.numberOfComponents === 0)
+            .case({ singleComponent: true }, () => this.numberOfComponents === 1)
+            .default(() => false)
+            .evaluate();
     }
 }
 

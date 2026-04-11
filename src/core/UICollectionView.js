@@ -3,6 +3,7 @@ import UIColor from './UIColor.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue } from './Foundation.js';
+import Switch from './Switch.js';
 
 class UICollectionView extends UIScrollView {
     constructor(frame, collectionViewLayout) {
@@ -205,6 +206,47 @@ class UICollectionView extends UIScrollView {
         collectionView.allowsMultipleSelection = data.allowsMultipleSelection || false;
         return collectionView;
     }
+
+    matchSelection(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ allowsSelection: true }, () => this.allowsSelection === true)
+            .case({ allowsSelection: false }, () => this.allowsSelection === false)
+            .case({ allowsMultipleSelection: true }, () => this.allowsMultipleSelection === true)
+            .case({ allowsMultipleSelection: false }, () => this.allowsMultipleSelection === false)
+            .case({ empty: true }, () => this._data.length === 0)
+            .case({ empty: false }, () => this._data.length > 0)
+            .default(() => false)
+            .evaluate();
+    }
+
+    matchItem(atIndexPath, predicate) {
+        const { item, section } = atIndexPath;
+        const state = {
+            item,
+            section,
+            isFirst: item === 0,
+            isLast: item === this.numberOfItemsInSection(section) - 1,
+            isEven: item % 2 === 0,
+            isOdd: item % 2 !== 0
+        };
+        if (typeof predicate === 'function') {
+            return predicate(state);
+        }
+        return Switch(predicate)
+            .case({ first: true }, () => state.isFirst)
+            .case({ last: true }, () => state.isLast)
+            .case({ even: true }, () => state.isEven)
+            .case({ odd: true }, () => state.isOdd)
+            .case({ at: Switch.let('i'), section: Switch.let('s') }, 
+                  (m) => state.item === m.i && state.section === m.s)
+            .case({ item: Switch.let('i') }, (m) => state.item === m.i)
+            .case({ section: Switch.let('s') }, (m) => state.section === m.s)
+            .default(() => false)
+            .evaluate();
+    }
 }
 
 class UICollectionViewFlowLayout {
@@ -244,6 +286,22 @@ class UICollectionViewFlowLayout {
         layout.sectionInset = data.sectionInset || { top: 10, right: 10, bottom: 10, left: 10 };
         layout.scrollDirection = data.scrollDirection || 'vertical';
         return layout;
+    }
+
+    matchLayout(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ scrollDirection: 'vertical' }, () => this.scrollDirection === 'vertical')
+            .case({ scrollDirection: 'horizontal' }, () => this.scrollDirection === 'horizontal')
+            .case({ squareItems: true }, () => this.itemSize.width === this.itemSize.height)
+            .case({ wideItems: true }, () => this.itemSize.width > this.itemSize.height)
+            .case({ tallItems: true }, () => this.itemSize.height > this.itemSize.width)
+            .case({ itemSize: Switch.let('size') }, (m) => 
+                   this.itemSize.width === m.size.width && this.itemSize.height === m.size.height)
+            .default(() => false)
+            .evaluate();
     }
 }
 
