@@ -23,7 +23,8 @@
             FileManager, UserDefaults, Bundle, Notification, AppError, AnyHashable,
             JSONEncoder, JSONDecoder, NumberFormatter, DateFormatter,
             OrderedSet, SortedSet, WeakDictionary,
-            Regex, Predicate, Task, Lock, ReadWriteLock, AtomicInt, AtomicBool
+            Regex, Predicate, Task, Lock, ReadWriteLock, AtomicInt, AtomicBool,
+            CALayer, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer, CATransform3D
         } from './src/core/index.js';
 
         class DemoViewController {
@@ -80,6 +81,7 @@
                 yOffset = this.addSection('Regex & Predicate', [this.createRegexPredicateDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('Async & Locking', [this.createAsyncLockingDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('Swift-like Chainable', [this.createChainableDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('CALayer & Animations', [this.createLayerDemos()], yOffset, padding, contentWidth);
 
                 this.scrollView.setContentSize(contentWidth, yOffset + 40);
             }
@@ -1581,6 +1583,90 @@
                 chainedStack.init();
                 chainedStack.frame = { x: 0, y: 286, width: 200, height: 34 };
                 container.addSubview(chainedStack);
+
+                return container;
+            }
+
+            createLayerDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 280 };
+
+                const gradientView = new UIView();
+                gradientView.init();
+                gradientView.frame = { x: 0, y: 0, width: 280, height: 80 };
+                gradientView.addGradientLayer(
+                    [UIColor.systemBlue(), UIColor.systemPurple()],
+                    [0, 1],
+                    { x: 0, y: 0 },
+                    { x: 1, y: 1 }
+                );
+                container.addSubview(gradientView);
+
+                const shadowView = new UIView();
+                shadowView.init();
+                shadowView.frame = { x: 0, y: 90, width: 280, height: 60 };
+                shadowView.backgroundColor = UIColor.white();
+                shadowView.cornerRadius = 12;
+                shadowView.setShadow(UIColor.black(), 0.5, { width: 0, height: 4 }, 8);
+                container.addSubview(shadowView);
+
+                const shadowLabel = new UILabel('Shadow Effect');
+                shadowLabel.init();
+                shadowLabel.frame = { x: 20, y: 20, width: 240, height: 20 };
+                shadowLabel.fontSize = 16;
+                shadowLabel.textColor = UIColor.black();
+                shadowView.addSubview(shadowLabel);
+
+                const circleView = new UIView();
+                circleView.init();
+                circleView.frame = { x: 200, y: 160, width: 80, height: 80 };
+                circleView.backgroundColor = UIColor.systemPink();
+                circleView.cornerRadius = 40;
+                circleView.setShadow(UIColor.systemPink(), 0.3, { width: 0, height: 2 }, 4);
+                container.addSubview(circleView);
+
+                const borderView = new UIView();
+                borderView.init();
+                borderView.frame = { x: 0, y: 160, width: 180, height: 50 };
+                borderView.backgroundColor = UIColor.colorWithWhiteAlpha(0.9, 1);
+                borderView.cornerRadius = 8;
+                borderView.borderWidth = 2;
+                borderView.borderColor = UIColor.systemBlue();
+                container.addSubview(borderView);
+
+                const borderLabel = new UILabel('Bordered View');
+                borderLabel.init();
+                borderLabel.frame = { x: 40, y: 15, width: 100, height: 20 };
+                borderLabel.fontSize = 14;
+                borderLabel.textColor = UIColor.systemBlue();
+                borderView.addSubview(borderLabel);
+
+                const layerInfo = new UILabel('Layer Features:');
+                layerInfo.init();
+                layerInfo.frame = { x: 0, y: 220, width: 280, height: 20 };
+                layerInfo.fontSize = 14;
+                layerInfo.fontWeight = 'bold';
+                layerInfo.textColor = UIColor.black();
+                container.addSubview(layerInfo);
+
+                const layerFeatures = [
+                    '• Gradients (CAGradientLayer)',
+                    '• Shadows with opacity & radius',
+                    '• Corner radius & borders',
+                    '• 3D transforms & perspective',
+                    '• Shape layers (CAShapeLayer)',
+                    '• Text layers (CATextLayer)'
+                ];
+
+                layerFeatures.forEach((feature, i) => {
+                    const featLabel = new UILabel(feature);
+                    featLabel.init();
+                    featLabel.frame = { x: 0, y: 245 + i * 18, width: 280, height: 16 };
+                    featLabel.fontSize = 11;
+                    featLabel.textColor = UIColor.darkGray();
+                    container.addSubview(featLabel);
+                });
 
                 return container;
             }

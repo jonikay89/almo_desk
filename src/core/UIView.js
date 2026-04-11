@@ -3,6 +3,7 @@ import UIResponder from './UIResponder.js';
 import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { CALayer, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer, CATransform3D } from './CALayer.js';
 
 class UIView extends UIResponder {
     constructor() {
@@ -24,11 +25,16 @@ class UIView extends UIResponder {
         this._borderColor = null;
         this._borderWidth = 0;
         this._cornerRadius = 0;
-        this._layer = {
-            borderColor: null,
-            borderWidth: 0,
-            cornerRadius: 0
-        };
+        this._layer = CALayer.layer();
+        this._layer.delegate = this;
+        this._gradientLayer = null;
+        this._shapeLayers = [];
+        this._textLayers = [];
+        this._emitterLayer = null;
+        this._shadowLayer = null;
+        this._transform3D = CATransform3D.identity();
+        this._perspective = false;
+        this._perspectiveM34 = -1 / 1000;
     }
 
     get frame() {
@@ -150,6 +156,53 @@ class UIView extends UIResponder {
         if (this.element) {
             this.element.style.overflow = clips ? 'hidden' : '';
         }
+        this._layer.masksToBounds = clips;
+    }
+
+    get transform3D() {
+        return this._transform3D;
+    }
+
+    set transform3D(value) {
+        this._transform3D = value;
+        this.#updateTransform();
+    }
+
+    get perspective() {
+        return this._perspective;
+    }
+
+    set perspective(value) {
+        this._perspective = value;
+        this.#updateTransform();
+    }
+
+    get anchorPoint() {
+        return this._layer.anchorPoint;
+    }
+
+    set anchorPoint(value) {
+        this._layer.anchorPoint = value;
+    }
+
+    get zPosition() {
+        return this._layer.zPosition;
+    }
+
+    set zPosition(value) {
+        this._layer.zPosition = value;
+    }
+
+    #updateTransform() {
+        if (!this.element) return;
+        
+        let transform = this._transform3D;
+        if (this._perspective) {
+            transform = transform.multiply(CATransform3D.MakePerspective(this._perspectiveM34));
+        }
+        
+        this.element.style.transform = transform.toCSSTransform();
+        this.element.style.transformOrigin = `${this._layer.anchorPoint.x * 100}% ${this._layer.anchorPoint.y * 100}%`;
     }
 
     get description() {
@@ -202,6 +255,9 @@ class UIView extends UIResponder {
             this.element.style.top = `${this.frame.y}px`;
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
+        }
+        if (this._layer && (this._gradientLayer || this._shapeLayers.length > 0 || this._textLayers.length > 0)) {
+            this.#renderLayers();
         }
     }
 
@@ -296,6 +352,335 @@ class UIView extends UIResponder {
 
     withZIndex(zIndex) {
         return this.setZIndex(zIndex);
+    }
+
+    withTransform3D(transform) {
+        this.transform3D = transform;
+        return this;
+    }
+
+    withPerspective(enabled, m34 = -1 / 1000) {
+        this._perspectiveM34 = m34;
+        this.perspective = enabled;
+        return this;
+    }
+
+    withAnchorPoint(x, y) {
+        this.anchorPoint = { x, y };
+        return this;
+    }
+
+    withZPosition(value) {
+        this.zPosition = value;
+        return this;
+    }
+
+    addSublayer(sublayer) {
+        this._layer.addSublayer(sublayer);
+        this.#renderLayers();
+        return this;
+    }
+
+    insertSublayerAtIndex(sublayer, index) {
+        this._layer.insertSublayer(sublayer, index);
+        this.#renderLayers();
+        return this;
+    }
+
+    removeSublayer(sublayer) {
+        this._layer.removeSublayer(sublayer);
+        this.#renderLayers();
+        return this;
+    }
+
+    removeAllSublayers() {
+        this._layer._sublayers = [];
+        this.#renderLayers();
+        return this;
+    }
+
+    addGradientLayer(colors, locations = null, startPoint = null, endPoint = null) {
+        const gradient = CAGradientLayer.layer();
+        gradient.colors = colors;
+        gradient.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+        if (locations) gradient.locations = locations;
+        if (startPoint) gradient.startPoint = startPoint;
+        if (endPoint) gradient.endPoint = endPoint;
+        gradient.name = 'gradientLayer';
+        this._gradientLayer = gradient;
+        this._layer.addSublayer(gradient);
+        this.#renderLayers();
+        return gradient;
+    }
+
+    addShapeLayer(path, fillColor = null, strokeColor = null, lineWidth = 1) {
+        const shape = CAShapeLayer.layer();
+        shape.path = path;
+        shape.fillColor = fillColor;
+        shape.strokeColor = strokeColor;
+        shape.lineWidth = lineWidth;
+        shape.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+        shape.name = 'shapeLayer';
+        this._shapeLayers.push(shape);
+        this._layer.addSublayer(shape);
+        this.#renderLayers();
+        return shape;
+    }
+
+    addTextLayer(text, fontSize = 14, textColor = null, alignment = 'left') {
+        const textLayer = CATextLayer.layer();
+        textLayer.string = text;
+        textLayer.fontSize = fontSize;
+        textLayer.textColor = textColor || UIColor.black();
+        textLayer.textAlignment = alignment;
+        textLayer.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+        textLayer.name = 'textLayer';
+        this._textLayers.push(textLayer);
+        this._layer.addSublayer(textLayer);
+        this.#renderLayers();
+        return textLayer;
+    }
+
+    addEmitterLayer(options = {}) {
+        const emitter = CAEmitterLayer.layer();
+        emitter.emitterPosition = options.position || { x: this._bounds.width / 2, y: this._bounds.height / 2 };
+        emitter.emitterSize = options.size || { width: this._bounds.width, height: this._bounds.height };
+        emitter.birthRate = options.birthRate || 10;
+        emitter.lifetime = options.lifetime || 2;
+        emitter.velocity = options.velocity || 50;
+        emitter.emissionRange = options.emissionRange || Math.PI * 2;
+        emitter.scale = options.scale || 1;
+        emitter.color = options.color || UIColor.white();
+        emitter.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+        emitter.name = 'emitterLayer';
+        this._emitterLayer = emitter;
+        this._layer.addSublayer(emitter);
+        this.#renderLayers();
+        return emitter;
+    }
+
+    startEmitterAnimation() {
+        if (this._emitterLayer) {
+            this._emitterLayer.startEmitting();
+        }
+        return this;
+    }
+
+    stopEmitterAnimation() {
+        if (this._emitterLayer) {
+            this._emitterLayer.stopEmitting();
+        }
+        return this;
+    }
+
+    setShadow(color, opacity = 0.5, offset = { width: 0, height: 2 }, radius = 4) {
+        this._layer.shadowColor = color;
+        this._layer.shadowOpacity = opacity;
+        this._layer.shadowOffset = offset;
+        this._layer.shadowRadius = radius;
+        if (this.element) {
+            this.element.style.boxShadow = `${offset.width}px ${offset.height}px ${radius}px rgba(${this._getShadowColorComponents(color)}, ${opacity})`;
+        }
+        return this;
+    }
+
+    _getShadowColorComponents(color) {
+        if (color instanceof UIColor) {
+            const hex = color.hex.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            return `${r}, ${g}, ${b}`;
+        }
+        return '0, 0, 0';
+    }
+
+    #renderLayers() {
+        if (!this.element) return;
+        
+        const existingCanvas = this.element.querySelector('.layer-canvas');
+        if (existingCanvas) {
+            existingCanvas.remove();
+        }
+
+        if (this._layer._sublayers.length === 0) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'layer-canvas';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.width = this._bounds.width * 2;
+        canvas.height = this._bounds.height * 2;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        
+        for (const sublayer of this._layer._sublayers) {
+            sublayer.renderToContext(ctx);
+        }
+
+        this.element.style.position = 'relative';
+        this.element.insertBefore(canvas, this.element.firstChild);
+    }
+
+    setGradient(colors, locations = null, startPoint = { x: 0.5, y: 0 }, endPoint = { x: 0.5, y: 1 }) {
+        if (!this._gradientLayer) {
+            this.addGradientLayer(colors, locations, startPoint, endPoint);
+        } else {
+            this._gradientLayer.colors = colors;
+            if (locations) this._gradientLayer.locations = locations;
+            this._gradientLayer.startPoint = startPoint;
+            this._gradientLayer.endPoint = endPoint;
+            this.#renderLayers();
+        }
+        return this;
+    }
+
+    setShapePath(path) {
+        if (this._shapeLayers.length > 0) {
+            this._shapeLayers[0].path = path;
+            this.#renderLayers();
+        }
+        return this;
+    }
+
+    rotate3D(angle, axis = 'z') {
+        this._transform3D = this._transform3D.rotated(angle, axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+        this.#updateTransform();
+        return this;
+    }
+
+    scale3D(sx, sy, sz = 1) {
+        this._transform3D = this._transform3D.scaled(sx, sy, sz);
+        this.#updateTransform();
+        return this;
+    }
+
+    translate3D(tx, ty, tz = 0) {
+        this._transform3D = this._transform3D.translated(tx, ty, tz);
+        this.#updateTransform();
+        return this;
+    }
+
+    applyPerspective(m34 = -1 / 1000) {
+        this._perspectiveM34 = m34;
+        this._perspective = true;
+        this.#updateTransform();
+        return this;
+    }
+
+    resetTransform3D() {
+        this._transform3D = CATransform3D.identity();
+        this._perspective = false;
+        if (this.element) {
+            this.element.style.transform = '';
+        }
+        return this;
+    }
+
+    withRotation3D(angle, axis = 'z') {
+        return this.rotate3D(angle, axis);
+    }
+
+    withScale3D(sx, sy, sz = 1) {
+        return this.scale3D(sx, sy, sz);
+    }
+
+    withTranslation3D(tx, ty, tz = 0) {
+        return this.translate3D(tx, ty, tz);
+    }
+
+    animate(animations, duration = 0.3, callback = null) {
+        const keys = Object.keys(animations);
+        const initialValues = {};
+        
+        keys.forEach(key => {
+            initialValues[key] = this[key];
+        });
+
+        const startTime = performance.now();
+        const animateFrame = (currentTime) => {
+            const elapsed = (currentTime - startTime) / 1000;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = this.#easeInOut(progress);
+
+            keys.forEach(key => {
+                const start = initialValues[key];
+                const end = animations[key];
+                if (typeof start === 'number' && typeof end === 'number') {
+                    this[key] = start + (end - start) * easedProgress;
+                }
+            });
+
+            if (progress < 1) {
+                requestAnimationFrame(animateFrame);
+            } else if (callback) {
+                callback();
+            }
+        };
+
+        requestAnimationFrame(animateFrame);
+        return this;
+    }
+
+    #easeInOut(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+
+    addPulseAnimation(duration = 0.6, scale = 1.1) {
+        if (!this.element) return this;
+        
+        this.element.style.transformOrigin = 'center center';
+        this.element.style.animation = `pulse_${Date.now()} ${duration}s ease-in-out infinite alternate`;
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse_${Date.now()} {
+                from { transform: scale(1); }
+                to { transform: scale(${scale}); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        return this;
+    }
+
+    addFadeAnimation(duration = 0.3, from = 0, to = 1) {
+        if (!this.element) return this;
+        
+        this.element.style.transition = `opacity ${duration}s ease-in-out`;
+        this.element.style.opacity = to;
+        
+        return this;
+    }
+
+    addRotationAnimation(duration = 1, fromAngle = 0, toAngle = Math.PI * 2, repeatCount = Infinity) {
+        if (!this.element) return this;
+        
+        const angle = (fromAngle * 180) / Math.PI;
+        const endAngle = (toAngle * 180) / Math.PI;
+        
+        this.element.style.transformOrigin = 'center center';
+        this.element.style.transition = `transform ${duration}s linear`;
+        this.element.style.transform = `rotate(${endAngle}deg)`;
+        
+        if (repeatCount > 1 || repeatCount === Infinity) {
+            setTimeout(() => {
+                if (this.element) {
+                    this.element.style.transition = 'none';
+                    this.element.style.transform = `rotate(${angle}deg)`;
+                    setTimeout(() => {
+                        this.addRotationAnimation(duration, fromAngle, toAngle, repeatCount - 1);
+                    }, 50);
+                }
+            }, duration * 1000);
+        }
+        
+        return this;
     }
 
     addSubview(view) {

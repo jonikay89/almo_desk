@@ -147,3 +147,7 @@ export {
     Lock, ReadWriteLock, AtomicInt, AtomicBool,
     UnsafePointer, UnsafeMutablePointer
 } from './MoreSwiftTypes.js';
+export {
+    CALayer, CATransform3D, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer,
+    CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup, CASpringAnimation
+} from './CALayer.js';
