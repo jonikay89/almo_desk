@@ -82,3 +82,6 @@ sleep 2
 curl -s http://localhost:3000/styles/main.css | head -5
 curl -s http://localhost:3000/src/index.js | head -5
 pkill -f "node server.js" 2>/dev/null
+
+run tests:
+npm test

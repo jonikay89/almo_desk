@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Desktop OS - Test Runner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 40px;
+            min-height: 100vh;
+        }
+        h1 { color: #4fc3f7; margin-bottom: 20px; }
+        h2 { color: #81c784; margin: 30px 0 15px; }
+        p { line-height: 1.6; margin-bottom: 10px; color: #aaa; }
+        code { 
+            background: #2d2d44; 
+            padding: 2px 8px; 
+            border-radius: 4px;
+            color: #ffcc02;
+        }
+        pre { 
+            background: #2d2d44; 
+            padding: 20px; 
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .test-case {
+            background: #252538;
+            border-left: 4px solid #4fc3f7;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .test-case h3 { color: #4fc3f7; margin-bottom: 10px; }
+        .step { margin: 8px 0; }
+        .expected { color: #81c784; }
+        .technical { color: #ff8a65; font-size: 0.9em; }
+        hr { border: none; border-top: 1px solid #444; margin: 30px 0; }
+        .btn {
+            background: #4fc3f7;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 10px 10px 0;
+        }
+        .btn:hover { background: #81d4fa; }
+        .instructions {
+            background: #2d2d44;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Web Desktop OS - Test Suite</h1>
+    
+    <div class="instructions">
+        <h2>How to Run Tests</h2>
+        <p><strong>Option 1:</strong> Open browser DevTools (F12) → Console, then paste the contents of <code>automated-tests.js</code></p>
+        <p><strong>Option 2:</strong> Copy and paste each test case's steps manually</p>
+        <p><strong>To start fresh:</strong> Run <code>localStorage.clear()</code> then refresh</p>
+    </div>
+    
+    <button class="btn" onclick="document.getElementById('test-code').style.display='block'; this.style.display='none'">
+        📋 Show Automated Test Code
+    </button>
+    
+    <div id="test-code" style="display: none;">
+        <pre><code id="test-content">Loading tests...</code></pre>
+    </div>
+    
+    <hr>
+    
+    <h2>Manual Test Cases</h2>
+    
+    <div class="test-case">
+        <h3>TEST 1: Window Creation</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Clear localStorage: DevTools → Application → Local Storage → Clear</p>
+        <p>2. Refresh the page</p>
+        <p class="expected">Expected: 3 default windows appear (JIT Code Editor, Live Clock, Sticky Notes)</p>
+        <p class="technical">Verify: <code>window.desktopOS.windows.length === 3</code></p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 2: Window Minimize</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Click the <code>−</code> button on any window's title bar</p>
+        <p class="expected">Expected: Window disappears from desktop but remains in taskbar</p>
+        <p class="technical">Verify: Window gets 'minimized' class; clicking taskbar item restores it</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 3: Window Close</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Click the <code>✕</code> button on any window's title bar</p>
+        <p class="expected">Expected: Window is completely removed from DOM and taskbar</p>
+        <p class="technical">Verify: <code>window.desktopOS.windows.length</code> decreases</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 4: Window Drag/Move</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Click and hold on window header (not on buttons)</p>
+        <p>2. Drag mouse to new position</p>
+        <p>3. Release mouse</p>
+        <p class="expected">Expected: Window follows mouse, stays within screen bounds</p>
+        <p class="technical">Verify: Check <code>window.desktopOS.windows[0].frame.x</code> and <code>.frame.y</code> change</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 5: Window Resize</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Locate resize handle (bottom-right corner, resize cursor)</p>
+        <p>2. Click and drag the handle</p>
+        <p class="expected">Expected: Window resizes, respects minimum size (300x240)</p>
+        <p class="technical">Verify: Check <code>window.desktopOS.windows[0].frame.width</code> and <code>.frame.height</code></p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 6: Bring to Front</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Open multiple windows</p>
+        <p>2. Click on a window that's behind another</p>
+        <p class="expected">Expected: Clicked window becomes topmost with blue glow border</p>
+        <p class="technical">Verify: <code>window.desktopOS.activeWindowId</code> updates; other windows go behind</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 7: State Persistence</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Move and resize windows</p>
+        <p>2. Refresh the page (F5)</p>
+        <p class="expected">Expected: Windows appear at their last positions/sizes</p>
+        <p class="technical">Verify: Check localStorage 'webDesktopState' key contains saved positions</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 8: Start Menu</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Click the 🚀 Start button</p>
+        <p>2. Click elsewhere on desktop</p>
+        <p class="expected">Expected: Menu opens on click, closes on click outside or Escape</p>
+        <p class="technical">Verify: <code>window.desktopOS.startMenuOpen</code> toggles</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 9: Desktop Icons</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Double-click on a desktop icon</p>
+        <p>2. Right-click → Delete → Confirm</p>
+        <p class="expected">Expected: Double-click opens window; right-click deletes icon</p>
+        <p class="technical">Verify: Icons stored in localStorage 'webDesktopIcons'</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>TEST 10: Widget Lifecycle</h3>
+        <p class="step"><strong>Steps:</strong></p>
+        <p>1. Open a Clock window</p>
+        <p>2. Minimize the Clock window</p>
+        <p>3. Wait 5 seconds</p>
+        <p>4. Restore the window</p>
+        <p class="expected">Expected: Clock shows correct time (not jumped ahead) - timer was cleaned up</p>
+        <p class="technical">Verify: <code>viewWillDisappear()</code> clears interval; no memory leaks</p>
+    </div>
+    
+    <hr>
+    
+    <h2>API Reference</h2>
+    <pre><code>// Access the DesktopOS instance
+window.desktopOS
+
+// Windows array
+window.desktopOS.windows           // Array of WindowController instances
+
+// Methods
+window.desktopOS.addWindow(title, widgetType, extraData, x, y, w, h)
+window.desktopOS.closeWindow(id)
+window.desktopOS.minimizeWindow(id)
+window.desktopOS.restoreWindow(id)
+window.desktopOS.bringToFront(id)
+window.desktopOS.saveState()
+window.desktopOS.saveDebounced()
+
+// Window properties
+win.windowId                      // Unique ID
+win.title                         // Window title
+win.widgetType                    // 'clock', 'notes', 'codeEditor', etc.
+win.frame                         // {x, y, width, height}
+win.bounds                        // {x: 0, y: 0, width, height}
+win.center                        // {x, y} (center point)
+win.view.zIndex                   // Z-index for layering
+win.isMinimized                   // Boolean
+win.view.element                  // DOM element
+
+// Lifecycle methods (on widgets)
+widget.viewDidLoad()              // Called when view is created
+widget.viewWillAppear()           // Called before view appears
+widget.viewDidAppear()            // Called after view appears
+widget.viewWillDisappear()        // Called before view hides
+widget.viewDidDisappear()         // Called after view hides</code></pre>
+    
+    <hr>
+    
+    <h2>Debug Commands</h2>
+    <pre><code>// View all windows
+window.desktopOS.windows
+
+// View first window details
+window.desktopOS.windows[0]
+
+// Force save/load
+window.desktopOS.saveState()
+localStorage.getItem('webDesktopState')
+
+// Clear everything
+localStorage.clear()
+location.reload()
+
+// Add test window programmatically
+window.desktopOS.addWindow('Test', 'clock', {}, 100, 100, 300, 200)</code></pre>
+
+    <script>
+        // Load the test code if available
+        fetch('./automated-tests.js')
+            .then(r => r.text())
+            .then(code => {
+                document.getElementById('test-content').textContent = code;
+            })
+            .catch(() => {
+                document.getElementById('test-content').textContent = 
+                    '// automated-tests.js not found. Copy tests from tests/automated-tests.js manually.';
+            });
+    </script>
+</body>
+</html>
