@@ -6,7 +6,6 @@ class UIViewController extends UIView {
         this.view = new UIView();
         this.view.element = null;
         this.isViewLoaded = false;
-        this.viewLoaded = false;
         this.parentController = null;
         this.childControllers = [];
     }
@@ -53,9 +52,7 @@ class UIViewController extends UIView {
     }
 
     loadViewIfNeeded() {
-        console.log('loadViewIfNeeded called, isViewLoaded:', this.isViewLoaded);
         if (!this.isViewLoaded) {
-            console.log('calling loadView for', this.constructor.name);
             this.loadView();
             this.isViewLoaded = true;
             this.viewDidLoad();

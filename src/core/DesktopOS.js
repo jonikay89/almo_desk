@@ -24,12 +24,10 @@ class DesktopOS {
         this.taskbarInterval = null;
         this.desktopEl = document.getElementById('webDesktop');
         this.taskbarEl = document.getElementById('taskbar');
-        console.log('DesktopOS: desktopEl:', this.desktopEl, 'taskbarEl:', this.taskbarEl);
         this.#init();
     }
 
     #init() {
-        console.log('init called');
         this.#loadState();
         this.#setupGlobalListeners();
         this.#render();
@@ -50,6 +48,7 @@ class DesktopOS {
                     width: w.width,
                     height: w.height,
                 });
+                win.os = this;
                 win.view.zIndex = w.zIndex ?? 100;
                 win.isMinimized = !!w.minimized;
                 return win;
@@ -186,13 +185,11 @@ class DesktopOS {
     }
 
     #render() {
-        console.log('render called');
         this.#renderDesktop();
         this.#renderTaskbar();
     }
 
     #renderDesktop() {
-        console.log('renderDesktop called, desktopEl:', this.desktopEl);
         if (!this.desktopEl) return;
         this.desktopEl.innerHTML = '';
         

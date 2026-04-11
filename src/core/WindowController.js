@@ -21,10 +21,8 @@ class WindowController extends UIViewController {
     }
 
     loadView() {
-        console.log('WindowController.loadView called for window:', this.windowId);
         this.view.element = this.createView();
         this.isViewLoaded = true;
-        console.log('view.element after loadView:', this.view.element);
     }
 
     createView() {
