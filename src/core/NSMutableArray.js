@@ -56,12 +56,12 @@ class NSMutableArray extends NSArray {
         this._array = [...array._array];
     }
 
-    exchangeObjectAtIndex(index1, withObjectAtIndex index2) {
+    exchangeObjectAtIndex(index1, withObjectAtIndex) {
         if (index1 < 0 || index1 >= this._array.length) return;
-        if (index2 < 0 || index2 >= this._array.length) return;
+        if (withObjectAtIndex < 0 || withObjectAtIndex >= this._array.length) return;
         const temp = this._array[index1];
-        this._array[index1] = this._array[index2];
-        this._array[index2] = temp;
+        this._array[index1] = this._array[withObjectAtIndex];
+        this._array[withObjectAtIndex] = temp;
     }
 
     removeAllObjects() {
