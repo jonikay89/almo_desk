@@ -5,6 +5,7 @@ import UIButton from './UIButton.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
 import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
 class UIAlertController extends UIViewController {
     constructor(title, message, preferredStyle = 'alert') {
@@ -329,6 +330,31 @@ class UIAlertController extends UIViewController {
 
     patternMatch(predicate) {
         return this.matchAlert(predicate);
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
     }
 }
 

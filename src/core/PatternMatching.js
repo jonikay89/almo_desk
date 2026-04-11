@@ -1,5 +1,102 @@
 import Switch, { ClosedRange, HalfOpenRange, TypePattern, ValueBindingPattern } from './Switch.js';
 
+function ifCase(pattern) {
+    return function(value) {
+        return {
+            then: (handler) => {
+                if (patternMatch(pattern, value)) {
+                    const bound = Switch.extractBoundValues(value, pattern);
+                    handler(bound);
+                    return true;
+                }
+                return false;
+            },
+            else: (handler) => {
+                if (!patternMatch(pattern, value)) {
+                    handler();
+                }
+            }
+        };
+    };
+}
+
+function guardCase(pattern) {
+    return function(value) {
+        if (patternMatch(pattern, value)) {
+            const bound = Switch.extractBoundValues(value, pattern);
+            return { matched: true, value: bound };
+        }
+        return { matched: false, value: undefined };
+    };
+}
+
+function whileCase(pattern) {
+    return function(iterator) {
+        const result = iterator.next();
+        if (result.done) return { done: true, value: undefined };
+        if (patternMatch(pattern, result.value)) {
+            const bound = Switch.extractBoundValues(result.value, pattern);
+            return { done: false, value: bound };
+        }
+        return { done: false, value: undefined };
+    };
+}
+
+function forCase(pattern) {
+    return function(value) {
+        if (patternMatch(pattern, value)) {
+            return Switch.extractBoundValues(value, pattern);
+        }
+        return undefined;
+    };
+}
+
+function forCaseLet(variableName, pattern) {
+    return {
+        __forCaseLet: true,
+        variableName,
+        pattern
+    };
+}
+
+function matchIf(pattern, value, handler) {
+    if (patternMatch(pattern, value)) {
+        const bound = Switch.extractBoundValues(value, pattern);
+        handler(bound);
+        return true;
+    }
+    return false;
+}
+
+function matchGuard(pattern, value) {
+    if (patternMatch(pattern, value)) {
+        return { success: true, value: Switch.extractBoundValues(value, pattern) };
+    }
+    return { success: false };
+}
+
+function optionalPattern(innerPattern = Switch.Wildcard) {
+    return {
+        __optionalPattern: true,
+        innerPattern
+    };
+}
+
+function isNil(value) {
+    return value === null || value === undefined;
+}
+
+function isSome(value) {
+    return value !== null && value !== undefined;
+}
+
+function extractOptional(value) {
+    if (value === null || value === undefined) {
+        return { isSome: false, value: undefined };
+    }
+    return { isSome: true, value };
+}
+
 class PatternMatcher {
     constructor(pattern) {
         this.pattern = pattern;
@@ -220,6 +317,17 @@ PatternMatcher.indirect = indirect;
 PatternMatcher.matchIndirect = matchIndirect;
 PatternMatcher.extractIndirect = extractIndirect;
 PatternMatcher.casePattern = casePattern;
+PatternMatcher.ifCase = ifCase;
+PatternMatcher.guardCase = guardCase;
+PatternMatcher.whileCase = whileCase;
+PatternMatcher.forCase = forCase;
+PatternMatcher.forCaseLet = forCaseLet;
+PatternMatcher.matchIf = matchIf;
+PatternMatcher.matchGuard = matchGuard;
+PatternMatcher.optionalPattern = optionalPattern;
+PatternMatcher.isNil = isNil;
+PatternMatcher.isSome = isSome;
+PatternMatcher.extractOptional = extractOptional;
 
 export {
     PatternMatcher,
@@ -240,5 +348,17 @@ export {
     extractValueCase,
     indirect,
     matchIndirect,
-    extractIndirect
+    extractIndirect,
+    ifCase,
+    guardCase,
+    whileCase,
+    forCase,
+    forCaseLet,
+    matchIf,
+    matchGuard,
+    optionalPattern,
+    isNil,
+    isSome,
+    extractOptional,
+    patternMatch
 };

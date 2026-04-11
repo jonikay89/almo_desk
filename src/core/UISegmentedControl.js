@@ -2,6 +2,7 @@ import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
 import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
 class UISegmentedControl extends UIControl {
     constructor(items = []) {
@@ -327,6 +328,35 @@ class UISegmentedControl extends UIControl {
             control.tintColor = UIColor.colorWithHex(data.tintColor);
         }
         return control;
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
+
+    switch() {
+        return Switch(this);
     }
 }
 

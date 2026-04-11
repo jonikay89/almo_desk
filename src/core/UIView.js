@@ -1,6 +1,8 @@
 import UIColor from './UIColor.js';
 import UIResponder from './UIResponder.js';
 import { NSValue } from './Foundation.js';
+import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
 class UIView extends UIResponder {
     constructor() {
@@ -249,6 +251,54 @@ class UIView extends UIResponder {
         if (data.zIndex !== undefined) view.zIndex = data.zIndex;
         if (data.backgroundColor) view.backgroundColor = UIColor.colorWithHex(data.backgroundColor);
         return view;
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
+
+    matchView(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ hidden: true }, () => this._hidden === true)
+            .case({ hidden: false }, () => this._hidden === false)
+            .case({ tagged: Switch.let('t') }, (m) => this.tag === m.t)
+            .case({ hasSuperview: true }, () => this.superview !== null)
+            .case({ hasSuperview: false }, () => this.superview === null)
+            .case({ alpha: Switch.let('a') }, (m) => Math.abs(this._alpha - m.a) < 0.001)
+            .default(() => false)
+            .evaluate();
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        return this.matchView(predicate);
     }
 }
 

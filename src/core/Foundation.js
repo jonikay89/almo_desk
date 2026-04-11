@@ -1,5 +1,6 @@
 import { hashObject } from './Protocol.js';
 import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, forCaseLet, patternMatch } from './PatternMatching.js';
 
 const CustomStringConvertible = {
     description: {
@@ -188,6 +189,31 @@ class NSNumber extends NSValue {
             .case(pattern)
             .evaluate();
     }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this._numberValue).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this._numberValue);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this._numberValue);
+    }
 }
 
 class Data {
@@ -346,6 +372,31 @@ class Data {
 
     match(predicate) {
         return this.patternMatch(predicate);
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
     }
 }
 
@@ -536,6 +587,31 @@ class NSURL {
     match(predicate) {
         return this.patternMatch(predicate);
     }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
 }
 
 class Scanner {
@@ -722,6 +798,31 @@ class Scanner {
         }
         this._index = savedIndex;
         return false;
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
     }
 }
 

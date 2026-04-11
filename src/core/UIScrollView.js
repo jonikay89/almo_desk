@@ -3,6 +3,7 @@ import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue } from './Foundation.js';
 import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
 class UIScrollView extends UIView {
     constructor() {
@@ -248,6 +249,35 @@ class UIScrollView extends UIView {
         scrollView._bounces = data.bounces !== false;
         scrollView.contentInset = data.contentInset || { top: 0, right: 0, bottom: 0, left: 0 };
         return scrollView;
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
+
+    switch() {
+        return Switch(this);
     }
 }
 

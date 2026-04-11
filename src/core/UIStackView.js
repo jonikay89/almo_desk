@@ -1,4 +1,6 @@
 import UIView from './UIView.js';
+import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
 class UIStackView extends UIView {
     constructor(arrangedSubviews = []) {
@@ -205,6 +207,35 @@ class UIStackView extends UIView {
         stackView._alignment = data.alignment || 'center';
         stackView._spacing = data.spacing || 0;
         return stackView;
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
+
+    switch() {
+        return Switch(this);
     }
 }
 

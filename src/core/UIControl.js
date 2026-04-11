@@ -1,6 +1,8 @@
 import UIView from './UIView.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
+import Switch from './Switch.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 
 class UIControl extends UIView {
     constructor() {
@@ -155,6 +157,54 @@ class UIControl extends UIView {
         control.contentVerticalAlignment = data.contentVerticalAlignment || 'center';
         control.contentHorizontalAlignment = data.contentHorizontalAlignment || 'center';
         return control;
+    }
+
+    ifCase(pattern, handler) {
+        return ifCase(pattern)(this).then(handler);
+    }
+
+    guardCase(pattern) {
+        return guardCase(pattern)(this);
+    }
+
+    static forCase(collection, pattern, handler) {
+        for (const item of collection) {
+            const result = forCase(pattern)(item);
+            if (result !== undefined) {
+                handler(result);
+            }
+        }
+    }
+
+    static whileCase(iterator, pattern) {
+        return whileCase(pattern)(iterator);
+    }
+
+    matchOperator(pattern) {
+        return patternMatch(pattern, this);
+    }
+
+    matchControl(predicate) {
+        if (typeof predicate === 'function') {
+            return predicate(this);
+        }
+        return Switch(predicate)
+            .case({ enabled: true }, () => this.enabled === true)
+            .case({ enabled: false }, () => this.enabled === false)
+            .case({ selected: true }, () => this.selected === true)
+            .case({ selected: false }, () => this.selected === false)
+            .case({ highlighted: true }, () => this.highlighted === true)
+            .case({ highlighted: false }, () => this.highlighted === false)
+            .default(() => false)
+            .evaluate();
+    }
+
+    switch() {
+        return Switch(this);
+    }
+
+    patternMatch(predicate) {
+        return this.matchControl(predicate);
     }
 }
 
