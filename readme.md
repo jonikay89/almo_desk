@@ -1,5 +1,4 @@
-
-This is web_desk - a web-based desktop operating system built with vanilla JavaScript that brings Apple's UIKit patterns to the web.
+This is ALmo desk - a web-based desktop operating system built with vanilla JavaScript that brings Apple's UIKit patterns to the web.
 What It Is
 A component library mimicking iOS/macOS UIKit APIs for building desktop-like web applications with Swift-like conventions.
 What Users Gain
@@ -174,37 +173,32 @@ NSObject
 │       ├── UIWindow
 │       └── UIAlertController
 
-## Running the Project
+Useful commands
+----
 
+## Running the Project
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server |
 | `node server.js` | Alternative start command |
 
-## Stopping the Server
 
-```bash
+## Stopping the Server
 pkill -f "node server.js" 2>/dev/null
 echo "Server stopped"
-```
 
 ## Kill Process on Port 3000 & Restart
-
-```bash
 lsof -ti:3000 | xargs kill -9 2>/dev/null
 sleep 1
 node server.js &
-```
+
 
 ## List All Project Files
-
-```bash
 find . -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) | head -30
-```
+
 
 ## Quick Server Test
 
-```bash
 # Start server
 node server.js &
 sleep 2
@@ -215,146 +209,35 @@ curl -s http://localhost:3000 | head -20
 # Expected output includes:
 # 🚀 Server running at http://localhost:3000
 # <!DOCTYPE html>...
-```
 
 ## Check CSS & JavaScript
-
-```bash
 curl -s http://localhost:3000/styles/main.css | head -5
 curl -s http://localhost:3000/src/index.js | head -5
 
 # Stop server
 pkill -f "node server.js" 2>/dev/null
-```
+
 
 ## Running Tests
-
-```bash
-npm test
-```
+npm test 
+or
+npm test 2>&1 | grep -E "(pass|fail|tests)"
 
 Example output:
-```
 > node --test tests/*.test.js
 ℹ tests 135
 ℹ pass 135
 ℹ fail 0
-```
 
 ## Run Server in Background (with logging)
-
-```bash
 nohup node server.js > /tmp/server.log 2>&1 &
 sleep 2
 cat /tmp/server.log
-```
 
 Expected output:
-```
 🚀 Server running at http://localhost:3000
-```
 
 
 
 
-architecture:
-web_desk/
-├── index.html              # Main entry point
-├── server.js               # Dev server (node server.js)
-├── package.json
-├── src/
-│   ├── index.js            # Bootstrap
-│   ├── core/
-│   │   ├── DesktopOS.js    # Main application
-│   │   ├── Window.js       # Window class
-│   │   └── index.js
-│   ├── widgets/
-│   │   ├── BaseWidget.js   # Base class
-│   │   ├── ClockWidget.js
-│   │   ├── NotesWidget.js
-│   │   ├── CodeEditorWidget.js
-│   │   ├── WebLinkWidget.js
-│   │   ├── CustomHtmlWidget.js
-│   │   └── index.js        # Registry
-│   └── utils/
-│       ├── dom.js          # DOM helpers
-│       ├── storage.js      # localStorage wrapper
-│       ├── sanitizer.js    # HTML/URL sanitization
-│       └── index.js
-└── styles/
-    ├── main.css            # Imports all
-    ├── base.css
-    ├── desktop.css
-    ├── window.css
-    ├── taskbar.css
-    └── widgets/
-        ├── clock.css
-        ├── notes.css
-        ├── code-editor.css
-        ├── weblink.css
-        └── custom-html.css
 
-
-
-Key improvements:
-----
-
-how to run it:
-npm run dev (or node server.js)
-
-how to close it:
-pkill -f "node server.js" 2>/dev/null; echo "done"
-
-how to kill process on port 3000 and restart:
-lsof -ti:3000 | xargs kill -9 2>/dev/null; sleep 1; node server.js &
-
-list all project files:
--type f \( -name "*.js" -o -name "*. css" -o -name "*.html" -o -name "*.json" \) | head 30
-
-look at the code:
-node server.js & sleep 2
-curl -s http://localhost:3000 | head -20
-example:
-🚀 Server running at http://localhost:3000
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Web Desktop OS - JIT Code Studio</title>
-    <link rel="stylesheet" href="./styles/main.css">
-</head>
-<body>
-    <div class="web-desktop" id="webDesktop"></div>
-    <div class="taskbar" id="taskbar"></div>
-    <script type="module" src="./src/index.js"></script>
-</body>
-</html>
-
-
-
-
-cd /Users/yonik/proj/web_desk && timeout 5 node server.js &
-sleep 2
-curl -s http://localhost:3000/styles/main.css | head -5
-curl -s http://localhost:3000/src/index.js | head -5
-pkill -f "node server.js" 2>/dev/null
-
-run tests:
-npm test 2>&1
-
-
-npm test 2>&1 | grep -E "(pass|fail|tests)"
-
-example:
-> node --test tests/*.test.js
-ℹ tests 135
-ℹ pass 135
-ℹ fail 0
-
-
-$ nohup node server.js > /tmp/server.log 2>&1 &
-example:
-sleep 2
-cat /tmp/server.log
-🚀 Server running at http://localhost:3000
