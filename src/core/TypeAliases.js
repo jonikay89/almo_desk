@@ -261,11 +261,183 @@ extendProtocol(TabBarDelegate, {
 });
 
 export const AlertDelegate = createDelegateProtocol('AlertDelegate', [
-    'alertDidDismiss'
+    'alertDidDismiss',
+    'alertWillPresent',
+    'alertDidPresent'
 ]);
 
 extendProtocol(AlertDelegate, {
     alertDidDismiss(alertController, action) {
+        return null;
+    },
+    alertWillPresent(alertController) {
+        return null;
+    },
+    alertDidPresent(alertController) {
+        return null;
+    }
+});
+
+export const TableViewDataSource = createDataSourceProtocol('TableViewDataSource', [
+    'tableView_numberOfRowsInSection',
+    'tableView_cellForRowAt',
+    'numberOfSectionsInTableView',
+    'tableView_commitEditingStyle',
+    'tableView_canEditRowAt',
+    'tableView_canMoveRowAt',
+    'tableView_moveRowAt'
+]);
+
+extendProtocol(TableViewDataSource, {
+    numberOfSectionsInTableView(tableView) {
+        return 1;
+    },
+    tableView_numberOfRowsInSection(tableView, section) {
+        return 0;
+    },
+    tableView_cellForRowAt(tableView, index, section) {
+        return null;
+    },
+    tableView_commitEditingStyle(tableView, editingStyle, indexPath) {
+        return null;
+    },
+    tableView_canEditRowAt(tableView, indexPath) {
+        return true;
+    },
+    tableView_canMoveRowAt(tableView, indexPath) {
+        return true;
+    },
+    tableView_moveRowAt(tableView, sourceIndexPath, destinationIndexPath) {
+        return null;
+    }
+});
+
+export const TableViewDelegate = createDelegateProtocol('TableViewDelegate', [
+    'tableViewDidSelectRowAt',
+    'tableView_titleForHeaderInSection',
+    'tableView_titleForFooterInSection',
+    'tableView_heightForRowAt',
+    'tableView_heightForHeaderInSection',
+    'tableView_heightForFooterInSection',
+    'tableView_willDisplayCell',
+    'tableView_didEndDisplayingCell',
+    'tableView_willSelectRowAt',
+    'tableView_didDeselectRowAt',
+    'tableView_editingStyleForRowAt',
+    'tableView_selectionStyleForRowAt',
+    'tableView_accessoryTypeForRowAt',
+    'tableView_indentLevelForRowAt'
+]);
+
+extendProtocol(TableViewDelegate, {
+    tableViewDidSelectRowAt(tableView, index, section) {
+        return null;
+    },
+    tableView_titleForHeaderInSection(tableView, section) {
+        return null;
+    },
+    tableView_titleForFooterInSection(tableView, section) {
+        return null;
+    },
+    tableView_heightForRowAt(tableView, indexPath) {
+        return tableView.rowHeight || 44;
+    },
+    tableView_heightForHeaderInSection(tableView, section) {
+        return tableView.sectionHeaderHeight || 30;
+    },
+    tableView_heightForFooterInSection(tableView, section) {
+        return tableView.sectionFooterHeight || 0;
+    },
+    tableView_willDisplayCell(tableView, cell, indexPath) {
+        return null;
+    },
+    tableView_didEndDisplayingCell(tableView, cell, indexPath) {
+        return null;
+    },
+    tableView_willSelectRowAt(tableView, indexPath) {
+        return indexPath;
+    },
+    tableView_didDeselectRowAt(tableView, indexPath) {
+        return null;
+    },
+    tableView_editingStyleForRowAt(tableView, indexPath) {
+        return 'none';
+    },
+    tableView_selectionStyleForRowAt(tableView, indexPath) {
+        return 'default';
+    },
+    tableView_accessoryTypeForRowAt(tableView, indexPath) {
+        return 'none';
+    },
+    tableView_indentLevelForRowAt(tableView, indexPath) {
+        return 0;
+    }
+});
+
+export const CollectionViewDelegate = createDelegateProtocol('CollectionViewDelegate', [
+    'collectionViewDidSelectItemAt',
+    'collectionView_sizeForItemAt',
+    'collectionView_willDisplayCell',
+    'collectionView_didEndDisplayingCell',
+    'collectionView_didHighlightItemAt',
+    'collectionView_didUnhighlightItemAt',
+    'collectionView_referenceSizeForHeaderInSection',
+    'collectionView_referenceSizeForFooterInSection'
+]);
+
+extendProtocol(CollectionViewDelegate, {
+    collectionViewDidSelectItemAt(collectionView, indexPath) {
+        return null;
+    },
+    collectionView_sizeForItemAt(collectionView, indexPath) {
+        return collectionView.itemSize || { width: 100, height: 100 };
+    },
+    collectionView_willDisplayCell(collectionView, cell, indexPath) {
+        return null;
+    },
+    collectionView_didEndDisplayingCell(collectionView, cell, indexPath) {
+        return null;
+    },
+    collectionView_didHighlightItemAt(collectionView, indexPath) {
+        return null;
+    },
+    collectionView_didUnhighlightItemAt(collectionView, indexPath) {
+        return null;
+    },
+    collectionView_referenceSizeForHeaderInSection(collectionView, section) {
+        return null;
+    },
+    collectionView_referenceSizeForFooterInSection(collectionView, section) {
+        return null;
+    }
+});
+
+export const CollectionViewDataSource = createDataSourceProtocol('CollectionViewDataSource', [
+    'numberOfSectionsInCollectionView',
+    'numberOfItemsInCollectionView',
+    'collectionView_cellForItemAt',
+    'collectionView_viewForSupplementaryElementOfKindAt',
+    'collectionView_canMoveItemAt',
+    'collectionView_moveItemAt'
+]);
+
+extendProtocol(CollectionViewDataSource, {
+    numberOfSectionsInCollectionView(collectionView) {
+        return 1;
+    },
+    numberOfItemsInCollectionView(collectionView, section) {
+        return 0;
+    },
+    collectionView_cellForItemAt(collectionView, indexPath) {
+        return null;
+    },
+    collectionView_viewForSupplementaryElementOfKindAt(collectionView, kind, indexPath) {
+        return null;
+    },
+    collectionView_canMoveItemAt(collectionView, indexPath) {
+        return true;
+    },
+    collectionView_moveItemAt(collectionView, sourceIndexPath, destinationIndexPath) {
         return null;
     }
 });

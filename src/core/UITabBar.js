@@ -3,10 +3,108 @@ import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
-import { defineTypeAlias } from './Protocol.js';
-import { TabBarDelegate } from './TypeAliases.js';
+import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
+import { TabBarDelegate, TabBarDelegate as TabBarDelegateProtocol } from './TypeAliases.js';
 
 defineTypeAlias('TabBarDelegateAlias', TabBarDelegate);
+
+class UITabBar extends UIView {
+    constructor() {
+        super();
+        this.items = [];
+        this.selectedItem = null;
+        this.tintColor = UIColor.systemBlue();
+        this.barTintColor = UIColor.systemBackground();
+        this.delegate = null;
+    }
+
+    init() {
+        this.element = document.createElement('div');
+        this.element.className = 'ui-tabbar';
+        this.element.style.display = 'flex';
+        this.element.style.alignItems = 'center';
+        this.element.style.justifyContent = 'space-around';
+        this.element.style.height = '49px';
+        this.element.style.backgroundColor = UIColor.systemBackground().css;
+        this.element.style.borderTop = '1px solid #ddd';
+        this.element.style.position = 'relative';
+        this.element.style.zIndex = '100';
+
+        return this;
+    }
+
+    setItems(items, animated = true) {
+        this.items = items;
+        this.#render();
+    }
+
+    #render() {
+        this.element.innerHTML = '';
+
+        this.items.forEach((item, index) => {
+            const tabItem = document.createElement('div');
+            tabItem.className = 'ui-tabbar-item';
+            tabItem.style.display = 'flex';
+            tabItem.style.flexDirection = 'column';
+            tabItem.style.alignItems = 'center';
+            tabItem.style.justifyContent = 'center';
+            tabItem.style.flex = '1';
+            tabItem.style.height = '100%';
+            tabItem.style.cursor = 'pointer';
+            tabItem.style.padding = '4px 8px';
+            tabItem.dataset.index = index;
+
+            if (item.image) {
+                const img = document.createElement('img');
+                img.src = item.image;
+                img.alt = item.title || '';
+                img.style.width = '24px';
+                img.style.height = '24px';
+                img.style.objectFit = 'contain';
+                tabItem.appendChild(img);
+            } else if (item.emoji) {
+                const emoji = document.createElement('span');
+                emoji.textContent = item.emoji;
+                emoji.style.fontSize = '22px';
+                tabItem.appendChild(emoji);
+            }
+
+            if (item.title) {
+                const label = document.createElement('span');
+                label.textContent = item.title;
+                label.style.fontSize = '10px';
+                label.style.marginTop = '2px';
+                tabItem.appendChild(label);
+            }
+
+            tabItem.addEventListener('click', () => {
+                this.#selectItem(index);
+            });
+
+            this.element.appendChild(tabItem);
+        });
+
+        if (this.selectedItem) {
+            const selectedIndex = this.items.indexOf(this.selectedItem);
+            if (selectedIndex >= 0) {
+                this.#updateSelection(selectedIndex);
+            }
+        }
+    }
+
+    #selectItem(index) {
+        const previousIndex = this.selectedItem ? this.items.indexOf(this.selectedItem) : -1;
+        this.selectedItem = this.items[index];
+        this.#updateSelection(index);
+
+        if (this.delegate) {
+            const result = invokeProtocolMethod(TabBarDelegateProtocol, this.delegate, 'tabBarDidSelectItem', this, index);
+            if (result !== null && result !== undefined) {
+                return result;
+            }
+        }
+        return null;
+    }
 
 class UITabBar extends UIView {
     constructor() {

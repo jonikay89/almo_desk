@@ -2,8 +2,8 @@ import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
-import { defineTypeAlias } from './Protocol.js';
-import { NavigationBarDelegate } from './TypeAliases.js';
+import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
+import { NavigationBarDelegate, NavigationBarDelegate as NavigationBarDelegateProtocol } from './TypeAliases.js';
 
 defineTypeAlias('NavigationBarDelegateAlias', NavigationBarDelegate);
 
@@ -16,6 +16,7 @@ class UINavigationBar extends UIView {
         this.prefersLargeTitles = false;
         this.titleTextAttributes = {};
         this.items = [];
+        this.delegate = null;
     }
 
     get description() {
@@ -49,6 +50,11 @@ class UINavigationBar extends UIView {
         if (!this.items.includes(item)) {
             this.items.push(item);
         }
+        
+        if (this.delegate) {
+            invokeProtocolMethod(NavigationBarDelegateProtocol, this.delegate, 'navigationBarDidSelectItem', this, item);
+        }
+        
         this.#render(animated);
     }
 
@@ -56,6 +62,11 @@ class UINavigationBar extends UIView {
         const popped = this.topItem;
         this.topItem = this.backItem;
         this.backItem = null;
+        
+        if (this.delegate) {
+            invokeProtocolMethod(NavigationBarDelegateProtocol, this.delegate, 'navigationBarDidSelectItem', this, this.topItem);
+        }
+        
         this.#render(animated);
         return popped;
     }

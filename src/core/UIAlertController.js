@@ -6,6 +6,8 @@ import UIColor from './UIColor.js';
 import { NSNumber } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { invokeProtocolMethod } from './Protocol.js';
+import { AlertDelegate, AlertDelegate as AlertDelegateProtocol } from './TypeAliases.js';
 
 class UIAlertController extends UIViewController {
     constructor(title, message, preferredStyle = 'alert') {
@@ -16,6 +18,7 @@ class UIAlertController extends UIViewController {
         this.actions = [];
         this.textFields = [];
         this.alertView = null;
+        this.delegate = null;
     }
 
     init() {
@@ -176,6 +179,9 @@ class UIAlertController extends UIViewController {
     }
 
     #dismissWithAction(action) {
+        if (this.delegate) {
+            invokeProtocolMethod(AlertDelegateProtocol, this.delegate, 'alertDidDismiss', this, action);
+        }
         if (action.handler) {
             action.handler();
         }
@@ -189,6 +195,10 @@ class UIAlertController extends UIViewController {
     }
 
     present(animated = true, completion = null) {
+        if (this.delegate) {
+            invokeProtocolMethod(AlertDelegateProtocol, this.delegate, 'alertWillPresent', this);
+        }
+        
         if (animated) {
             this.alertView.style.opacity = '0';
             this.alertView.style.transform = 'scale(0.9)';
@@ -197,7 +207,14 @@ class UIAlertController extends UIViewController {
             requestAnimationFrame(() => {
                 this.alertView.style.opacity = '1';
                 this.alertView.style.transform = 'scale(1)';
+                if (this.delegate) {
+                    invokeProtocolMethod(AlertDelegateProtocol, this.delegate, 'alertDidPresent', this);
+                }
             });
+        } else {
+            if (this.delegate) {
+                invokeProtocolMethod(AlertDelegateProtocol, this.delegate, 'alertDidPresent', this);
+            }
         }
         
         if (completion) {
