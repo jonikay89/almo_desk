@@ -1,5 +1,12 @@
+import UIView from './UIView.js';
+import UIWindow from './UIWindow.js';
+import UILabel from './UILabel.js';
+import UIButton from './UIButton.js';
+import UIImage from './UIImage.js';
+import UIColor from './UIColor.js';
+import UIScrollView from './UIScrollView.js';
 import WindowController from './WindowController.js';
-import { storage, createElement, escapeHtml } from '../utils/index.js';
+import { storage } from '../utils/index.js';
 
 const CONFIG = {
     MIN_WIDTH: 300,
@@ -22,6 +29,8 @@ class DesktopOS {
         this.drag = null;
         this.saveTimer = null;
         this.taskbarInterval = null;
+        this.desktopView = new UIView().init();
+        this.taskbarView = new UIView().init();
         this.desktopEl = document.getElementById('webDesktop');
         this.taskbarEl = document.getElementById('taskbar');
         this.#init();
@@ -193,6 +202,11 @@ class DesktopOS {
         if (!this.desktopEl) return;
         this.desktopEl.innerHTML = '';
         
+        this.desktopView.element = this.desktopEl;
+        this.desktopView.element.style.position = 'relative';
+        this.desktopView.element.style.width = '100%';
+        this.desktopView.element.style.height = '100%';
+        
         this.#renderDesktopIcons();
 
         const visibleWindows = this.windows
@@ -218,45 +232,116 @@ class DesktopOS {
             storage.set(CONFIG.STORAGE_KEY_ICONS, icons);
         }
 
-        const container = createElement('div', { className: 'desktop-icons' });
+        const container = new UIView();
+        container.init();
+        container.element.className = 'desktop-icons';
+        container.element.style.position = 'absolute';
+        container.element.style.top = '10px';
+        container.element.style.left = '10px';
+        container.element.style.display = 'flex';
+        container.element.style.flexDirection = 'column';
+        container.element.style.gap = '8px';
 
         icons.forEach(ic => {
-            const icon = createElement('div', { className: 'desktop-icon' }, [
-                createElement('div', { className: 'icon-img', textContent: ic.icon }),
-                createElement('div', { className: 'icon-label', textContent: ic.label })
-            ]);
-
-            icon.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const existing = this.windows.find(w => w.widgetType === ic.type && w.title === ic.label);
-                if (existing) {
-                    if (existing.isMinimized) this.restoreWindow(existing.windowId);
-                    else this.bringToFront(existing.windowId);
-                } else {
-                    this.addWindow(ic.label, ic.type, ic.data, 100 + Math.random() * 80, 80 + Math.random() * 100);
-                }
-            });
-
-            icon.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                if (confirm(`Delete desktop icon "${ic.label}"?`)) {
-                    icons = icons.filter(i => i.id !== ic.id);
-                    storage.set(CONFIG.STORAGE_KEY_ICONS, icons);
-                    this.#renderDesktopIcons();
-                }
-            });
-
-            container.appendChild(icon);
+            const iconView = this.#createDesktopIcon(ic);
+            container.addSubview(iconView);
         });
 
-        const addBtn = createElement('div', { className: 'desktop-icon' }, [
-            createElement('div', { className: 'icon-img', textContent: '➕' }),
-            createElement('div', { className: 'icon-label', textContent: 'New Icon' })
-        ]);
-        addBtn.addEventListener('click', () => this.#promptNewIcon());
-        container.appendChild(addBtn);
+        const addIcon = this.#createAddIconButton();
+        container.addSubview(addIcon);
 
-        this.desktopEl.appendChild(container);
+        this.desktopEl.appendChild(container.element);
+    }
+
+    #createDesktopIcon(iconData) {
+        const iconView = new UIView().init();
+        iconView.element.className = 'desktop-icon';
+        iconView.element.style.display = 'flex';
+        iconView.element.style.flexDirection = 'column';
+        iconView.element.style.alignItems = 'center';
+        iconView.element.style.cursor = 'pointer';
+        iconView.element.style.padding = '8px';
+        iconView.element.style.borderRadius = '8px';
+        iconView.element.style.transition = 'background-color 0.2s';
+        
+        const iconLabel = new UILabel(iconData.icon).init();
+        iconLabel.setFrame(0, 0, 48, 48);
+        iconLabel.setTextAlignment('center');
+        iconLabel.setFontSize(32);
+        iconView.addSubview(iconLabel);
+        
+        const textLabel = new UILabel(iconData.label).init();
+        textLabel.setFrame(0, 52, 64, 20);
+        textLabel.setFontSize(11);
+        textLabel.setTextAlignment('center');
+        textLabel.setNumberOfLines(2);
+        iconView.addSubview(textLabel);
+
+        iconView.element.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const existing = this.windows.find(w => w.widgetType === iconData.type && w.title === iconData.label);
+            if (existing) {
+                if (existing.isMinimized) this.restoreWindow(existing.windowId);
+                else this.bringToFront(existing.windowId);
+            } else {
+                this.addWindow(iconData.label, iconData.type, iconData.data, 100 + Math.random() * 80, 80 + Math.random() * 100);
+            }
+        });
+
+        iconView.element.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (confirm(`Delete desktop icon "${iconData.label}"?`)) {
+                let icons = storage.get(CONFIG.STORAGE_KEY_ICONS, []) || [];
+                icons = icons.filter(i => i.id !== iconData.id);
+                storage.set(CONFIG.STORAGE_KEY_ICONS, icons);
+                this.#renderDesktopIcons();
+            }
+        });
+
+        iconView.element.addEventListener('mouseenter', () => {
+            iconView.element.style.backgroundColor = 'rgba(255,255,255,0.2)';
+        });
+
+        iconView.element.addEventListener('mouseleave', () => {
+            iconView.element.style.backgroundColor = 'transparent';
+        });
+
+        return iconView;
+    }
+
+    #createAddIconButton() {
+        const addView = new UIView().init();
+        addView.element.className = 'desktop-icon';
+        addView.element.style.display = 'flex';
+        addView.element.style.flexDirection = 'column';
+        addView.element.style.alignItems = 'center';
+        addView.element.style.cursor = 'pointer';
+        addView.element.style.padding = '8px';
+        addView.element.style.borderRadius = '8px';
+        
+        const iconLabel = new UILabel('➕').init();
+        iconLabel.setFrame(0, 0, 48, 48);
+        iconLabel.setTextAlignment('center');
+        iconLabel.setFontSize(32);
+        addView.addSubview(iconLabel);
+        
+        const textLabel = new UILabel('New Icon').init();
+        textLabel.setFrame(0, 52, 64, 20);
+        textLabel.setFontSize(11);
+        textLabel.setTextAlignment('center');
+        addView.addSubview(textLabel);
+
+        addView.element.addEventListener('click', () => this.#promptNewIcon());
+
+        addView.element.addEventListener('mouseenter', () => {
+            addView.element.style.backgroundColor = 'rgba(255,255,255,0.2)';
+        });
+
+        addView.element.addEventListener('mouseleave', () => {
+            addView.element.style.backgroundColor = 'transparent';
+        });
+
+        return addView;
     }
 
     #renderTaskbar() {
@@ -266,44 +351,67 @@ class DesktopOS {
 
         this.taskbarEl.innerHTML = '';
         
-        const startBtn = createElement('div', { 
-            className: 'start-button', 
-            id: 'startBtn',
-            textContent: '🚀 Start',
-            onClick: () => this.#toggleStartMenu()
-        });
-        this.taskbarEl.appendChild(startBtn);
+        this.taskbarView.element = this.taskbarEl;
+        this.taskbarView.element.style.display = 'flex';
+        this.taskbarView.element.style.alignItems = 'center';
+        this.taskbarView.element.style.height = `${CONFIG.TASKBAR_HEIGHT}px`;
+        
+        const startButton = new UIButton('🚀 Start').init();
+        startButton.setFrame(0, 0, 100, CONFIG.TASKBAR_HEIGHT - 8);
+        startButton.setBackgroundColor(UIColor.systemBlue());
+        startButton.setTitleColor(UIColor.white());
+        startButton.element.style.borderRadius = '4px';
+        startButton.element.style.marginLeft = '8px';
+        startButton.element.addEventListener('click', () => this.#toggleStartMenu());
+        this.taskbarView.addSubview(startButton);
 
-        const windowsContainer = createElement('div', { className: 'taskbar-windows' });
+        const windowsContainer = new UIScrollView().init();
+        windowsContainer.setFrame(100, 0, window.innerWidth - 250, CONFIG.TASKBAR_HEIGHT - 8);
+        windowsContainer.setShowsHorizontalScrollIndicator(true);
+        windowsContainer.setShowsVerticalScrollIndicator(false);
+        windowsContainer.element.style.display = 'flex';
+        windowsContainer.element.style.alignItems = 'center';
+        windowsContainer.element.style.gap = '4px';
+        windowsContainer.element.style.padding = '0 8px';
+        windowsContainer.element.style.backgroundColor = 'transparent';
+        windowsContainer.element.style.border = 'none';
+        windowsContainer.element.style.overflowX = 'auto';
+        windowsContainer.element.style.overflowY = 'hidden';
         
         this.windows.forEach(win => {
-            const btn = createElement('div', {
-                className: `taskbar-item ${this.activeWindowId === win.windowId ? 'active' : ''}`
-            }, [createElement('span', { textContent: win.title.substring(0, 22) })]);
-
-            btn.addEventListener('click', () => {
+            const btn = new UIButton(win.title.substring(0, 22)).init();
+            btn.setBackgroundColor(this.activeWindowId === win.windowId ? UIColor.systemBlue() : UIColor.gray());
+            btn.setTitleColor(UIColor.white());
+            btn.element.style.marginRight = '4px';
+            btn.element.style.padding = '6px 12px';
+            btn.element.style.borderRadius = '4px';
+            btn.element.style.fontSize = '12px';
+            btn.element.style.height = '32px';
+            
+            btn.element.addEventListener('click', () => {
                 if (win.isMinimized) this.restoreWindow(win.windowId);
                 else if (this.activeWindowId === win.windowId) this.minimizeWindow(win.windowId);
                 else this.bringToFront(win.windowId);
             });
 
-            windowsContainer.appendChild(btn);
+            windowsContainer.contentElement.appendChild(btn.element);
         });
 
-        this.taskbarEl.appendChild(windowsContainer);
+        this.taskbarView.addSubview(windowsContainer);
 
-        const clock = createElement('div', { className: 'clock-area', id: 'liveClock' });
-        this.taskbarEl.appendChild(clock);
+        const clockLabel = new UILabel('').init();
+        clockLabel.setFrame(window.innerWidth - 130, 0, 120, CONFIG.TASKBAR_HEIGHT - 8);
+        clockLabel.setTextAlignment('center');
+        clockLabel.setFontSize(14);
+        clockLabel.setFontWeight('bold');
+        this.taskbarView.addSubview(clockLabel);
 
-        this.#updateTaskbarClock();
-        this.taskbarInterval = setInterval(() => this.#updateTaskbarClock(), 1000);
+        this.#updateTaskbarClockLabel(clockLabel);
+        this.taskbarInterval = setInterval(() => this.#updateTaskbarClockLabel(clockLabel), 1000);
     }
 
-    #updateTaskbarClock() {
-        const el = document.getElementById('liveClock');
-        if (el) {
-            el.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
+    #updateTaskbarClockLabel(label) {
+        label.setText(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     }
 
     #toggleStartMenu() {
@@ -314,39 +422,66 @@ class DesktopOS {
             return;
         }
 
-        const menu = createElement('div', { className: 'start-menu' }, [
-            createElement('div', { className: 'start-menu-item', 'data-action': 'newIcon', textContent: '➕ Create New Desktop Icon' }),
-            createElement('div', { className: 'start-menu-item', 'data-action': 'newWeblink', textContent: '🌐 Add Web Link Icon' }),
-            createElement('div', { className: 'start-menu-item', 'data-action': 'newHtml', textContent: '📄 Add Custom HTML Icon' }),
-            createElement('hr', { style: 'margin:8px 0; border-color:#444;' }),
-            createElement('div', { className: 'start-menu-item', 'data-action': 'about', textContent: 'ℹ️ About Web Desktop' }),
-        ]);
+        const menu = new UIView().init();
+        menu.element.className = 'start-menu';
+        menu.element.style.position = 'absolute';
+        menu.element.style.top = `${CONFIG.TASKBAR_HEIGHT}px`;
+        menu.element.style.left = '8px';
+        menu.element.style.backgroundColor = UIColor.darkGray().css;
+        menu.element.style.borderRadius = '8px';
+        menu.element.style.padding = '8px 0';
+        menu.element.style.minWidth = '200px';
+        menu.element.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        menu.element.style.zIndex = '10000';
 
+        const menuItems = [
+            { text: '➕ Create New Desktop Icon', action: 'newIcon' },
+            { text: '🌐 Add Web Link Icon', action: 'newWeblink' },
+            { text: '📄 Add Custom HTML Icon', action: 'newHtml' },
+            { text: 'ℹ️ About Web Desktop', action: 'about' },
+        ];
+
+        menuItems.forEach(item => {
+            const menuItem = new UILabel(item.text).init();
+            menuItem.setFrame(0, 0, 200, 36);
+            menuItem.setFontSize(14);
+            menuItem.setTextAlignment('left');
+            menuItem.element.style.padding = '8px 16px';
+            menuItem.element.style.cursor = 'pointer';
+            menuItem.element.addEventListener('mouseenter', () => {
+                menuItem.element.style.backgroundColor = 'rgba(255,255,255,0.1)';
+            });
+            menuItem.element.addEventListener('mouseleave', () => {
+                menuItem.element.style.backgroundColor = 'transparent';
+            });
+            menuItem.element.addEventListener('click', () => {
+                this.#handleMenuAction(item.action);
+                this.#toggleStartMenu();
+            });
+            menu.element.appendChild(menuItem.element);
+        });
+
+        document.body.appendChild(menu.element);
+        this.startMenuOpen = true;
+
+        const closeMenu = (e) => {
+            if (!menu.element.contains(e.target) && !e.target.closest('.start-button')) {
+                this.#toggleStartMenu();
+                document.removeEventListener('click', closeMenu);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeMenu), 100);
+    }
+
+    #handleMenuAction(action) {
         const actions = {
             newIcon: () => this.#promptNewIcon(),
             newWeblink: () => this.#promptWeblinkIcon(),
             newHtml: () => this.#promptHtmlIcon(),
             about: () => alert('Web Desktop OS v4.0\niOS UIKit-Inspired Architecture\nDrag • Resize • Persist'),
         };
-
-        menu.querySelectorAll('.start-menu-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const action = actions[item.getAttribute('data-action')];
-                if (action) action();
-                this.#toggleStartMenu();
-            });
-        });
-
-        document.body.appendChild(menu);
-        this.startMenuOpen = true;
-
-        const closeMenu = (e) => {
-            if (!menu.contains(e.target) && !e.target.closest('.start-button')) {
-                this.#toggleStartMenu();
-                document.removeEventListener('click', closeMenu);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', closeMenu), 100);
+        const fn = actions[action];
+        if (fn) fn();
     }
 
     #promptNewIcon() {
@@ -360,7 +495,7 @@ class DesktopOS {
             label,
             icon: iconEmoji,
             type: 'customHtml',
-            data: { htmlContent: `<h3>${escapeHtml(label)}</h3><p>Custom widget</p>` },
+            data: { htmlContent: `<h3>${label}</h3><p>Custom widget</p>` },
         });
         storage.set(CONFIG.STORAGE_KEY_ICONS, icons);
         this.#renderDesktopIcons();

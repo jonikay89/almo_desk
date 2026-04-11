@@ -38,18 +38,16 @@ web_desk/
 
 
 Key improvements:
-- Modular architecture - Each widget is its own class with clear separation
-- Extensible - Add new widgets by creating a file in widgets/ and registering in index.js
-- Clean utilities - Storage, sanitization, and DOM helpers are reusable
-- Scoped styles - CSS is organized by component for easier maintenance
-- TypeScript-ready - Can easily add .ts files and TypeScript config
-
+----
 
 how to run it:
 npm run dev (or node server.js)
 
 how to close it:
 pkill -f "node server.js" 2>/dev/null; echo "done"
+
+how to kill process on port 3000 and restart:
+lsof -ti:3000 | xargs kill -9 2>/dev/null; sleep 1; node server.js &
 
 list all project files:
 -type f \( -name "*.js" -o -name "*. css" -o -name "*.html" -o -name "*.json" \) | head 30

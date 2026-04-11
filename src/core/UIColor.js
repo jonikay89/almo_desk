@@ -1,0 +1,157 @@
+class UIColor {
+    constructor(red, green, blue, alpha = 1) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+        this.alpha = alpha;
+    }
+
+    static clear() {
+        return new UIColor(0, 0, 0, 0);
+    }
+
+    static black() {
+        return new UIColor(0, 0, 0, 1);
+    }
+
+    static white() {
+        return new UIColor(1, 1, 1, 1);
+    }
+
+    static gray() {
+        return new UIColor(0.5, 0.5, 0.5, 1);
+    }
+
+    static lightGray() {
+        return new UIColor(0.75, 0.75, 0.75, 1);
+    }
+
+    static darkGray() {
+        return new UIColor(0.25, 0.25, 0.25, 1);
+    }
+
+    static red() {
+        return new UIColor(1, 0, 0, 1);
+    }
+
+    static green() {
+        return new UIColor(0, 1, 0, 1);
+    }
+
+    static blue() {
+        return new UIColor(0, 0, 1, 1);
+    }
+
+    static yellow() {
+        return new UIColor(1, 1, 0, 1);
+    }
+
+    static orange() {
+        return new UIColor(1, 0.5, 0, 1);
+    }
+
+    static purple() {
+        return new UIColor(0.5, 0, 0.5, 1);
+    }
+
+    static cyan() {
+        return new UIColor(0, 1, 1, 1);
+    }
+
+    static magenta() {
+        return new UIColor(1, 0, 1, 1);
+    }
+
+    static systemBlue() {
+        return new UIColor(0, 0.478, 1, 1);
+    }
+
+    static systemGreen() {
+        return new UIColor(0.204, 0.78, 0.349, 1);
+    }
+
+    static systemRed() {
+        return new UIColor(1, 0.231, 0.188, 1);
+    }
+
+    static systemOrange() {
+        return new UIColor(1, 0.584, 0, 1);
+    }
+
+    static systemYellow() {
+        return new UIColor(1, 0.8, 0, 1);
+    }
+
+    static systemPurple() {
+        return new UIColor(0.686, 0.322, 0.871, 1);
+    }
+
+    static systemPink() {
+        return new UIColor(1, 0.176, 0.333, 1);
+    }
+
+    static systemTeal() {
+        return new UIColor(0.188, 0.82, 0.82, 1);
+    }
+
+    static systemIndigo() {
+        return new UIColor(0.345, 0.337, 0.839, 1);
+    }
+
+    static colorWithRedGreenBlueAlpha(red, green, blue, alpha) {
+        return new UIColor(red, green, blue, alpha);
+    }
+
+    static colorWithHex(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (result) {
+            return new UIColor(
+                parseInt(result[1], 16) / 255,
+                parseInt(result[2], 16) / 255,
+                parseInt(result[3], 16) / 255,
+                1
+            );
+        }
+        return UIColor.black();
+    }
+
+    static colorWithWhiteAlpha(white, alpha) {
+        return new UIColor(white, white, white, alpha);
+    }
+
+    toString() {
+        if (this.alpha === 0) return 'transparent';
+        const r = Math.round(this.red * 255);
+        const g = Math.round(this.green * 255);
+        const b = Math.round(this.blue * 255);
+        if (this.alpha === 1) {
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        return `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+    }
+
+    withAlpha(alpha) {
+        return new UIColor(this.red, this.green, this.blue, alpha);
+    }
+
+    get hex() {
+        const r = Math.round(this.red * 255).toString(16).padStart(2, '0');
+        const g = Math.round(this.green * 255).toString(16).padStart(2, '0');
+        const b = Math.round(this.blue * 255).toString(16).padStart(2, '0');
+        return `#${r}${g}${b}`;
+    }
+
+    get css() {
+        return this.toString();
+    }
+
+    isEqual(other) {
+        if (!(other instanceof UIColor)) return false;
+        return this.red === other.red &&
+               this.green === other.green &&
+               this.blue === other.blue &&
+               this.alpha === other.alpha;
+    }
+}
+
+export default UIColor;

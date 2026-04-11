@@ -1,3 +1,5 @@
+import UIColor from './UIColor.js';
+
 class UIView {
     constructor() {
         this.superview = null;
@@ -11,9 +13,47 @@ class UIView {
         this.userInteractionEnabled = true;
         this.tag = 0;
         this.subviews = [];
-        this.element = null;
+        this.element = document.createElement('div');
         this.zIndex = 0;
         this.translatesAutoresizingMaskIntoConstraints = true;
+        this.flexWidth = false;
+        this.flexHeight = false;
+        this._backgroundColor = null;
+    }
+
+    get backgroundColor() {
+        return this._backgroundColor;
+    }
+
+    set backgroundColor(color) {
+        if (color instanceof UIColor) {
+            this._backgroundColor = color;
+        } else if (typeof color === 'string') {
+            this._backgroundColor = UIColor.colorWithHex(color);
+        } else {
+            this._backgroundColor = null;
+        }
+        if (this.element) {
+            this.element.style.backgroundColor = this._backgroundColor ? this._backgroundColor.css : '';
+        }
+    }
+
+    setBackgroundColor(color) {
+        this.backgroundColor = color;
+    }
+
+    init() {
+        return this;
+    }
+
+    deinit() {
+        for (const subview of this.subviews) {
+            subview.deinit();
+        }
+        this.subviews = [];
+        this.superview = null;
+        this.window = null;
+        this.element = null;
     }
 
     didMoveToSuperview() {}
@@ -63,6 +103,27 @@ class UIView {
         if (this.element) {
             this.element.style.opacity = alpha;
         }
+    }
+
+    setFlexibleWidth(flexible) {
+        this.flexWidth = flexible;
+        if (this.element) {
+            this.element.style.flexGrow = flexible ? 1 : 0;
+            this.element.style.flexShrink = flexible ? 1 : 0;
+        }
+    }
+
+    setFlexibleHeight(flexible) {
+        this.flexHeight = flexible;
+        if (this.element) {
+            this.element.style.flexGrow = flexible ? 1 : 0;
+            this.element.style.flexShrink = flexible ? 1 : 0;
+        }
+    }
+
+    setFlexibile(flexible) {
+        this.setFlexibleWidth(flexible);
+        this.setFlexibleHeight(flexible);
     }
 }
 
