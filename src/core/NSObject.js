@@ -26,6 +26,10 @@ class NSObject {
         return this._hash === object._hash;
     }
 
+    hashValue() {
+        return this._hash;
+    }
+
     copy() {
         return new this.constructor();
     }

@@ -1,17 +1,21 @@
 import NSObject from './NSObject.js';
+import NSArray from './NSArray.js';
 
 class NSSet extends NSObject {
     constructor(objects = []) {
         super();
-        this._set = new Set();
+        this._objects = [];
+        this._hashMap = new Map();
         if (objects) {
             if (objects instanceof NSSet) {
-                objects._set.forEach(obj => this._set.add(obj));
+                for (const obj of objects) {
+                    this.addObject(obj);
+                }
             } else if (Array.isArray(objects)) {
-                objects.forEach(obj => this._set.add(obj));
+                objects.forEach(obj => this.addObject(obj));
             } else if (objects[Symbol.iterator]) {
                 for (const obj of objects) {
-                    this._set.add(obj);
+                    this.addObject(obj);
                 }
             }
         }
@@ -30,80 +34,117 @@ class NSSet extends NSObject {
     }
 
     get count() {
-        return this._set.size;
+        return this._objects.length;
     }
 
     get length() {
-        return this._set.size;
+        return this._objects.length;
     }
 
     allObjects() {
-        return new NSArray(Array.from(this._set));
+        return new NSArray(this._objects.slice());
     }
 
     anyObject() {
-        const first = this._set.values().next().value;
-        return first !== undefined ? first : null;
+        return this._objects[0] || null;
     }
 
     containsObject(object) {
-        return this.#exists(object);
+        const hash = this._computeHash(object);
+        const existingHash = this._hashMap.get(hash);
+        if (!existingHash) return false;
+        
+        for (const obj of existingHash) {
+            if (this._objectsAreEqual(obj, object)) return true;
+        }
+        return false;
     }
 
     intersectsSet(otherSet) {
-        for (const obj of this._set) {
+        for (const obj of this._objects) {
             if (otherSet.containsObject(obj)) return true;
         }
         return false;
     }
 
     isEqualToSet(otherSet) {
-        if (this._set.size !== otherSet._set.size) return false;
+        if (this._objects.length !== otherSet._objects.length) return false;
         return this.isSubsetOfSet(otherSet);
     }
 
     isSubsetOfSet(otherSet) {
-        for (const obj of this._set) {
+        for (const obj of this._objects) {
             if (!otherSet.containsObject(obj)) return false;
         }
         return true;
     }
 
     member(object) {
-        for (const obj of this._set) {
-            if (this.#objectsAreEqual(obj, object)) return obj;
+        const hash = this._computeHash(object);
+        const existingHash = this._hashMap.get(hash);
+        if (!existingHash) return null;
+        
+        for (const obj of existingHash) {
+            if (this._objectsAreEqual(obj, object)) return obj;
         }
         return null;
     }
 
     setByAddingObject(object) {
         const newSet = new NSSet(this);
-        newSet._set.add(object);
+        newSet.addObject(object);
         return newSet;
     }
 
     setByAddingObjectsFromSet(otherSet) {
         const newSet = new NSSet(this);
-        otherSet._set.forEach(obj => newSet._set.add(obj));
+        for (const obj of otherSet) {
+            newSet.addObject(obj);
+        }
         return newSet;
     }
 
     setByAddingObjectsFromArray(array) {
         const newSet = new NSSet(this);
-        array.forEach(obj => newSet._set.add(obj));
+        array.forEach(obj => newSet.addObject(obj));
         return newSet;
     }
 
+    addObject(object) {
+        if (this.containsObject(object)) return;
+        this._objects.push(object);
+        const hash = this._computeHash(object);
+        if (!this._hashMap.has(hash)) {
+            this._hashMap.set(hash, []);
+        }
+        this._hashMap.get(hash).push(object);
+    }
+
+    removeObject(object) {
+        const hash = this._computeHash(object);
+        const existingHash = this._hashMap.get(hash);
+        if (!existingHash) return;
+        
+        for (let i = 0; i < existingHash.length; i++) {
+            if (this._objectsAreEqual(existingHash[i], object)) {
+                existingHash.splice(i, 1);
+                break;
+            }
+        }
+        
+        this._objects = this._objects.filter(obj => !this._objectsAreEqual(obj, object));
+    }
+
     makeObjectsPerformSelector(selector) {
-        this._set.forEach(obj => {
+        this._objects.forEach(obj => {
             if (obj && typeof obj[selector] === 'function') {
                 obj[selector]();
             }
         });
     }
 
-    makeObjectsPerformSelector(selector, withObject) {
-        this._set.forEach(obj => {
+    makeObjectsPerformSelectorWithObject(selector, withObject) {
+        this._objects.forEach(obj => {
             if (obj && typeof obj[selector] === 'function') {
                 obj[selector](withObject);
             }
@@ -111,48 +152,50 @@ class NSSet extends NSObject {
     }
 
     enumerateObjectsUsingBlock(block) {
-        this._set.forEach(obj => block(obj));
+        this._objects.forEach(obj => block(obj));
     }
 
     objectsPassingTest(predicate) {
-        const result = [];
-        this._set.forEach(obj => {
-            if (predicate(obj)) result.push(obj);
-        });
+        const result = this._objects.filter(obj => predicate(obj));
         return new NSSet(result);
     }
 
-    filteredArrayUsingPredicate(predicate) {
-        const result = [];
-        this._set.forEach(obj => {
-            if (predicate(obj)) result.push(obj);
-        });
+    filteredSetUsingPredicate(predicate) {
+        const result = this._objects.filter(obj => predicate(obj));
         return new NSSet(result);
     }
 
-    #exists(object) {
-        return this.#objectHash(object) in this._set;
-    }
-
-    #objectHash(object) {
+    _computeHash(object) {
         if (object && typeof object.hash === 'number') return object.hash;
         if (object && typeof object.hash === 'function') return object.hash();
-        return object;
+        if (typeof object === 'string') {
+            let hash = 0;
+            for (let i = 0; i < object.length; i++) {
+                const char = object.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash;
+        }
+        if (typeof object === 'number') return object ^ (object >>> 16);
+        if (object === null) return 0;
+        if (object === undefined) return 0;
+        return typeof object;
     }
 
-    #objectsAreEqual(a, b) {
+    _objectsAreEqual(a, b) {
         if (a === b) return true;
         if (a && typeof a.isEqual === 'function') return a.isEqual(b);
         if (b && typeof b.isEqual === 'function') return b.isEqual(a);
-        return a === b;
+        return false;
     }
 
     toArray() {
-        return Array.from(this._set);
+        return this._objects.slice();
     }
 
     toString() {
-        const items = Array.from(this._set).map(item => {
+        const items = this._objects.map(item => {
             if (item && typeof item.description === 'string') return item.description;
             return String(item);
         });
@@ -164,7 +207,7 @@ class NSSet extends NSObject {
     }
 
     [Symbol.iterator]() {
-        return this._set[Symbol.iterator]();
+        return this._objects[Symbol.iterator]();
     }
 }
 

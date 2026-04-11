@@ -13,6 +13,25 @@ export { default as PropertyPolicy } from './PropertyPolicy.js';
 export { SwiftArray, ContiguousArray, ArraySlice } from './SwiftArray.js';
 export { SwiftDictionary, KeyValuePairs } from './SwiftDictionary.js';
 export { SwiftSet, OptionSet } from './SwiftSet.js';
+export { 
+    Protocol,
+    ProtocolExtension,
+    DelegationManager,
+    conformToProtocol,
+    hasProtocol,
+    AssociatedType,
+    Identifiable,
+    Equatable,
+    Hashable,
+    Comparable,
+    CustomStringConvertible,
+    Codable,
+    hashObject,
+    hashString,
+    hashNumber,
+    hashArray,
+    hashValue
+} from './Protocol.js';
 export { default as UIResponder } from './UIResponder.js';
 export { default as UIViewController } from './UIViewController.js';
 export { default as UIView } from './UIView.js';
