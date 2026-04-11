@@ -92,3 +92,10 @@ example:
 ℹ tests 135
 ℹ pass 135
 ℹ fail 0
+
+
+$ nohup node server.js > /tmp/server.log 2>&1 &
+example:
+sleep 2
+cat /tmp/server.log
+🚀 Server running at http://localhost:3000

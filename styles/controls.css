@@ -1,0 +1,111 @@
+.ui-textfield {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-height: 36px;
+}
+
+.ui-textfield:focus-within {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.ui-textfield input::placeholder {
+    color: #999;
+}
+
+.ui-textview {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-height: 80px;
+}
+
+.ui-textview:focus-within {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.ui-switch {
+    outline: none;
+}
+
+.ui-switch:focus {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+    border-radius: 15px;
+}
+
+.ui-slider {
+    outline: none;
+}
+
+.ui-slider:focus {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.ui-stepper {
+    outline: none;
+    height: 32px;
+}
+
+.ui-stepper:focus-within {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.ui-stepper button {
+    outline: none;
+}
+
+.ui-stepper button:focus {
+    background-color: rgba(0, 122, 255, 0.1);
+}
+
+.ui-segmented-control {
+    outline: none;
+}
+
+.ui-segmented-control:focus-within {
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.ui-datepicker {
+    outline: none;
+}
+
+.ui-datepicker:focus-within {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.ui-datepicker .ui-segmented-control {
+    box-shadow: none;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+}

@@ -3,6 +3,7 @@ import NotesWidget from './NotesWidget.js';
 import CodeEditorWidget from './CodeEditorWidget.js';
 import WebLinkWidget from './WebLinkWidget.js';
 import CustomHtmlWidget from './CustomHtmlWidget.js';
+import FormControlsDemo from './FormControlsDemo.js';
 
 const WIDGET_CLASSES = {
     clock: ClockWidget,
@@ -10,6 +11,7 @@ const WIDGET_CLASSES = {
     codeEditor: CodeEditorWidget,
     webLink: WebLinkWidget,
     customHtml: CustomHtmlWidget,
+    formControlsDemo: FormControlsDemo,
 };
 
 class WidgetRegistry {

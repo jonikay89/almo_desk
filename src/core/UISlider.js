@@ -1,0 +1,229 @@
+import UIControl from './UIControl.js';
+import UIColor from './UIColor.js';
+
+class UISlider extends UIControl {
+    constructor() {
+        super();
+        this._value = 0.5;
+        this._minimumValue = 0;
+        this._maximumValue = 1;
+        this.minimumTrackTintColor = UIColor.systemBlue();
+        this.maximumTrackTintColor = UIColor.lightGray();
+        this.thumbTintColor = UIColor.white();
+        this.isContinuous = true;
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    set value(val) {
+        this._value = Math.max(this._minimumValue, Math.min(this._maximumValue, val));
+        this.#updateAppearance();
+    }
+
+    get minimumValue() {
+        return this._minimumValue;
+    }
+
+    get maximumValue() {
+        return this._maximumValue;
+    }
+
+    init() {
+        super.init();
+        this.element.className = 'ui-slider';
+        this.element.style.position = 'relative';
+        this.element.style.display = 'inline-flex';
+        this.element.style.alignItems = 'center';
+        this.element.style.cursor = 'pointer';
+        this.element.style.userSelect = 'none';
+        this.element.style.height = '30px';
+        this.element.style.padding = '0 10px';
+
+        this.trackElement = document.createElement('div');
+        this.trackElement.style.position = 'relative';
+        this.trackElement.style.flexGrow = '1';
+        this.trackElement.style.height = '4px';
+        this.trackElement.style.borderRadius = '2px';
+        this.trackElement.style.backgroundColor = this.maximumTrackTintColor.css;
+
+        this.minimumTrackElement = document.createElement('div');
+        this.minimumTrackElement.style.position = 'absolute';
+        this.minimumTrackElement.style.left = '0';
+        this.minimumTrackElement.style.top = '0';
+        this.minimumTrackElement.style.height = '100%';
+        this.minimumTrackElement.style.borderRadius = '2px';
+        this.minimumTrackElement.style.backgroundColor = this.minimumTrackTintColor.css;
+
+        this.trackElement.appendChild(this.minimumTrackElement);
+        this.element.appendChild(this.trackElement);
+
+        this.thumbElement = document.createElement('div');
+        this.thumbElement.style.position = 'absolute';
+        this.thumbElement.style.width = '20px';
+        this.thumbElement.style.height = '20px';
+        this.thumbElement.style.borderRadius = '50%';
+        this.thumbElement.style.backgroundColor = this.thumbTintColor.css;
+        this.thumbElement.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+        this.thumbElement.style.cursor = 'grab';
+        this.thumbElement.style.transition = 'transform 0.1s ease';
+
+        this.element.appendChild(this.thumbElement);
+
+        this.#updateAppearance();
+        this.#setupEventListeners();
+
+        return this;
+    }
+
+    #setupEventListeners() {
+        let isDragging = false;
+
+        const updateValue = (clientX) => {
+            const rect = this.trackElement.getBoundingClientRect();
+            const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            const newValue = this._minimumValue + percent * (this._maximumValue - this._minimumValue);
+            
+            const oldValue = this._value;
+            this._value = newValue;
+            this.#updateAppearance();
+
+            if (this.isContinuous && oldValue !== newValue) {
+                this.sendAction('valueChanged', 'input');
+            }
+        };
+
+        this.element.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            this.thumbElement.style.cursor = 'grabbing';
+            updateValue(e.clientX);
+            this.sendAction('editingDidBegin', 'mousedown');
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                updateValue(e.clientX);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                this.thumbElement.style.cursor = 'grab';
+                if (!this.isContinuous) {
+                    this.sendAction('valueChanged', 'mouseup');
+                }
+                this.sendAction('editingDidEnd', 'mouseup');
+            }
+        });
+
+        this.element.addEventListener('keydown', (e) => {
+            const step = (this._maximumValue - this._minimumValue) * 0.05;
+            let newValue = this._value;
+
+            if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                newValue = Math.min(this._maximumValue, this._value + step);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                newValue = Math.max(this._minimumValue, this._value - step);
+            }
+
+            if (newValue !== this._value) {
+                this._value = newValue;
+                this.#updateAppearance();
+                this.sendAction('valueChanged', 'keydown');
+            }
+        });
+
+        this.element.setAttribute('tabindex', '0');
+        this.element.setAttribute('role', 'slider');
+        this.element.setAttribute('aria-valuemin', this._minimumValue);
+        this.element.setAttribute('aria-valuemax', this._maximumValue);
+    }
+
+    #updateAppearance() {
+        if (!this.trackElement || !this.minimumTrackElement || !this.thumbElement) return;
+
+        const percent = (this._value - this._minimumValue) / (this._maximumValue - this._minimumValue);
+        const trackWidth = this.trackElement.offsetWidth || 100;
+        const thumbOffset = 10;
+
+        this.minimumTrackElement.style.width = `${percent * (trackWidth - thumbOffset * 2)}px`;
+        this.thumbElement.style.left = `${percent * (trackWidth - thumbOffset * 2) + thumbOffset - 10}px`;
+
+        if (this.element) {
+            this.element.setAttribute('aria-valuenow', this._value);
+        }
+    }
+
+    setValue(value, animated = false) {
+        const clampedValue = Math.max(this._minimumValue, Math.min(this._maximumValue, value));
+        
+        if (animated) {
+            this.minimumTrackElement.style.transition = 'width 0.2s ease';
+            this.thumbElement.style.transition = 'left 0.2s ease';
+        } else {
+            this.minimumTrackElement.style.transition = 'none';
+            this.thumbElement.style.transition = 'none';
+        }
+
+        this._value = clampedValue;
+        this.#updateAppearance();
+    }
+
+    setMinimumValue(min) {
+        this._minimumValue = min;
+        if (this._value < min) this._value = min;
+        this.#updateAppearance();
+    }
+
+    setMaximumValue(max) {
+        this._maximumValue = max;
+        if (this._value > max) this._value = max;
+        this.#updateAppearance();
+    }
+
+    setMinimumTrackTintColor(color) {
+        if (color instanceof UIColor) {
+            this.minimumTrackTintColor = color;
+        } else if (typeof color === 'string') {
+            this.minimumTrackTintColor = UIColor.colorWithHex(color);
+        }
+        if (this.minimumTrackElement) {
+            this.minimumTrackElement.style.backgroundColor = this.minimumTrackTintColor.css;
+        }
+    }
+
+    setMaximumTrackTintColor(color) {
+        if (color instanceof UIColor) {
+            this.maximumTrackTintColor = color;
+        } else if (typeof color === 'string') {
+            this.maximumTrackTintColor = UIColor.colorWithHex(color);
+        }
+        if (this.trackElement) {
+            this.trackElement.style.backgroundColor = this.maximumTrackTintColor.css;
+        }
+    }
+
+    setThumbTintColor(color) {
+        if (color instanceof UIColor) {
+            this.thumbTintColor = color;
+        } else if (typeof color === 'string') {
+            this.thumbTintColor = UIColor.colorWithHex(color);
+        }
+        if (this.thumbElement) {
+            this.thumbElement.style.backgroundColor = this.thumbTintColor.css;
+        }
+    }
+
+    layoutSubviews() {
+        super.layoutSubviews();
+        if (this.element) {
+            this.element.style.width = `${this.frame.width}px`;
+            this.element.style.height = `${this.frame.height}px`;
+        }
+        this.#updateAppearance();
+    }
+}
+
+export default UISlider;
