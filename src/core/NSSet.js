@@ -1,7 +1,7 @@
 import NSObject from './NSObject.js';
 import NSArray from './NSArray.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 
 class NSSet extends NSObject {
     constructor(objects = []) {

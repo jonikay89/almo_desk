@@ -2,7 +2,7 @@ import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { CALayer, CATextLayer, CAShapeLayer, CGPath } from './CALayer.js';
 import { TextStorage, AttributedString, ParagraphStyle } from './TextStorage.js';
 

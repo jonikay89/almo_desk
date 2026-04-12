@@ -5,7 +5,7 @@ import UIButton from './UIButton.js';
 import UIColor from './UIColor.js';
 import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { invokeProtocolMethod } from './Protocol.js';
 import { AlertDelegate, AlertDelegate as AlertDelegateProtocol } from './TypeAliases.js';
 

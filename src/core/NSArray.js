@@ -1,6 +1,6 @@
 import NSObject from './NSObject.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 
 class NSArray extends NSObject {
     constructor(objects = []) {

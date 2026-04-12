@@ -2,7 +2,7 @@ import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import UILabel from './UILabel.js';
 import UIImageView from './UIImageView.js';
 import { CALayer, CAShapeLayer } from './CALayer.js';
@@ -285,10 +285,32 @@ class UITableViewCell extends UIView {
         this.accessoryType = 'none';
         this._selected = false;
         this._highlighted = false;
-        if (this._textLabel) this._textLabel.text = '';
-        if (this._detailTextLabel) this._detailTextLabel.text = '';
-        if (this._imageView) this._imageView.imageUrl = null;
-        this.#updateSelectionAppearance();
+        this.selectionStyle = 'default';
+        
+        if (this._textLabel) {
+            this._textLabel.text = '';
+            this._textLabel.textColor = UIColor.black();
+        }
+        if (this._detailTextLabel) {
+            this._detailTextLabel.text = '';
+            this._detailTextLabel.textColor = UIColor.gray();
+        }
+        if (this._imageView) {
+            this._imageView.imageUrl = null;
+            this._imageView.element.style.display = 'none';
+        }
+        
+        if (this._accessoryView) {
+            this._accessoryView.element.remove();
+            this._accessoryView = null;
+        }
+        
+        this.element.style.backgroundColor = UIColor.white().css;
+        this.element.classList.remove('selected', 'highlighted');
+        
+        if (this._contentView) {
+            this._contentView.element.style.backgroundColor = 'transparent';
+        }
     }
 
     layoutSubviews() {

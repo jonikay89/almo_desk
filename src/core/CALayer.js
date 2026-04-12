@@ -537,7 +537,7 @@ class CALayer {
         this._rasterizationScale = 1;
         this._shouldRasterize = false;
         this._edgeAntialiasing = true;
-        self._opaque = false;
+        this._opaque = false;
     }
 
     static layer() {
@@ -671,8 +671,8 @@ class CALayer {
     get presentationLayer() { return this._presentationLayer || this; }
     get modelLayer() { return this._modelLayer || this; }
 
-    get opaque() { return self._opaque; }
-    set opaque(value) { self._opaque = value; }
+    get opaque() { return this._opaque; }
+    set opaque(value) { this._opaque = value; }
 
     get shouldRasterize() { return this._shouldRasterize; }
     set shouldRasterize(value) { this._shouldRasterize = value; }

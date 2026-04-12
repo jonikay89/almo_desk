@@ -1,7 +1,7 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
 import { NavigationBarDelegate, NavigationBarDelegate as NavigationBarDelegateProtocol } from './TypeAliases.js';
 import { kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';

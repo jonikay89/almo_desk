@@ -5,7 +5,7 @@ import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
 import {
     CollectionViewDelegate,

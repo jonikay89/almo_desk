@@ -3,7 +3,7 @@ import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
 import { ScrollViewDelegate } from './TypeAliases.js';
 
@@ -132,8 +132,8 @@ class UIScrollView extends UIView {
         this.contentElement = document.createElement('div');
         this.contentElement.className = 'ui-scrollview-content';
         this.contentElement.style.position = 'absolute';
-        this.contentElement.style.minWidth = '100%';
-        this.contentElement.style.minHeight = '100%';
+        this.contentElement.style.left = '0';
+        this.contentElement.style.top = '0';
         
         this.element.appendChild(this.contentElement);
         
@@ -275,7 +275,51 @@ class UIScrollView extends UIView {
             this.contentElement.appendChild(view.element);
         }
         view.didMoveToSuperview();
+        this.#updateContentSizeFromSubviews();
         return Result.success(view);
+    }
+
+    removeSubview(view) {
+        const index = this.subviews.indexOf(view);
+        if (index !== -1) {
+            this.subviews.splice(index, 1);
+            if (view.element && view.element.parentNode === this.contentElement) {
+                this.contentElement.removeChild(view.element);
+            }
+            view.superview = null;
+            view.didMoveToSuperview();
+            this.#updateContentSizeFromSubviews();
+        }
+        return Result.success(view);
+    }
+
+    #updateContentSizeFromSubviews() {
+        if (this.subviews.length === 0) {
+            this.contentSize = { width: this.frame.width || 0, height: 0 };
+            if (this.contentElement) {
+                this.contentElement.style.width = `${this.contentSize.width}px`;
+                this.contentElement.style.height = `${this.contentSize.height}px`;
+            }
+            return;
+        }
+
+        let maxX = 0;
+        let maxY = 0;
+        
+        for (const subview of this.subviews) {
+            const frame = subview.frame || { x: 0, y: 0, width: 0, height: 0 };
+            const rightEdge = frame.x + frame.width;
+            const bottomEdge = frame.y + frame.height;
+            if (rightEdge > maxX) maxX = rightEdge;
+            if (bottomEdge > maxY) maxY = bottomEdge;
+        }
+
+        this.contentSize = { width: maxX, height: maxY };
+        
+        if (this.contentElement) {
+            this.contentElement.style.width = `${maxX}px`;
+            this.contentElement.style.height = `${maxY}px`;
+        }
     }
 
     removeFromSuperview() {
@@ -296,6 +340,7 @@ class UIScrollView extends UIView {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+        this.#updateContentSizeFromSubviews();
     }
 
     encode() {

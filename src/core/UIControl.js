@@ -3,7 +3,7 @@ import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
 import UIColor from './UIColor.js';
 

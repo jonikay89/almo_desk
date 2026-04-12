@@ -2,7 +2,7 @@ import UIControl from './UIControl.js';
 import UIColor from './UIColor.js';
 import { Scanner, NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
 import { TextFieldDelegate } from './TypeAliases.js';
 import { TextStorage, AttributedString } from './TextStorage.js';

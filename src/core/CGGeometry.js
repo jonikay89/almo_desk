@@ -1,6 +1,6 @@
 import { Equatable, Hashable } from './Protocol.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 
 class CGPoint {
     constructor(x = 0, y = 0) {

@@ -2,7 +2,7 @@ import UIColor from './UIColor.js';
 import UIResponder from './UIResponder.js';
 import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { CALayer, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer, CATransform3D, CGPath } from './CALayer.js';
 
 class UIView extends UIResponder {
