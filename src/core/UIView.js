@@ -3,7 +3,7 @@ import UIResponder from './UIResponder.js';
 import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
-import { CALayer, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer, CATransform3D } from './CALayer.js';
+import { CALayer, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer, CATransform3D, CGPath } from './CALayer.js';
 
 class UIView extends UIResponder {
     constructor() {
@@ -35,6 +35,9 @@ class UIView extends UIResponder {
         this._transform3D = CATransform3D.identity();
         this._perspective = false;
         this._perspectiveM34 = -1 / 1000;
+        this._customDrawHandler = null;
+        this._layerContents = null;
+        this._useLayerCanvas = true;
     }
 
     get frame() {
@@ -346,6 +349,11 @@ class UIView extends UIResponder {
         return this.setClipsToBounds(clips);
     }
 
+    withShadow(color, opacity = 0.5, offset = { width: 0, height: 2 }, radius = 4) {
+        this.setShadow(color, opacity, offset, radius);
+        return this;
+    }
+
     withTag(tag) {
         return this.setTag(tag);
     }
@@ -496,14 +504,19 @@ class UIView extends UIResponder {
     }
 
     #renderLayers() {
-        if (!this.element) return;
+        if (!this.element || !this._useLayerCanvas) return;
         
         const existingCanvas = this.element.querySelector('.layer-canvas');
         if (existingCanvas) {
             existingCanvas.remove();
         }
 
-        if (this._layer._sublayers.length === 0) return;
+        const hasSublayers = this._layer._sublayers && this._layer._sublayers.length > 0;
+        const hasGradient = this._gradientLayer;
+        const hasCustomDraw = this._customDrawHandler;
+        const hasContents = this._layerContents;
+
+        if (!hasSublayers && !hasGradient && !hasCustomDraw && !hasContents) return;
 
         const canvas = document.createElement('canvas');
         canvas.className = 'layer-canvas';
@@ -518,13 +531,80 @@ class UIView extends UIResponder {
         
         const ctx = canvas.getContext('2d');
         ctx.scale(2, 2);
-        
+
+        if (this._layer.backgroundColor) {
+            ctx.fillStyle = this._layer.backgroundColor.css;
+            if (this._layer.cornerRadius > 0) {
+                this.#roundRect(ctx, 0, 0, this._bounds.width, this._bounds.height, this._layer.cornerRadius);
+                ctx.fill();
+            } else {
+                ctx.fillRect(0, 0, this._bounds.width, this._bounds.height);
+            }
+        }
+
+        if (hasGradient && this._gradientLayer) {
+            const gradient = ctx.createLinearGradient(
+                this._gradientLayer.startPoint.x * this._bounds.width,
+                this._gradientLayer.startPoint.y * this._bounds.height,
+                this._gradientLayer.endPoint.x * this._bounds.width,
+                this._gradientLayer.endPoint.y * this._bounds.height
+            );
+            this._gradientLayer.colors.forEach((color, index) => {
+                const location = this._gradientLayer.locations[index] || (index / (this._gradientLayer.colors.length - 1 || 1));
+                gradient.addColorStop(location, color.css);
+            });
+            if (this._gradientLayer.cornerRadius > 0) {
+                this.#roundRect(ctx, 0, 0, this._bounds.width, this._bounds.height, this._gradientLayer.cornerRadius);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            } else {
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, this._bounds.width, this._bounds.height);
+            }
+        }
+
+        if (hasContents && this._layerContents) {
+            if (typeof this._layerContents === 'function') {
+                ctx.save();
+                ctx.translate(0, this._bounds.height);
+                ctx.scale(1, -1);
+                this._layerContents(ctx, this._bounds);
+                ctx.restore();
+            } else if (typeof this._layerContents === 'string' && this._layerContents.startsWith('data:image')) {
+                const img = new Image();
+                img.src = this._layerContents;
+                ctx.drawImage(img, 0, 0, this._bounds.width, this._bounds.height);
+            }
+        }
+
+        if (hasCustomDraw && this._customDrawHandler) {
+            ctx.save();
+            this._customDrawHandler(ctx, this._bounds);
+            ctx.restore();
+        }
+
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
 
         this.element.style.position = 'relative';
-        this.element.insertBefore(canvas, this.element.firstChild);
+        if (this.element.firstChild !== canvas) {
+            this.element.insertBefore(canvas, this.element.firstChild);
+        }
+    }
+
+    #roundRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
     }
 
     setGradient(colors, locations = null, startPoint = { x: 0.5, y: 0 }, endPoint = { x: 0.5, y: 1 }) {
@@ -546,6 +626,96 @@ class UIView extends UIResponder {
             this.#renderLayers();
         }
         return this;
+    }
+
+    setContents(contents) {
+        this._layerContents = contents;
+        this.#renderLayers();
+        return this;
+    }
+
+    setMaskingMask(mask) {
+        if (mask && this._layer) {
+            this._layer.mask = mask;
+        }
+        return this;
+    }
+
+    drawUsingHandler(handler) {
+        this._customDrawHandler = handler;
+        this.#renderLayers();
+        return this;
+    }
+
+    clearDraw() {
+        this._customDrawHandler = null;
+        this._layerContents = null;
+        this.#renderLayers();
+        return this;
+    }
+
+    setNeedsDisplay() {
+        this.#renderLayers();
+        return this;
+    }
+
+    setNeedsLayout() {
+        this.layoutSubviews();
+        return this;
+    }
+
+    addShape(path, fillColor = null, strokeColor = null, lineWidth = 1) {
+        const shapeLayer = CAShapeLayer.layer();
+        shapeLayer.path = path;
+        shapeLayer.fillColor = fillColor;
+        shapeLayer.strokeColor = strokeColor;
+        shapeLayer.lineWidth = lineWidth;
+        shapeLayer.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+        this._layer.addSublayer(shapeLayer);
+        this._shapeLayers.push(shapeLayer);
+        this.#renderLayers();
+        return shapeLayer;
+    }
+
+    addCircle(radius, centerX, centerY, fillColor = null, strokeColor = null) {
+        const path = CGPath.CreateCircle(centerX, centerY, radius);
+        return this.addShape(path, fillColor, strokeColor);
+    }
+
+    addRectangle(x, y, width, height, fillColor = null, strokeColor = null, cornerRadius = 0) {
+        let path;
+        if (cornerRadius > 0) {
+            path = CGPath.CreateRoundedRect(x, y, width, height, cornerRadius);
+        } else {
+            path = CGPath.CreateRect(x, y, width, height);
+        }
+        return this.addShape(path, fillColor, strokeColor);
+    }
+
+    addStar(centerX, centerY, outerRadius, innerRadius, points = 5, fillColor = null, strokeColor = null) {
+        const path = CGPath.CreateStar(centerX, centerY, outerRadius, innerRadius, points);
+        return this.addShape(path, fillColor, strokeColor);
+    }
+
+    addPolygon(points, fillColor = null, strokeColor = null) {
+        const path = CGPath.CreatePolygon(points);
+        return this.addShape(path, fillColor, strokeColor);
+    }
+
+    withLayerContents(contents) {
+        return this.setContents(contents);
+    }
+
+    withMaskingMask(mask) {
+        return this.setMaskingMask(mask);
+    }
+
+    withNeedsDisplay() {
+        return this.setNeedsDisplay();
+    }
+
+    withNeedsLayout() {
+        return this.setNeedsLayout();
     }
 
     rotate3D(angle, axis = 'z') {

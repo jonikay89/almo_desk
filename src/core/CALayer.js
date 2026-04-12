@@ -1,6 +1,233 @@
 import { CGPoint, CGSize, CGRect } from './CGGeometry.js';
 import UIColor from './UIColor.js';
 
+class CGPath {
+    constructor() {
+        this._elements = [];
+        this._boundingBox = null;
+    }
+
+    static Create() {
+        return new CGPath();
+    }
+
+    static CreateRect(x, y, width, height) {
+        const path = new CGPath();
+        path.moveToPoint(x, y);
+        path.addLineToPoint(x + width, y);
+        path.addLineToPoint(x + width, y + height);
+        path.addLineToPoint(x, y + height);
+        path.closeSubpath();
+        return path;
+    }
+
+    static CreateRoundedRect(x, y, width, height, cornerRadius) {
+        const path = new CGPath();
+        const r = Math.min(cornerRadius, width / 2, height / 2);
+        path.moveToPoint(x + r, y);
+        path.addLineToPoint(x + width - r, y);
+        path.addArcAtPoint(x + width - r, y + r, r, -Math.PI / 2, 0, false);
+        path.addLineToPoint(x + width, y + height - r);
+        path.addArcAtPoint(x + width - r, y + height - r, r, 0, Math.PI / 2, false);
+        path.addLineToPoint(x + r, y + height);
+        path.addArcAtPoint(x + r, y + height - r, r, Math.PI / 2, Math.PI, false);
+        path.addLineToPoint(x, y + r);
+        path.addArcAtPoint(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
+        path.closeSubpath();
+        return path;
+    }
+
+    static CreateEllipse(x, y, width, height) {
+        const path = new CGPath();
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        const rx = width / 2;
+        const ry = height / 2;
+        
+        path.moveToPoint(cx + rx, cy);
+        for (let i = 1; i <= 360; i += 10) {
+            const angle = (i * Math.PI) / 180;
+            path.addLineToPoint(cx + rx * Math.cos(angle), cy + ry * Math.sin(angle));
+        }
+        path.closeSubpath();
+        return path;
+    }
+
+    static CreateCircle(x, y, radius) {
+        return CGPath.CreateEllipse(x - radius, y - radius, radius * 2, radius * 2);
+    }
+
+    static CreateStar(x, y, outerRadius, innerRadius, points = 5) {
+        const path = new CGPath();
+        const cx = x;
+        const cy = y;
+        
+        for (let i = 0; i < points * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const angle = (i * Math.PI) / points - Math.PI / 2;
+            if (i === 0) {
+                path.moveToPoint(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle));
+            } else {
+                path.addLineToPoint(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle));
+            }
+        }
+        path.closeSubpath();
+        return path;
+    }
+
+    static CreateLine(fromPoint, toPoint) {
+        const path = new CGPath();
+        path.moveToPoint(fromPoint.x, fromPoint.y);
+        path.addLineToPoint(toPoint.x, toPoint.y);
+        return path;
+    }
+
+    static CreatePolygon(points) {
+        const path = new CGPath();
+        if (points.length === 0) return path;
+        
+        path.moveToPoint(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            path.addLineToPoint(points[i].x, points[i].y);
+        }
+        path.closeSubpath();
+        return path;
+    }
+
+    moveToPoint(x, y) {
+        this._elements.push({ type: 'move', x, y });
+        return this;
+    }
+
+    addLineToPoint(x, y) {
+        this._elements.push({ type: 'line', x, y });
+        return this;
+    }
+
+    addCurveToPoint(endPoint, controlPoint1, controlPoint2) {
+        this._elements.push({ type: 'curve', end: endPoint, cp1: controlPoint1, cp2: controlPoint2 });
+        return this;
+    }
+
+    addQuadCurveToPoint(endPoint, controlPoint) {
+        this._elements.push({ type: 'quadCurve', end: endPoint, cp: controlPoint });
+        return this;
+    }
+
+    addArcAtPoint(centerX, centerY, radius, startAngle, endAngle, clockwise) {
+        this._elements.push({ type: 'arc', cx: centerX, cy: centerY, radius, startAngle, endAngle, clockwise });
+        return this;
+    }
+
+    addArcToPoint(x1, y1, x2, y2, radius) {
+        this._elements.push({ type: 'arcTo', x1, y1, x2, y2, radius });
+        return this;
+    }
+
+    closeSubpath() {
+        this._elements.push({ type: 'close' });
+        return this;
+    }
+
+    addPath(path) {
+        if (path) {
+            this._elements = this._elements.concat(path._elements);
+        }
+        return this;
+    }
+
+    applyWithContext(ctx) {
+        ctx.beginPath();
+        for (const element of this._elements) {
+            switch (element.type) {
+                case 'move':
+                    ctx.moveTo(element.x, element.y);
+                    break;
+                case 'line':
+                    ctx.lineTo(element.x, element.y);
+                    break;
+                case 'curve':
+                    ctx.bezierCurveTo(element.cp1.x, element.cp1.y, element.cp2.x, element.cp2.y, element.end.x, element.end.y);
+                    break;
+                case 'quadCurve':
+                    ctx.quadraticCurveTo(element.cp.x, element.cp.y, element.end.x, element.end.y);
+                    break;
+                case 'arc':
+                    ctx.arc(element.cx, element.cy, element.radius, element.startAngle, element.endAngle, element.clockwise);
+                    break;
+                case 'arcTo':
+                    ctx.arcTo(element.x1, element.y1, element.x2, element.y2, element.radius);
+                    break;
+                case 'close':
+                    ctx.closePath();
+                    break;
+            }
+        }
+    }
+
+    get boundingBox() {
+        if (this._boundingBox) return this._boundingBox;
+        
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let currentX = 0, currentY = 0;
+        
+        for (const element of this._elements) {
+            switch (element.type) {
+                case 'move':
+                case 'line':
+                    minX = Math.min(minX, element.x);
+                    minY = Math.min(minY, element.y);
+                    maxX = Math.max(maxX, element.x);
+                    maxY = Math.max(maxY, element.y);
+                    currentX = element.x;
+                    currentY = element.y;
+                    break;
+                case 'curve':
+                    minX = Math.min(minX, element.end.x, element.cp1.x, element.cp2.x);
+                    minY = Math.min(minY, element.end.y, element.cp1.y, element.cp2.y);
+                    maxX = Math.max(maxX, element.end.x, element.cp1.x, element.cp2.x);
+                    maxY = Math.max(maxY, element.end.y, element.cp1.y, element.cp2.y);
+                    currentX = element.end.x;
+                    currentY = element.end.y;
+                    break;
+                case 'quadCurve':
+                    minX = Math.min(minX, element.end.x, element.cp.x);
+                    minY = Math.min(minY, element.end.y, element.cp.y);
+                    maxX = Math.max(maxX, element.end.x, element.cp.x);
+                    maxY = Math.max(maxY, element.end.y, element.cp.y);
+                    currentX = element.end.x;
+                    currentY = element.end.y;
+                    break;
+                case 'arc':
+                    minX = Math.min(minX, element.cx - element.radius);
+                    minY = Math.min(minY, element.cy - element.radius);
+                    maxX = Math.max(maxX, element.cx + element.radius);
+                    maxY = Math.max(maxY, element.cy + element.radius);
+                    break;
+            }
+        }
+        
+        if (minX === Infinity) return CGRect.zero();
+        this._boundingBox = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+        return this._boundingBox;
+    }
+
+    copy() {
+        const path = new CGPath();
+        path._elements = this._elements.map(e => ({ ...e }));
+        path._boundingBox = this._boundingBox ? { ...this._boundingBox } : null;
+        return path;
+    }
+
+    isEmpty() {
+        return this._elements.length === 0;
+    }
+
+    containsPoint(point) {
+        return false;
+    }
+}
+
 class CATransform3D {
     constructor() {
         this.m11 = 1; this.m12 = 0; this.m13 = 0; this.m14 = 0;
@@ -58,12 +285,16 @@ class CATransform3D {
         return this.multiply(CATransform3D.MakeRotation(angle, x, y, z));
     }
 
-    scaled(sx, sy, sz) {
+    scaled(sx, sy, sz = 1) {
         return this.multiply(CATransform3D.MakeScale(sx, sy, sz));
     }
 
-    translated(tx, ty, tz) {
+    translated(tx, ty, tz = 0) {
         return this.multiply(CATransform3D.MakeTranslation(tx, ty, tz));
+    }
+
+    multiplied(other) {
+        return this.multiply(other);
     }
 
     multiply(other) {
@@ -94,11 +325,37 @@ class CATransform3D {
     toCSSTransformWithAnchor(anchorX, anchorY, width, height) {
         const anchorOffsetX = -anchorX * width;
         const anchorOffsetY = -anchorY * height;
-        
         const translate = CATransform3D.MakeTranslation(anchorOffsetX, anchorOffsetY, 0);
         const combined = this.multiply(translate);
         const untranslate = CATransform3D.MakeTranslation(-anchorOffsetX, -anchorOffsetY, 0);
         return combined.multiply(untranslate).toCSSTransform();
+    }
+
+    isIdentity() {
+        return this.m11 === 1 && this.m12 === 0 && this.m13 === 0 && this.m14 === 0 &&
+               this.m21 === 0 && this.m22 === 1 && this.m23 === 0 && this.m24 === 0 &&
+               this.m31 === 0 && this.m32 === 0 && this.m33 === 1 && this.m34 === 0 &&
+               this.m41 === 0 && this.m42 === 0 && this.m43 === 0 && this.m44 === 1;
+    }
+
+    inverted() {
+        const det = this.m11 * (this.m22 * this.m33 - this.m23 * this.m32) -
+                    this.m12 * (this.m21 * this.m33 - this.m23 * this.m31) +
+                    this.m13 * (this.m21 * this.m32 - this.m22 * this.m31);
+        if (det === 0) return null;
+        
+        const invDet = 1 / det;
+        const result = new CATransform3D();
+        result.m11 = (this.m22 * this.m33 - this.m23 * this.m32) * invDet;
+        result.m12 = -(this.m12 * this.m33 - this.m13 * this.m32) * invDet;
+        result.m13 = (this.m12 * this.m23 - this.m13 * this.m22) * invDet;
+        result.m21 = -(this.m21 * this.m33 - this.m23 * this.m31) * invDet;
+        result.m22 = (this.m11 * this.m33 - this.m13 * this.m31) * invDet;
+        result.m23 = -(this.m11 * this.m23 - this.m13 * this.m21) * invDet;
+        result.m31 = (this.m21 * this.m32 - this.m22 * this.m31) * invDet;
+        result.m32 = -(this.m11 * this.m32 - this.m12 * this.m31) * invDet;
+        result.m33 = (this.m11 * this.m22 - this.m12 * this.m21) * invDet;
+        return result;
     }
 }
 
@@ -136,16 +393,19 @@ class CALayer {
         this._style = {};
         this._presentationLayer = null;
         this._modelLayer = null;
+        this._customDrawContext = null;
+        this._drawRect = null;
+        this._rasterizationScale = 1;
+        this._shouldRasterize = false;
+        this._edgeAntialiasing = true;
+        self._opaque = false;
     }
 
     static layer() {
         return new CALayer();
     }
 
-    get frame() {
-        return this._frame;
-    }
-
+    get frame() { return this._frame; }
     set frame(value) {
         this._frame = { ...value };
         this._bounds = { x: 0, y: 0, width: value.width, height: value.height };
@@ -155,10 +415,7 @@ class CALayer {
         };
     }
 
-    get bounds() {
-        return this._bounds;
-    }
-
+    get bounds() { return this._bounds; }
     set bounds(value) {
         this._bounds = { ...value };
         this._frame = {
@@ -169,10 +426,7 @@ class CALayer {
         };
     }
 
-    get position() {
-        return this._position;
-    }
-
+    get position() { return this._position; }
     set position(value) {
         this._position = { ...value };
         this._frame = {
@@ -183,266 +437,133 @@ class CALayer {
         };
     }
 
-    get anchorPoint() {
-        return this._anchorPoint;
-    }
-
+    get anchorPoint() { return this._anchorPoint; }
     set anchorPoint(value) {
         const oldAnchor = this._anchorPoint;
         this._anchorPoint = { ...value };
         if (this._frame.width && this._frame.height) {
             const dx = (value.x - oldAnchor.x) * this._frame.width;
             const dy = (value.y - oldAnchor.y) * this._frame.height;
-            this._position = {
-                x: this._position.x + dx,
-                y: this._position.y + dy
-            };
+            this._position = { x: this._position.x + dx, y: this._position.y + dy };
         }
     }
 
-    get anchorPointZ() {
-        return this._anchorPointZ;
-    }
+    get anchorPointZ() { return this._anchorPointZ; }
+    set anchorPointZ(value) { this._anchorPointZ = value; }
 
-    set anchorPointZ(value) {
-        this._anchorPointZ = value;
-    }
+    get zPosition() { return this._zPosition; }
+    set zPosition(value) { this._zPosition = value; }
 
-    get zPosition() {
-        return this._zPosition;
-    }
+    get opacity() { return this._opacity; }
+    set opacity(value) { this._opacity = Math.max(0, Math.min(1, value)); }
 
-    set zPosition(value) {
-        this._zPosition = value;
-    }
+    get isHidden() { return this._isHidden; }
+    set isHidden(value) { this._isHidden = value; }
 
-    get opacity() {
-        return this._opacity;
-    }
-
-    set opacity(value) {
-        this._opacity = Math.max(0, Math.min(1, value));
-    }
-
-    get isHidden() {
-        return this._isHidden;
-    }
-
-    set isHidden(value) {
-        this._isHidden = value;
-    }
-
-    get backgroundColor() {
-        return this._backgroundColor;
-    }
-
+    get backgroundColor() { return this._backgroundColor; }
     set backgroundColor(value) {
-        if (value instanceof UIColor) {
-            this._backgroundColor = value;
-        } else if (typeof value === 'string') {
-            this._backgroundColor = UIColor.colorWithHex(value);
-        } else {
-            this._backgroundColor = null;
-        }
+        if (value instanceof UIColor) this._backgroundColor = value;
+        else if (typeof value === 'string') this._backgroundColor = UIColor.colorWithHex(value);
+        else this._backgroundColor = null;
     }
 
-    get borderColor() {
-        return this._borderColor;
-    }
-
+    get borderColor() { return this._borderColor; }
     set borderColor(value) {
-        if (value instanceof UIColor) {
-            this._borderColor = value;
-        } else if (typeof value === 'string') {
-            this._borderColor = UIColor.colorWithHex(value);
-        } else {
-            this._borderColor = null;
-        }
+        if (value instanceof UIColor) this._borderColor = value;
+        else if (typeof value === 'string') this._borderColor = UIColor.colorWithHex(value);
+        else this._borderColor = null;
     }
 
-    get borderWidth() {
-        return this._borderWidth;
-    }
+    get borderWidth() { return this._borderWidth; }
+    set borderWidth(value) { this._borderWidth = value; }
 
-    set borderWidth(value) {
-        this._borderWidth = value;
-    }
+    get cornerRadius() { return this._cornerRadius; }
+    set cornerRadius(value) { this._cornerRadius = value; }
 
-    get cornerRadius() {
-        return this._cornerRadius;
-    }
+    get masksToBounds() { return this._masksToBounds; }
+    set masksToBounds(value) { this._masksToBounds = value; }
 
-    set cornerRadius(value) {
-        this._cornerRadius = value;
-    }
-
-    get masksToBounds() {
-        return this._masksToBounds;
-    }
-
-    set masksToBounds(value) {
-        this._masksToBounds = value;
-    }
-
-    get shadowColor() {
-        return this._shadowColor;
-    }
-
+    get shadowColor() { return this._shadowColor; }
     set shadowColor(value) {
-        if (value instanceof UIColor) {
-            this._shadowColor = value;
-        } else if (typeof value === 'string') {
-            this._shadowColor = UIColor.colorWithHex(value);
-        } else {
-            this._shadowColor = null;
-        }
+        if (value instanceof UIColor) this._shadowColor = value;
+        else if (typeof value === 'string') this._shadowColor = UIColor.colorWithHex(value);
+        else this._shadowColor = null;
     }
 
-    get shadowOpacity() {
-        return this._shadowOpacity;
-    }
+    get shadowOpacity() { return this._shadowOpacity; }
+    set shadowOpacity(value) { this._shadowOpacity = Math.max(0, Math.min(1, value)); }
 
-    set shadowOpacity(value) {
-        this._shadowOpacity = Math.max(0, Math.min(1, value));
-    }
+    get shadowOffset() { return this._shadowOffset; }
+    set shadowOffset(value) { this._shadowOffset = { ...value }; }
 
-    get shadowOffset() {
-        return this._shadowOffset;
-    }
+    get shadowRadius() { return this._shadowRadius; }
+    set shadowRadius(value) { this._shadowRadius = value; }
 
-    set shadowOffset(value) {
-        this._shadowOffset = { ...value };
-    }
+    get shadowPath() { return this._shadowPath; }
+    set shadowPath(value) { this._shadowPath = value; }
 
-    get shadowRadius() {
-        return this._shadowRadius;
-    }
+    get contents() { return this._contents; }
+    set contents(value) { this._contents = value; }
 
-    set shadowRadius(value) {
-        this._shadowRadius = value;
-    }
+    get contentsGravity() { return this._contentsGravity; }
+    set contentsGravity(value) { this._contentsGravity = value; }
 
-    get shadowPath() {
-        return this._shadowPath;
-    }
+    get transform() { return this._transform; }
+    set transform(value) { this._transform = value; }
 
-    set shadowPath(value) {
-        this._shadowPath = value;
-    }
+    get sublayers() { return [...this._sublayers]; }
+    get superlayer() { return this._superlayer; }
 
-    get contents() {
-        return this._contents;
-    }
+    get mask() { return this._mask; }
+    set mask(value) { this._mask = value; }
 
-    set contents(value) {
-        this._contents = value;
-    }
+    get isDoubleSided() { return this._isDoubleSided; }
+    set isDoubleSided(value) { this._isDoubleSided = value; }
 
-    get contentsGravity() {
-        return this._contentsGravity;
-    }
+    get geometryFlipped() { return this._geometryFlipped; }
+    set geometryFlipped(value) { this._geometryFlipped = value; }
 
-    set contentsGravity(value) {
-        this._contentsGravity = value;
-    }
+    get name() { return this._name; }
+    set name(value) { this._name = value; }
 
-    get transform() {
-        return this._transform;
-    }
+    get delegate() { return this._delegate; }
+    set delegate(value) { this._delegate = value; }
 
-    set transform(value) {
-        this._transform = value;
-    }
+    get presentationLayer() { return this._presentationLayer || this; }
+    get modelLayer() { return this._modelLayer || this; }
 
-    get sublayers() {
-        return [...this._sublayers];
-    }
+    get opaque() { return self._opaque; }
+    set opaque(value) { self._opaque = value; }
 
-    get superlayer() {
-        return this._superlayer;
-    }
+    get shouldRasterize() { return this._shouldRasterize; }
+    set shouldRasterize(value) { this._shouldRasterize = value; }
 
-    get mask() {
-        return this._mask;
-    }
-
-    set mask(value) {
-        this._mask = value;
-    }
-
-    get isDoubleSided() {
-        return this._isDoubleSided;
-    }
-
-    set isDoubleSided(value) {
-        this._isDoubleSided = value;
-    }
-
-    get geometryFlipped() {
-        return this._geometryFlipped;
-    }
-
-    set geometryFlipped(value) {
-        this._geometryFlipped = value;
-    }
-
-    get name() {
-        return this._name;
-    }
-
-    set name(value) {
-        this._name = value;
-    }
-
-    get delegate() {
-        return this._delegate;
-    }
-
-    set delegate(value) {
-        this._delegate = value;
-    }
-
-    get presentationLayer() {
-        return this._presentationLayer || this;
-    }
-
-    get modelLayer() {
-        return this._modelLayer || this;
-    }
+    get rasterizationScale() { return this._rasterizationScale; }
+    set rasterizationScale(value) { this._rasterizationScale = value; }
 
     addSublayer(layer) {
-        if (layer._superlayer) {
-            layer._superlayer.removeSublayer(layer);
-        }
+        if (layer._superlayer) layer._superlayer.removeSublayer(layer);
         layer._superlayer = this;
         this._sublayers.push(layer);
         return this;
     }
 
-    insertSublayer(layer, atIndex) {
-        if (layer._superlayer) {
-            layer._superlayer.removeSublayer(layer);
-        }
+    insertSublayerAtIndex(layer, index) {
+        if (layer._superlayer) layer._superlayer.removeSublayer(layer);
         layer._superlayer = this;
-        atIndex = Math.max(0, Math.min(atIndex, this._sublayers.length));
-        this._sublayers.splice(atIndex, 0, layer);
+        index = Math.max(0, Math.min(index, this._sublayers.length));
+        this._sublayers.splice(index, 0, layer);
         return this;
     }
 
     insertSublayerBelow(layer, sibling) {
         const index = this._sublayers.indexOf(sibling);
-        if (index >= 0) {
-            return this.insertSublayer(layer, index);
-        }
-        return this.insertSublayer(layer, 0);
+        return this.insertSublayerAtIndex(layer, index >= 0 ? index : 0);
     }
 
     insertSublayerAbove(layer, sibling) {
         const index = this._sublayers.indexOf(sibling);
-        if (index >= 0) {
-            return this.insertSublayer(layer, index + 1);
-        }
-        return this.addSublayer(layer);
+        return this.insertSublayerAtIndex(layer, index >= 0 ? index + 1 : this._sublayers.length);
     }
 
     replaceSublayer(oldLayer, newLayer) {
@@ -471,10 +592,6 @@ class CALayer {
         return this;
     }
 
-    insertSublayerAtIndex(layer, index) {
-        return this.insertSublayer(layer, index);
-    }
-
     sublayerIndex(layer) {
         return this._sublayers.indexOf(layer);
     }
@@ -482,7 +599,7 @@ class CALayer {
     addAnimation(anim, forKey) {
         this._animations = this._animations || {};
         this._animations[forKey] = anim;
-        if (this._delegate && typeof this._delegate.animationDidStart === 'function') {
+        if (this._delegate?.animationDidStart) {
             this._delegate.animationDidStart(anim);
         }
         return this;
@@ -618,102 +735,32 @@ class CALayer {
         return this;
     }
 
-    withFrame(x, y, width, height) {
-        return this.setFrame(x, y, width, height);
-    }
-
-    withBounds(x, y, width, height) {
-        return this.setBounds(x, y, width, height);
-    }
-
-    withPosition(x, y) {
-        return this.setPosition(x, y);
-    }
-
-    withAnchorPoint(x, y) {
-        return this.setAnchorPoint(x, y);
-    }
-
-    withZPosition(value) {
-        return this.setZPosition(value);
-    }
-
-    withOpacity(value) {
-        return this.setOpacity(value);
-    }
-
-    withHidden(value) {
-        return this.setHidden(value);
-    }
-
-    withBackgroundColor(color) {
-        return this.setBackgroundColor(color);
-    }
-
-    withBorderColor(color) {
-        return this.setBorderColor(color);
-    }
-
-    withBorderWidth(value) {
-        return this.setBorderWidth(value);
-    }
-
-    withCornerRadius(value) {
-        return this.setCornerRadius(value);
-    }
-
-    withMasksToBounds(value) {
-        return this.setMasksToBounds(value);
-    }
-
-    withShadowColor(color) {
-        return this.setShadowColor(color);
-    }
-
-    withShadowOpacity(value) {
-        return this.setShadowOpacity(value);
-    }
-
-    withShadowOffset(width, height) {
-        return this.setShadowOffset(width, height);
-    }
-
-    withShadowRadius(value) {
-        return this.setShadowRadius(value);
-    }
-
-    withShadowPath(path) {
-        return this.setShadowPath(path);
-    }
-
-    withContents(contents) {
-        return this.setContents(contents);
-    }
-
-    withContentsGravity(value) {
-        return this.setContentsGravity(value);
-    }
-
-    withTransform(transform) {
-        return this.setTransform(transform);
-    }
-
-    withMask(mask) {
-        return this.setMask(mask);
-    }
-
-    withName(name) {
-        this.name = name;
-        return this;
-    }
+    withFrame(x, y, width, height) { return this.setFrame(x, y, width, height); }
+    withBounds(x, y, width, height) { return this.setBounds(x, y, width, height); }
+    withPosition(x, y) { return this.setPosition(x, y); }
+    withAnchorPoint(x, y) { return this.setAnchorPoint(x, y); }
+    withZPosition(value) { return this.setZPosition(value); }
+    withOpacity(value) { return this.setOpacity(value); }
+    withHidden(value) { return this.setHidden(value); }
+    withBackgroundColor(color) { return this.setBackgroundColor(color); }
+    withBorderColor(color) { return this.setBorderColor(color); }
+    withBorderWidth(value) { return this.setBorderWidth(value); }
+    withCornerRadius(value) { return this.setCornerRadius(value); }
+    withMasksToBounds(value) { return this.setMasksToBounds(value); }
+    withShadowColor(color) { return this.setShadowColor(color); }
+    withShadowOpacity(value) { return this.setShadowOpacity(value); }
+    withShadowOffset(width, height) { return this.setShadowOffset(width, height); }
+    withShadowRadius(value) { return this.setShadowRadius(value); }
+    withShadowPath(path) { return this.setShadowPath(path); }
+    withContents(contents) { return this.setContents(contents); }
+    withContentsGravity(value) { return this.setContentsGravity(value); }
+    withTransform(transform) { return this.setTransform(transform); }
+    withMask(mask) { return this.setMask(mask); }
+    withName(name) { this.name = name; return this; }
 
     rotate(angle, axis = 'z') {
-        const axes = { x: 1, y: 0, z: 0 };
-        if (axis === 'x') axes.x = 1, axes.y = 0, axes.z = 0;
-        else if (axis === 'y') axes.x = 0, axes.y = 1, axes.z = 0;
-        else axes.x = 0, axes.y = 0, axes.z = 1;
-        
-        this.transform = this.transform.rotated(angle, axes.x, axes.y, axes.z);
+        const axes = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+        this.transform = this.transform.rotated(angle, axes[0], axes[1], axes[2]);
         return this;
     }
 
@@ -732,13 +779,15 @@ class CALayer {
         return this;
     }
 
+    renderInContext(ctx) {
+        this.renderToContext(ctx);
+    }
+
     renderToContext(ctx) {
         if (this._isHidden) return;
 
         ctx.save();
         
-        ctx.globalAlpha = this._opacity;
-
         const anchorX = this._anchorPoint.x * this._bounds.width;
         const anchorY = this._anchorPoint.y * this._bounds.height;
         
@@ -750,11 +799,17 @@ class CALayer {
             ctx.shadowBlur = this._shadowRadius;
             ctx.shadowOffsetX = this._shadowOffset.width;
             ctx.shadowOffsetY = this._shadowOffset.height;
+            
+            if (this._shadowPath) {
+                ctx.shadowPath = this._shadowPath;
+            }
         }
+
+        ctx.globalAlpha = this._opacity;
 
         if (this._backgroundColor) {
             ctx.fillStyle = this._backgroundColor.css;
-            if (this._cornerRadius > 0) {
+            if (this._cornerRadius > 0 && this._borderWidth === 0) {
                 this.#roundRect(ctx, 0, 0, this._bounds.width, this._bounds.height, this._cornerRadius);
                 ctx.fill();
             } else {
@@ -782,6 +837,12 @@ class CALayer {
                 } else {
                     ctx.drawImage(img, 0, 0);
                 }
+            } else if (typeof this._contents === 'function') {
+                ctx.save();
+                ctx.translate(0, this._bounds.height);
+                ctx.scale(1, -1);
+                this._contents(ctx, this._bounds);
+                ctx.restore();
             }
         }
 
@@ -899,102 +960,46 @@ class CAGradientLayer extends CALayer {
         this._startPoint = { x: 0.5, y: 0 };
         this._endPoint = { x: 0.5, y: 1 };
         this._type = 'axial';
+        this._bounds = { x: 0, y: 0, width: 0, height: 0 };
     }
 
     static layer() {
         return new CAGradientLayer();
     }
 
-    get colors() {
-        return [...this._colors];
-    }
-
+    get colors() { return [...this._colors]; }
     set colors(value) {
         this._colors = value.map(c => c instanceof UIColor ? c : UIColor.colorWithHex(c));
     }
 
-    get locations() {
-        return [...this._locations];
-    }
+    get locations() { return [...this._locations]; }
+    set locations(value) { this._locations = [...value]; }
 
-    set locations(value) {
-        this._locations = [...value];
-    }
+    get startPoint() { return this._startPoint; }
+    set startPoint(value) { this._startPoint = { ...value }; }
 
-    get startPoint() {
-        return this._startPoint;
-    }
+    get endPoint() { return this._endPoint; }
+    set endPoint(value) { this._endPoint = { ...value }; }
 
-    set startPoint(value) {
-        this._startPoint = { ...value };
-    }
+    get type() { return this._type; }
+    set type(value) { this._type = value; }
 
-    get endPoint() {
-        return this._endPoint;
-    }
+    setColors(colors) { this.colors = colors; return this; }
+    setLocations(locations) { this.locations = locations; return this; }
+    setStartPoint(point) { this.startPoint = point; return this; }
+    setEndPoint(point) { this.endPoint = point; return this; }
+    setType(type) { this.type = type; return this; }
 
-    set endPoint(value) {
-        this._endPoint = { ...value };
-    }
-
-    get type() {
-        return this._type;
-    }
-
-    set type(value) {
-        this._type = value;
-    }
-
-    setColors(colors) {
-        this.colors = colors;
-        return this;
-    }
-
-    setLocations(locations) {
-        this.locations = locations;
-        return this;
-    }
-
-    setStartPoint(point) {
-        this.startPoint = point;
-        return this;
-    }
-
-    setEndPoint(point) {
-        this.endPoint = point;
-        return this;
-    }
-
-    setType(type) {
-        this.type = type;
-        return this;
-    }
-
-    withColors(colors) {
-        return this.setColors(colors);
-    }
-
-    withLocations(locations) {
-        return this.setLocations(locations);
-    }
-
-    withStartPoint(point) {
-        return this.setStartPoint(point);
-    }
-
-    withEndPoint(point) {
-        return this.setEndPoint(point);
-    }
-
-    withType(type) {
-        return this.setType(type);
-    }
+    withColors(colors) { return this.setColors(colors); }
+    withLocations(locations) { return this.setLocations(locations); }
+    withStartPoint(point) { return this.setStartPoint(point); }
+    withEndPoint(point) { return this.setEndPoint(point); }
+    withType(type) { return this.setType(type); }
 
     renderToContext(ctx) {
         if (this._isHidden) return;
 
         ctx.save();
-        
         ctx.globalAlpha = this._opacity;
 
         const gradient = ctx.createLinearGradient(
@@ -1005,7 +1010,7 @@ class CAGradientLayer extends CALayer {
         );
 
         this._colors.forEach((color, index) => {
-            const location = this._locations[index] || (index / (this._colors.length - 1));
+            const location = this._locations[index] || (index / (this._colors.length - 1 || 1));
             gradient.addColorStop(location, color.css);
         });
 
@@ -1055,159 +1060,65 @@ class CAShapeLayer extends CALayer {
         return new CAShapeLayer();
     }
 
-    get path() {
-        return this._path;
-    }
+    get path() { return this._path; }
+    set path(value) { this._path = value; }
 
-    set path(value) {
-        this._path = value;
-    }
-
-    get fillColor() {
-        return this._fillColor;
-    }
-
+    get fillColor() { return this._fillColor; }
     set fillColor(value) {
-        if (value instanceof UIColor) {
-            this._fillColor = value;
-        } else if (typeof value === 'string') {
-            this._fillColor = UIColor.colorWithHex(value);
-        } else {
-            this._fillColor = null;
-        }
+        if (value instanceof UIColor) this._fillColor = value;
+        else if (typeof value === 'string') this._fillColor = UIColor.colorWithHex(value);
+        else this._fillColor = null;
     }
 
-    get strokeColor() {
-        return this._strokeColor;
-    }
-
+    get strokeColor() { return this._strokeColor; }
     set strokeColor(value) {
-        if (value instanceof UIColor) {
-            this._strokeColor = value;
-        } else if (typeof value === 'string') {
-            this._strokeColor = UIColor.colorWithHex(value);
-        } else {
-            this._strokeColor = null;
-        }
+        if (value instanceof UIColor) this._strokeColor = value;
+        else if (typeof value === 'string') this._strokeColor = UIColor.colorWithHex(value);
+        else this._strokeColor = null;
     }
 
-    get lineWidth() {
-        return this._lineWidth;
-    }
+    get lineWidth() { return this._lineWidth; }
+    set lineWidth(value) { this._lineWidth = value; }
 
-    set lineWidth(value) {
-        this._lineWidth = value;
-    }
+    get lineCap() { return this._lineCap; }
+    set lineCap(value) { this._lineCap = value; }
 
-    get lineCap() {
-        return this._lineCap;
-    }
+    get lineJoin() { return this._lineJoin; }
+    set lineJoin(value) { this._lineJoin = value; }
 
-    set lineCap(value) {
-        this._lineCap = value;
-    }
+    get lineDashPhase() { return this._lineDashPhase; }
+    set lineDashPhase(value) { this._lineDashPhase = value; }
 
-    get lineJoin() {
-        return this._lineJoin;
-    }
+    get lineDashPattern() { return [...this._lineDashPattern]; }
+    set lineDashPattern(value) { this._lineDashPattern = [...value]; }
 
-    set lineJoin(value) {
-        this._lineJoin = value;
-    }
+    get fillRule() { return this._fillRule; }
+    set fillRule(value) { this._fillRule = value; }
 
-    get lineDashPhase() {
-        return this._lineDashPhase;
-    }
+    setPath(path) { this.path = path; return this; }
+    setFillColor(color) { this.fillColor = color; return this; }
+    setStrokeColor(color) { this.strokeColor = color; return this; }
+    setLineWidth(value) { this.lineWidth = value; return this; }
+    setLineCap(value) { this.lineCap = value; return this; }
+    setLineJoin(value) { this.lineJoin = value; return this; }
+    setLineDashPhase(value) { this.lineDashPhase = value; return this; }
+    setLineDashPattern(pattern) { this.lineDashPattern = pattern; return this; }
 
-    set lineDashPhase(value) {
-        this._lineDashPhase = value;
-    }
-
-    get lineDashPattern() {
-        return [...this._lineDashPattern];
-    }
-
-    set lineDashPattern(value) {
-        this._lineDashPattern = [...value];
-    }
-
-    setPath(path) {
-        this.path = path;
-        return this;
-    }
-
-    setFillColor(color) {
-        this.fillColor = color;
-        return this;
-    }
-
-    setStrokeColor(color) {
-        this.strokeColor = color;
-        return this;
-    }
-
-    setLineWidth(value) {
-        this.lineWidth = value;
-        return this;
-    }
-
-    setLineCap(value) {
-        this.lineCap = value;
-        return this;
-    }
-
-    setLineJoin(value) {
-        this.lineJoin = value;
-        return this;
-    }
-
-    setLineDashPhase(value) {
-        this.lineDashPhase = value;
-        return this;
-    }
-
-    setLineDashPattern(pattern) {
-        this.lineDashPattern = pattern;
-        return this;
-    }
-
-    withPath(path) {
-        return this.setPath(path);
-    }
-
-    withFillColor(color) {
-        return this.setFillColor(color);
-    }
-
-    withStrokeColor(color) {
-        return this.setStrokeColor(color);
-    }
-
-    withLineWidth(value) {
-        return this.setLineWidth(value);
-    }
-
-    withLineCap(value) {
-        return this.setLineCap(value);
-    }
-
-    withLineJoin(value) {
-        return this.setLineJoin(value);
-    }
+    withPath(path) { return this.setPath(path); }
+    withFillColor(color) { return this.setFillColor(color); }
+    withStrokeColor(color) { return this.setStrokeColor(color); }
+    withLineWidth(value) { return this.setLineWidth(value); }
+    withLineCap(value) { return this.setLineCap(value); }
+    withLineJoin(value) { return this.setLineJoin(value); }
 
     renderToContext(ctx) {
         if (this._isHidden || !this._path) return;
 
         ctx.save();
-        
         ctx.globalAlpha = this._opacity;
 
-        if (this._fillColor) {
-            ctx.fillStyle = this._fillColor.css;
-        }
-        if (this._strokeColor) {
-            ctx.strokeStyle = this._strokeColor.css;
-        }
+        if (this._fillColor) ctx.fillStyle = this._fillColor.css;
+        if (this._strokeColor) ctx.strokeStyle = this._strokeColor.css;
         ctx.lineWidth = this._lineWidth;
         ctx.lineCap = this._lineCap;
         ctx.lineJoin = this._lineJoin;
@@ -1217,65 +1128,35 @@ class CAShapeLayer extends CALayer {
             ctx.setLineDash(this._lineDashPattern, this._lineDashPhase);
         }
 
-        if (this._path) {
+        if (typeof this._path === 'function') {
             ctx.beginPath();
-            if (typeof this._path === 'function') {
-                this._path(ctx);
-            }
-            if (this._fillColor) {
-                ctx.fill();
-            }
-            if (this._strokeColor) {
-                ctx.stroke();
-            }
+            this._path(ctx);
+            if (this._fillColor) ctx.fill(this._fillRule);
+            if (this._strokeColor) ctx.stroke();
+        } else if (this._path && typeof this._path.applyWithContext === 'function') {
+            ctx.beginPath();
+            this._path.applyWithContext(ctx);
+            if (this._fillColor) ctx.fill(this._fillRule);
+            if (this._strokeColor) ctx.stroke();
         }
 
         ctx.restore();
     }
 
-    static createCirclePath(centerX, centerY, radius) {
-        return (ctx) => {
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        };
+    static CreateCirclePath(centerX, centerY, radius) {
+        return CGPath.CreateCircle(centerX, centerY, radius);
     }
 
-    static createRectPath(x, y, width, height) {
-        return (ctx) => {
-            ctx.rect(x, y, width, height);
-        };
+    static CreateRectPath(x, y, width, height) {
+        return CGPath.CreateRect(x, y, width, height);
     }
 
-    static createRoundedRectPath(x, y, width, height, cornerRadius) {
-        return (ctx) => {
-            ctx.moveTo(x + cornerRadius, y);
-            ctx.lineTo(x + width - cornerRadius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + cornerRadius);
-            ctx.lineTo(x + width, y + height - cornerRadius);
-            ctx.quadraticCurveTo(x + width, y + height, x + width - cornerRadius, y + height);
-            ctx.lineTo(x + cornerRadius, y + height);
-            ctx.quadraticCurveTo(x, y + height, x, y + height - cornerRadius);
-            ctx.lineTo(x, y + cornerRadius);
-            ctx.quadraticCurveTo(x, y, x + cornerRadius, y);
-            ctx.closePath();
-        };
+    static CreateRoundedRectPath(x, y, width, height, cornerRadius) {
+        return CGPath.CreateRoundedRect(x, y, width, height, cornerRadius);
     }
 
-    static createStarPath(centerX, centerY, outerRadius, innerRadius, points) {
-        return (ctx) => {
-            const step = Math.PI / points;
-            ctx.moveTo(centerX, centerY - outerRadius);
-            for (let i = 0; i < points; i++) {
-                ctx.lineTo(
-                    centerX + Math.sin(step + i * 2 * step) * innerRadius,
-                    centerY - Math.cos(step + i * 2 * step) * innerRadius
-                );
-                ctx.lineTo(
-                    centerX + Math.sin(i * 2 * step) * outerRadius,
-                    centerY - Math.cos(i * 2 * step) * outerRadius
-                );
-            }
-            ctx.closePath();
-        };
+    static CreateStarPath(centerX, centerY, outerRadius, innerRadius, points) {
+        return CGPath.CreateStar(centerX, centerY, outerRadius, innerRadius, points);
     }
 }
 
@@ -1296,18 +1177,10 @@ class CATextLayer extends CALayer {
         return new CATextLayer();
     }
 
-    get string() {
-        return this._string;
-    }
+    get string() { return this._string; }
+    set string(value) { this._string = value; }
 
-    set string(value) {
-        this._string = value;
-    }
-
-    get font() {
-        return this._font;
-    }
-
+    get font() { return this._font; }
     set font(value) {
         this._font = value;
         if (typeof value === 'number') {
@@ -1316,124 +1189,49 @@ class CATextLayer extends CALayer {
         }
     }
 
-    get fontSize() {
-        return this._fontSize;
-    }
-
+    get fontSize() { return this._fontSize; }
     set fontSize(value) {
         this._fontSize = value;
         this._font = `${value}px system-ui`;
     }
 
-    get textColor() {
-        return this._textColor;
-    }
-
+    get textColor() { return this._textColor; }
     set textColor(value) {
-        if (value instanceof UIColor) {
-            this._textColor = value;
-        } else if (typeof value === 'string') {
-            this._textColor = UIColor.colorWithHex(value);
-        }
+        if (value instanceof UIColor) this._textColor = value;
+        else if (typeof value === 'string') this._textColor = UIColor.colorWithHex(value);
     }
 
-    get textAlignment() {
-        return this._textAlignment;
-    }
+    get textAlignment() { return this._textAlignment; }
+    set textAlignment(value) { this._textAlignment = value; }
 
-    set textAlignment(value) {
-        this._textAlignment = value;
-    }
+    get isWrapped() { return this._isWrapped; }
+    set isWrapped(value) { this._isWrapped = value; }
 
-    get isWrapped() {
-        return this._isWrapped;
-    }
+    get truncationMode() { return this._truncationMode; }
+    set truncationMode(value) { this._truncationMode = value; }
 
-    set isWrapped(value) {
-        this._isWrapped = value;
-    }
+    get maximumNumberOfLines() { return this._maximumNumberOfLines; }
+    set maximumNumberOfLines(value) { this._maximumNumberOfLines = value; }
 
-    get truncationMode() {
-        return this._truncationMode;
-    }
+    setString(value) { this.string = value; return this; }
+    setFont(font) { this.font = font; return this; }
+    setFontSize(size) { this.fontSize = size; return this; }
+    setTextColor(color) { this.textColor = color; return this; }
+    setTextAlignment(alignment) { this.textAlignment = alignment; return this; }
+    setWrapped(wrapped) { this.isWrapped = wrapped; return this; }
+    setTruncationMode(mode) { this.truncationMode = mode; return this; }
+    setMaximumNumberOfLines(lines) { this.maximumNumberOfLines = lines; return this; }
 
-    set truncationMode(value) {
-        this._truncationMode = value;
-    }
-
-    get maximumNumberOfLines() {
-        return this._maximumNumberOfLines;
-    }
-
-    set maximumNumberOfLines(value) {
-        this._maximumNumberOfLines = value;
-    }
-
-    setString(value) {
-        this.string = value;
-        return this;
-    }
-
-    setFont(font) {
-        this.font = font;
-        return this;
-    }
-
-    setFontSize(size) {
-        this.fontSize = size;
-        return this;
-    }
-
-    setTextColor(color) {
-        this.textColor = color;
-        return this;
-    }
-
-    setTextAlignment(alignment) {
-        this.textAlignment = alignment;
-        return this;
-    }
-
-    setWrapped(wrapped) {
-        this.isWrapped = wrapped;
-        return this;
-    }
-
-    setTruncationMode(mode) {
-        this.truncationMode = mode;
-        return this;
-    }
-
-    setMaximumNumberOfLines(lines) {
-        this.maximumNumberOfLines = lines;
-        return this;
-    }
-
-    withString(value) {
-        return this.setString(value);
-    }
-
-    withFont(font) {
-        return this.setFont(font);
-    }
-
-    withFontSize(size) {
-        return this.setFontSize(size);
-    }
-
-    withTextColor(color) {
-        return this.setTextColor(color);
-    }
-
-    withTextAlignment(alignment) {
-        return this.setTextAlignment(alignment);
-    }
+    withString(value) { return this.setString(value); }
+    withFont(font) { return this.setFont(font); }
+    withFontSize(size) { return this.setFontSize(size); }
+    withTextColor(color) { return this.setTextColor(color); }
+    withTextAlignment(alignment) { return this.setTextAlignment(alignment); }
 
     renderToContext(ctx) {
         if (this._isHidden) return;
 
         ctx.save();
-        
         ctx.globalAlpha = this._opacity;
         ctx.font = this._font;
         ctx.fillStyle = this._textColor.css;
@@ -1493,285 +1291,83 @@ class CAEmitterLayer extends CALayer {
         return new CAEmitterLayer();
     }
 
-    get emitterPosition() {
-        return this._emitterPosition;
-    }
+    get emitterPosition() { return this._emitterPosition; }
+    set emitterPosition(value) { this._emitterPosition = { ...value }; }
 
-    set emitterPosition(value) {
-        this._emitterPosition = { ...value };
-    }
+    get emitterSize() { return this._emitterSize; }
+    set emitterSize(value) { this._emitterSize = { ...value }; }
 
-    get emitterSize() {
-        return this._emitterSize;
-    }
+    get emitterShape() { return this._emitterShape; }
+    set emitterShape(value) { this._emitterShape = value; }
 
-    set emitterSize(value) {
-        this._emitterSize = { ...value };
-    }
+    get emitterMode() { return this._emitterMode; }
+    set emitterMode(value) { this._emitterMode = value; }
 
-    get emitterShape() {
-        return this._emitterShape;
-    }
+    get birthRate() { return this._birthRate; }
+    set birthRate(value) { this._birthRate = value; }
 
-    set emitterShape(value) {
-        this._emitterShape = value;
-    }
+    get lifetime() { return this._lifetime; }
+    set lifetime(value) { this._lifetime = value; }
 
-    get emitterMode() {
-        return this._emitterMode;
-    }
+    get emissionRange() { return this._emissionRange; }
+    set emissionRange(value) { this._emissionRange = value; }
 
-    set emitterMode(value) {
-        this._emitterMode = value;
-    }
+    get velocity() { return this._velocity; }
+    set velocity(value) { this._velocity = value; }
 
-    get birthRate() {
-        return this._birthRate;
-    }
+    get velocityRange() { return this._velocityRange; }
+    set velocityRange(value) { this._velocityRange = value; }
 
-    set birthRate(value) {
-        this._birthRate = value;
-    }
+    get scale() { return this._scale; }
+    set scale(value) { this._scale = value; }
 
-    get lifetime() {
-        return this._lifetime;
-    }
+    get scaleRange() { return this._scaleRange; }
+    set scaleRange(value) { this._scaleRange = value; }
 
-    set lifetime(value) {
-        this._lifetime = value;
-    }
+    get spin() { return this._spin; }
+    set spin(value) { this._spin = value; }
 
-    get emissionRange() {
-        return this._emissionRange;
-    }
+    get spinRange() { return this._spinRange; }
+    set spinRange(value) { this._spinRange = value; }
 
-    set emissionRange(value) {
-        this._emissionRange = value;
-    }
+    get contents() { return this._contents; }
+    set contents(value) { this._contents = value; }
 
-    get velocity() {
-        return this._velocity;
-    }
-
-    set velocity(value) {
-        this._velocity = value;
-    }
-
-    get velocityRange() {
-        return this._velocityRange;
-    }
-
-    set velocityRange(value) {
-        this._velocityRange = value;
-    }
-
-    get scale() {
-        return this._scale;
-    }
-
-    set scale(value) {
-        this._scale = value;
-    }
-
-    get scaleRange() {
-        return this._scaleRange;
-    }
-
-    set scaleRange(value) {
-        this._scaleRange = value;
-    }
-
-    get spin() {
-        return this._spin;
-    }
-
-    set spin(value) {
-        this._spin = value;
-    }
-
-    set spinRange(value) {
-        this._spinRange = value;
-    }
-
-    get spinRange() {
-        return this._spinRange;
-    }
-
-    set spin(value) {
-        this._spin = value;
-    }
-
-    get contents() {
-        return this._contents;
-    }
-
-    set contents(value) {
-        this._contents = value;
-    }
-
-    get color() {
-        return this._color;
-    }
-
+    get color() { return this._color; }
     set color(value) {
-        if (value instanceof UIColor) {
-            this._color = value;
-        } else if (typeof value === 'string') {
-            this._color = UIColor.colorWithHex(value);
-        }
+        if (value instanceof UIColor) this._color = value;
+        else if (typeof value === 'string') this._color = UIColor.colorWithHex(value);
     }
 
-    get alphaSpeed() {
-        return this._alphaSpeed;
-    }
+    get alphaSpeed() { return this._alphaSpeed; }
+    set alphaSpeed(value) { this._alphaSpeed = value; }
 
-    set alphaSpeed(value) {
-        this._alphaSpeed = value;
-    }
+    setEmitterPosition(point) { this.emitterPosition = point; return this; }
+    setEmitterSize(size) { this.emitterSize = size; return this; }
+    setEmitterShape(shape) { this.emitterShape = shape; return this; }
+    setEmitterMode(mode) { this.emitterMode = mode; return this; }
+    setBirthRate(rate) { this.birthRate = rate; return this; }
+    setLifetime(lifetime) { this.lifetime = lifetime; return this; }
+    setEmissionRange(range) { this.emissionRange = range; return this; }
+    setVelocity(velocity) { this.velocity = velocity; return this; }
+    setVelocityRange(range) { this.velocityRange = range; return this; }
+    setScale(scale) { this.scale = scale; return this; }
+    setScaleRange(range) { this.scaleRange = range; return this; }
+    setSpin(spin) { this.spin = spin; return this; }
+    setSpinRange(range) { this.spinRange = range; return this; }
+    setContents(contents) { this.contents = contents; return this; }
+    setColor(color) { this.color = color; return this; }
+    setAlphaSpeed(speed) { this.alphaSpeed = speed; return this; }
 
-    setEmitterPosition(point) {
-        this.emitterPosition = point;
-        return this;
-    }
-
-    setEmitterSize(size) {
-        this.emitterSize = size;
-        return this;
-    }
-
-    setEmitterShape(shape) {
-        this.emitterShape = shape;
-        return this;
-    }
-
-    setEmitterMode(mode) {
-        this.emitterMode = mode;
-        return this;
-    }
-
-    setBirthRate(rate) {
-        this.birthRate = rate;
-        return this;
-    }
-
-    setLifetime(lifetime) {
-        this.lifetime = lifetime;
-        return this;
-    }
-
-    setEmissionRange(range) {
-        this.emissionRange = range;
-        return this;
-    }
-
-    setVelocity(velocity) {
-        this.velocity = velocity;
-        return this;
-    }
-
-    setVelocityRange(range) {
-        this.velocityRange = range;
-        return this;
-    }
-
-    setScale(scale) {
-        this.scale = scale;
-        return this;
-    }
-
-    setScaleRange(range) {
-        this.scaleRange = range;
-        return this;
-    }
-
-    setSpin(spin) {
-        this.spin = spin;
-        return this;
-    }
-
-    setSpinRange(range) {
-        this.spinRange = range;
-        return this;
-    }
-
-    setContents(contents) {
-        this.contents = contents;
-        return this;
-    }
-
-    setColor(color) {
-        this.color = color;
-        return this;
-    }
-
-    setAlphaSpeed(speed) {
-        this.alphaSpeed = speed;
-        return this;
-    }
-
-    withEmitterPosition(point) {
-        return this.setEmitterPosition(point);
-    }
-
-    withEmitterSize(size) {
-        return this.setEmitterSize(size);
-    }
-
-    withEmitterShape(shape) {
-        return this.setEmitterShape(shape);
-    }
-
-    withEmitterMode(mode) {
-        return this.setEmitterMode(mode);
-    }
-
-    withBirthRate(rate) {
-        return this.setBirthRate(rate);
-    }
-
-    withLifetime(lifetime) {
-        return this.setLifetime(lifetime);
-    }
-
-    withEmissionRange(range) {
-        return this.setEmissionRange(range);
-    }
-
-    withVelocity(velocity) {
-        return this.setVelocity(velocity);
-    }
-
-    withVelocityRange(range) {
-        return this.setVelocityRange(range);
-    }
-
-    withScale(scale) {
-        return this.setScale(scale);
-    }
-
-    withScaleRange(range) {
-        return this.setScaleRange(range);
-    }
-
-    withSpin(spin) {
-        return this.setSpin(spin);
-    }
-
-    withSpinRange(range) {
-        return this.setSpinRange(range);
-    }
-
-    withContents(contents) {
-        return this.setContents(contents);
-    }
-
-    withColor(color) {
-        return this.setColor(color);
-    }
-
-    withAlphaSpeed(speed) {
-        return this.setAlphaSpeed(speed);
-    }
+    withEmitterPosition(point) { return this.setEmitterPosition(point); }
+    withEmitterSize(size) { return this.setEmitterSize(size); }
+    withEmitterShape(shape) { return this.setEmitterShape(shape); }
+    withBirthRate(rate) { return this.setBirthRate(rate); }
+    withLifetime(lifetime) { return this.setLifetime(lifetime); }
+    withEmissionRange(range) { return this.setEmissionRange(range); }
+    withVelocity(velocity) { return this.setVelocity(velocity); }
+    withScale(scale) { return this.setScale(scale); }
+    withColor(color) { return this.setColor(color); }
 
     startEmitting() {
         this._isActive = true;
@@ -1905,16 +1501,10 @@ class CABasicAnimation {
     }
 
     getValueAtProgress(progress) {
-        if (this.fromValue === null || this.toValue === null) {
-            return null;
-        }
+        if (this.fromValue === null || this.toValue === null) return null;
         let adjustedProgress = progress;
         if (this.autoreverses) {
-            if (progress <= 0.5) {
-                adjustedProgress = progress * 2;
-            } else {
-                adjustedProgress = 2 - progress * 2;
-            }
+            adjustedProgress = progress <= 0.5 ? progress * 2 : 2 - progress * 2;
         }
         return this.interpolate(this.fromValue, this.toValue, adjustedProgress);
     }
@@ -1998,13 +1588,14 @@ class CASpringAnimation extends CABasicAnimation {
         const dampingRatio = this.damping / (2 * Math.sqrt(this.stiffness * this.mass));
         if (dampingRatio < 1) {
             const omega = Math.sqrt(this.stiffness / this.mass);
-            return (Math.log(1 / 0.001) / (dampingRatio * omega));
+            return Math.log(1 / 0.001) / (dampingRatio * omega);
         }
         return this.duration;
     }
 }
 
 export { 
+    CGPath,
     CALayer, 
     CATransform3D, 
     CAGradientLayer, 

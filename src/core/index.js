@@ -149,5 +149,6 @@ export {
 } from './MoreSwiftTypes.js';
 export {
     CALayer, CATransform3D, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer,
-    CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup, CASpringAnimation
+    CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup, CASpringAnimation,
+    CGPath
 } from './CALayer.js';
