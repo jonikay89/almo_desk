@@ -16,6 +16,8 @@ class UISegmentedControl extends UIControl {
         this.tintColor = UIColor.systemBlue();
         this.selectedSegmentTintColor = null;
         this.apportionsSegmentWidthsByContent = false;
+        
+        this._accessibilityTraits = ['tabBar'];
     }
 
     get description() {
@@ -29,7 +31,11 @@ class UISegmentedControl extends UIControl {
 
     set selectedSegmentIndex(index) {
         this._selectedSegmentIndex = index;
+        this._accessibilityValue = this.segments[index]?.title || String(index);
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.selected = true;
         this.#updateAppearance();
+        this._updateAccessibilityAttributes();
     }
 
     selectedSegmentIndexAsNumber() {

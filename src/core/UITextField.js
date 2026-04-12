@@ -33,6 +33,8 @@ class UITextField extends UIControl {
         this._borderLayer = null;
         this._selectionLayer = null;
         this._cursorLayer = null;
+        
+        this._accessibilityTraits = ['textField'];
     }
 
     get textColor() {

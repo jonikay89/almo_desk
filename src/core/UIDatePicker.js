@@ -15,6 +15,8 @@ class UIDatePicker extends UIControl {
         this.minuteInterval = 1;
         this.timeZone = null;
         this.pickers = {};
+        
+        this._accessibilityTraits = ['adjustable'];
     }
 
     get description() {
@@ -28,7 +30,9 @@ class UIDatePicker extends UIControl {
     set date(value) {
         if (value instanceof Date) {
             this._date = value;
+            this._accessibilityValue = value.toLocaleDateString();
             this.#updateDisplay();
+            this._updateAccessibilityAttributes();
         }
     }
 

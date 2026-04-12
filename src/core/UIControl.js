@@ -14,10 +14,54 @@ class UIControl extends UIView {
         this.contentVerticalAlignment = 'center';
         this.contentHorizontalAlignment = 'center';
         this._targetActions = [];
+        this._accessibilityTraits = ['button'];
     }
 
     get description() {
         return `UIControl(enabled: ${this.enabled}, selected: ${this.selected}, highlighted: ${this.highlighted})`;
+    }
+
+    get enabled() {
+        return this._enabled;
+    }
+
+    set enabled(value) {
+        this._enabled = value;
+        if (this.element) {
+            this.element.style.cursor = value ? 'pointer' : 'default';
+            this.element.style.opacity = value ? '1' : '0.5';
+        }
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.disabled = !value;
+        this._updateAccessibilityAttributes();
+    }
+
+    get selected() {
+        return this._selected;
+    }
+
+    set selected(value) {
+        this._selected = value;
+        if (this.element) {
+            this.element.classList.toggle('selected', value);
+        }
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.selected = value;
+        this._updateAccessibilityAttributes();
+    }
+
+    get highlighted() {
+        return this._highlighted;
+    }
+
+    set highlighted(value) {
+        this._highlighted = value;
+        if (this.element) {
+            this.element.classList.toggle('highlighted', value);
+        }
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.pressed = value;
+        this._updateAccessibilityAttributes();
     }
 
     init() {
@@ -26,12 +70,48 @@ class UIControl extends UIView {
         this.element.className = 'ui-control';
         this.element.style.userSelect = 'none';
         this.element.style.cursor = this.enabled ? 'pointer' : 'default';
+        this._updateAccessibilityAttributes();
         return this;
     }
 
     deinit() {
         this._targetActions = [];
         this.element = null;
+    }
+
+    setEnabled(enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
+    setSelected(selected) {
+        this.selected = selected;
+        return this;
+    }
+
+    setHighlighted(highlighted) {
+        this.highlighted = highlighted;
+        return this;
+    }
+
+    setAccessibilityTraits(traits) {
+        this._accessibilityTraits = Array.isArray(traits) ? traits : [traits];
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    addTrait(trait) {
+        if (!this._accessibilityTraits.includes(trait)) {
+            this._accessibilityTraits.push(trait);
+            this._updateAccessibilityAttributes();
+        }
+        return this;
+    }
+
+    removeTrait(trait) {
+        this._accessibilityTraits = this._accessibilityTraits.filter(t => t !== trait);
+        this._updateAccessibilityAttributes();
+        return this;
     }
 
     addTarget(target, action, eventType) {
@@ -79,31 +159,6 @@ class UIControl extends UIView {
             })
             .map(ta => ta.action);
         return Optional.of(actions.length > 0 ? actions : null);
-    }
-
-    setEnabled(enabled) {
-        this.enabled = enabled;
-        if (this.element) {
-            this.element.style.cursor = enabled ? 'pointer' : 'default';
-            this.element.style.opacity = enabled ? '1' : '0.5';
-        }
-        return this;
-    }
-
-    setSelected(selected) {
-        this.selected = selected;
-        if (this.element) {
-            this.element.classList.toggle('selected', selected);
-        }
-        return this;
-    }
-
-    setHighlighted(highlighted) {
-        this.highlighted = highlighted;
-        if (this.element) {
-            this.element.classList.toggle('highlighted', highlighted);
-        }
-        return this;
     }
 
     setContentVerticalAlignment(alignment) {

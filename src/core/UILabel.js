@@ -39,6 +39,9 @@ class UILabel extends UIView {
         this._layerContents = null;
         this._preferredMaxLayoutWidth = 0;
         this._baselineAlignment = 'first';
+        
+        this._isAccessibilityElement = true;
+        this._accessibilityTraits = ['staticText'];
     }
 
     get description() {
@@ -52,8 +55,10 @@ class UILabel extends UIView {
     set text(value) {
         this._text = value || '';
         this._textStorage.string = this._text;
+        this._accessibilityValue = this._text;
         this.#updateTextLayer();
         this.#updateStyle();
+        this._updateAccessibilityAttributes();
     }
 
     get attributedText() {
@@ -153,6 +158,7 @@ class UILabel extends UIView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-label';
         this.element.style.display = 'inline-block';
@@ -163,6 +169,8 @@ class UILabel extends UIView {
         
         this.#createTextLayerContent();
         this.#updateStyle();
+        this._accessibilityValue = this._text;
+        this._updateAccessibilityAttributes();
         
         return this;
     }
@@ -541,6 +549,36 @@ class UILabel extends UIView {
         if (data.lineBreakMode) label.lineBreakMode = data.lineBreakMode;
         if (data.isEnabled !== undefined) label.isEnabled = data.isEnabled;
         return label;
+    }
+
+    setAccessibilityLabel(label) {
+        this._accessibilityLabel = label;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityValue(value) {
+        this._accessibilityValue = value;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityTraits(traits) {
+        this._accessibilityTraits = Array.isArray(traits) ? traits : [traits];
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    withAccessibilityLabel(label) {
+        return this.setAccessibilityLabel(label);
+    }
+
+    withAccessibilityValue(value) {
+        return this.setAccessibilityValue(value);
+    }
+
+    withAccessibilityTraits(...traits) {
+        return this.setAccessibilityTraits(traits);
     }
 
     matchLabel(predicate) {

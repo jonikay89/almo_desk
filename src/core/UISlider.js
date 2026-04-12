@@ -14,6 +14,8 @@ class UISlider extends UIControl {
         this.maximumTrackTintColor = UIColor.lightGray();
         this.thumbTintColor = UIColor.white();
         this.isContinuous = true;
+        
+        this._accessibilityTraits = ['adjustable'];
     }
 
     get value() {
@@ -22,7 +24,9 @@ class UISlider extends UIControl {
 
     set value(val) {
         this._value = Math.max(this._minimumValue, Math.min(this._maximumValue, val));
+        this._accessibilityValue = `${this._value}`;
         this.#updateAppearance();
+        this._updateAccessibilityAttributes();
     }
 
     get minimumValue() {

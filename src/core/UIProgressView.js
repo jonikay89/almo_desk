@@ -10,6 +10,9 @@ class UIProgressView extends UIView {
         this._progress = 0;
         this.progressTintColor = UIColor.systemBlue();
         this.trackTintColor = UIColor.lightGray();
+        
+        this._isAccessibilityElement = true;
+        this._accessibilityTraits = ['progressIndicator'];
     }
 
     get progress() {
@@ -18,7 +21,9 @@ class UIProgressView extends UIView {
 
     set progress(value) {
         this._progress = Math.max(0, Math.min(1, value));
+        this._accessibilityValue = `${Math.round(this._progress * 100)}%`;
         this.#updateProgress();
+        this._updateAccessibilityAttributes();
     }
 
     get description() {

@@ -11,6 +11,8 @@ class UISwitch extends UIControl {
         this.onTintColor = UIColor.systemGreen();
         this.thumbTintColor = UIColor.white();
         this.trackOffColor = UIColor.lightGray();
+        
+        this._accessibilityTraits = ['button', 'adjustable'];
     }
 
     get isOn() {
@@ -19,7 +21,11 @@ class UISwitch extends UIControl {
 
     set isOn(value) {
         this._isOn = !!value;
+        this._accessibilityValue = this._isOn ? 'On' : 'Off';
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.selected = this._isOn;
         this.#updateAppearance();
+        this._updateAccessibilityAttributes();
     }
 
     get description() {

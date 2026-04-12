@@ -35,6 +35,8 @@ class UIButton extends UIControl {
         
         this._buttonType = 'system';
         this._imagePlacement = 'left';
+        
+        this._accessibilityTraits = ['button'];
     }
 
     get titleLabel() {
@@ -52,9 +54,12 @@ class UIButton extends UIControl {
     set title(value) {
         this._title = value || '';
         this._currentTitle = this._title;
+        this._accessibilityLabel = this._title;
+        this._accessibilityValue = this._title;
         if (this._titleLabel) {
             this._titleLabel.text = this._currentTitle;
         }
+        this._updateAccessibilityAttributes();
     }
 
     get currentTitle() {

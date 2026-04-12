@@ -13,6 +13,8 @@ class UIStepper extends UIControl {
         this._stepValue = 1;
         this.wraps = false;
         this.tintColor = UIColor.systemBlue();
+        
+        this._accessibilityTraits = ['adjustable'];
     }
 
     get value() {
@@ -21,6 +23,8 @@ class UIStepper extends UIControl {
 
     set value(val) {
         this._value = val;
+        this._accessibilityValue = `${this._value}`;
+        this._updateAccessibilityAttributes();
     }
 
     get minimumValue() {

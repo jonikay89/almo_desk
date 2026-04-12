@@ -12,6 +12,9 @@ class UIPageControl extends UIView {
         this.pageIndicatorTintColor = UIColor.lightGray();
         this.currentPageIndicatorTintColor = UIColor.systemBlue();
         this.enabled = true;
+        
+        this._isAccessibilityElement = true;
+        this._accessibilityTraits = ['adjustable'];
     }
 
     get numberOfPages() {
@@ -20,7 +23,9 @@ class UIPageControl extends UIView {
 
     set numberOfPages(value) {
         this._numberOfPages = Math.max(0, Math.floor(value));
+        this._accessibilityValue = `Page ${this._currentPage + 1} of ${this._numberOfPages}`;
         this.#rebuildDots();
+        this._updateAccessibilityAttributes();
     }
 
     get currentPage() {
@@ -29,7 +34,9 @@ class UIPageControl extends UIView {
 
     set currentPage(value) {
         this._currentPage = Math.max(0, Math.min(this._numberOfPages - 1, Math.floor(value)));
+        this._accessibilityValue = `Page ${this._currentPage + 1} of ${this._numberOfPages}`;
         this.#updateDots();
+        this._updateAccessibilityAttributes();
     }
 
     get description() {

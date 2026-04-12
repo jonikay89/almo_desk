@@ -38,6 +38,20 @@ class UIView extends UIResponder {
         this._customDrawHandler = null;
         this._layerContents = null;
         this._useLayerCanvas = true;
+        
+        this._isAccessibilityElement = false;
+        this._accessibilityLabel = '';
+        this._accessibilityHint = '';
+        this._accessibilityValue = '';
+        this._accessibilityTraits = [];
+        this._accessibilityIdentifier = '';
+        this._accessibilityElements = [];
+        this._accessibilityContainerType = 'none';
+        this._accessibilityRole = '';
+        this._accessibilityState = {};
+        this._accessibilityActions = [];
+        this._notifiesAccessibilityWhenMoved = false;
+        this._shouldGroupAccessibilityChildren = false;
     }
 
     get frame() {
@@ -144,6 +158,383 @@ class UIView extends UIResponder {
         if (this.element) {
             this.element.style.borderColor = this._borderColor ? this._borderColor.css : '';
         }
+    }
+
+    get isAccessibilityElement() {
+        return this._isAccessibilityElement;
+    }
+
+    set isAccessibilityElement(value) {
+        this._isAccessibilityElement = value;
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityLabel() {
+        return this._accessibilityLabel;
+    }
+
+    set accessibilityLabel(value) {
+        this._accessibilityLabel = value || '';
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityHint() {
+        return this._accessibilityHint;
+    }
+
+    set accessibilityHint(value) {
+        this._accessibilityHint = value || '';
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityValue() {
+        return this._accessibilityValue;
+    }
+
+    set accessibilityValue(value) {
+        this._accessibilityValue = value || '';
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityTraits() {
+        return this._accessibilityTraits;
+    }
+
+    set accessibilityTraits(value) {
+        this._accessibilityTraits = Array.isArray(value) ? value : [value];
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityIdentifier() {
+        return this._accessibilityIdentifier;
+    }
+
+    set accessibilityIdentifier(value) {
+        this._accessibilityIdentifier = value || '';
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityRole() {
+        return this._accessibilityRole;
+    }
+
+    set accessibilityRole(value) {
+        this._accessibilityRole = value || '';
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityState() {
+        return this._accessibilityState;
+    }
+
+    set accessibilityState(value) {
+        this._accessibilityState = value || {};
+        this._updateAccessibilityAttributes();
+    }
+
+    get accessibilityElements() {
+        return this._accessibilityElements;
+    }
+
+    set accessibilityElements(value) {
+        this._accessibilityElements = value || [];
+    }
+
+    get accessibilityContainerType() {
+        return this._accessibilityContainerType;
+    }
+
+    set accessibilityContainerType(value) {
+        this._accessibilityContainerType = value;
+    }
+
+    get shouldGroupAccessibilityChildren() {
+        return this._shouldGroupAccessibilityChildren;
+    }
+
+    set shouldGroupAccessibilityChildren(value) {
+        this._shouldGroupAccessibilityChildren = value;
+    }
+
+    get notifiesAccessibilityWhenMoved() {
+        return this._notifiesAccessibilityWhenMoved;
+    }
+
+    set notifiesAccessibilityWhenMoved(value) {
+        this._notifiesAccessibilityWhenMoved = value;
+    }
+
+    _updateAccessibilityAttributes() {
+        if (!this.element) return;
+        
+        const role = this._mapAccessibilityRole();
+        if (role) {
+            this.element.setAttribute('role', role);
+        }
+        
+        if (this._accessibilityLabel) {
+            this.element.setAttribute('aria-label', this._accessibilityLabel);
+        }
+        
+        if (this._accessibilityHint) {
+            this.element.setAttribute('aria-describedby', this._accessibilityHint);
+        }
+        
+        if (this._accessibilityValue) {
+            this.element.setAttribute('aria-valuetext', this._accessibilityValue);
+        }
+        
+        if (this._accessibilityIdentifier) {
+            this.element.setAttribute('data-accessibility-id', this._accessibilityIdentifier);
+        }
+        
+        const expanded = this._accessibilityState?.expanded;
+        if (expanded !== undefined) {
+            this.element.setAttribute('aria-expanded', String(expanded));
+        }
+        
+        const checked = this._accessibilityState?.checked;
+        if (checked !== undefined) {
+            this.element.setAttribute('aria-checked', String(checked));
+        }
+        
+        const disabled = this._accessibilityState?.disabled;
+        if (disabled !== undefined) {
+            this.element.setAttribute('aria-disabled', String(disabled));
+        }
+        
+        const selected = this._accessibilityState?.selected;
+        if (selected !== undefined) {
+            this.element.setAttribute('aria-selected', String(selected));
+        }
+        
+        const pressed = this._accessibilityState?.pressed;
+        if (pressed !== undefined) {
+            this.element.setAttribute('aria-pressed', String(pressed));
+        }
+        
+        this.element.setAttribute('tabindex', this._isAccessibilityElement ? '0' : '-1');
+    }
+
+    _mapAccessibilityRole() {
+        if (this._accessibilityRole) {
+            return this._accessibilityRole;
+        }
+        
+        const traits = this._accessibilityTraits;
+        if (traits.includes('button')) return 'button';
+        if (traits.includes('link')) return 'link';
+        if (traits.includes('header')) return 'heading';
+        if (traits.includes('searchField')) return 'searchbox';
+        if (traits.includes('keyboardKey')) return 'key';
+        if (traits.includes('textField')) return 'textbox';
+        if (traits.includes('image')) return 'img';
+        if (traits.includes('imageButton')) return 'button';
+        if (traits.includes('selected')) return 'option';
+        if (traits.includes('plays')) return 'button';
+        if (traits.includes('startsMediaSession')) return 'button';
+        if (traits.includes('adjustable')) return 'slider';
+        if (traits.includes('tabBarItem')) return 'tab';
+        if (traits.includes('listItem')) return 'listitem';
+        if (traits.includes('list')) return 'list';
+        if (traits.includes('menuItem')) return 'menuitem';
+        if (traits.includes('menu')) return 'menu';
+        if (traits.includes('tooltip')) return 'tooltip';
+        if (traits.includes('staticText')) return 'note';
+        
+        return '';
+    }
+
+    accessibilityElementAtIndex(index) {
+        return this._accessibilityElements[index] || null;
+    }
+
+    indexOfAccessibilityElement(element) {
+        return this._accessibilityElements.indexOf(element);
+    }
+
+    countOfAccessibilityElements() {
+        return this._accessibilityElements.length;
+    }
+
+    setAccessibilityFocused(animated = false) {
+        if (this.element) {
+            this.element.focus();
+        }
+        return this;
+    }
+
+    accessibilityActivationPoint() {
+        return this._center;
+    }
+
+    accessibilityFrame() {
+        return this._frame;
+    }
+
+    accessibilityPath() {
+        return null;
+    }
+
+    accessibilityContainer() {
+        return this.superview;
+    }
+
+    isAccessibilityContainer() {
+        return this._accessibilityElements.length > 0 || this._accessibilityContainerType !== 'none';
+    }
+
+    addAccessibilityAction(name, handler) {
+        this._accessibilityActions.push({ name, handler });
+        return this;
+    }
+
+    removeAccessibilityAction(name) {
+        this._accessibilityActions = this._accessibilityActions.filter(a => a.name !== name);
+        return this;
+    }
+
+    accessibilityPerformAction(action) {
+        const actionHandler = this._accessibilityActions.find(a => a.name === action);
+        if (actionHandler) {
+            actionHandler.handler();
+            return true;
+        }
+        return false;
+    }
+
+    postAccessibilityNotification(notification, userInfo = {}) {
+        if (this.element) {
+            const event = new CustomEvent(`accessibility:${notification}`, { detail: userInfo });
+            this.element.dispatchEvent(event);
+        }
+        return this;
+    }
+
+    setAccessibilityValueByAdding(prefix, suffix) {
+        if (prefix) {
+            this._accessibilityValue = prefix + this._accessibilityValue;
+        }
+        if (suffix) {
+            this._accessibilityValue = this._accessibilityValue + suffix;
+        }
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setIsAccessibilityElement(enabled) {
+        this._isAccessibilityElement = enabled;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityLabel(label) {
+        this._accessibilityLabel = label;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityHint(hint) {
+        this._accessibilityHint = hint;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityValue(value) {
+        this._accessibilityValue = value;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityTraits(traits) {
+        this._accessibilityTraits = Array.isArray(traits) ? traits : [traits];
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityIdentifier(identifier) {
+        this._accessibilityIdentifier = identifier;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityRole(role) {
+        this._accessibilityRole = role;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    setAccessibilityState(state) {
+        this._accessibilityState = state;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    withIsAccessibilityElement(enabled) {
+        return this.setIsAccessibilityElement(enabled);
+    }
+
+    withAccessibilityLabel(label) {
+        return this.setAccessibilityLabel(label);
+    }
+
+    withAccessibilityHint(hint) {
+        return this.setAccessibilityHint(hint);
+    }
+
+    withAccessibilityValue(value) {
+        return this.setAccessibilityValue(value);
+    }
+
+    withAccessibilityTraits(...traits) {
+        return this.setAccessibilityTraits(traits);
+    }
+
+    withAccessibilityIdentifier(identifier) {
+        return this.setAccessibilityIdentifier(identifier);
+    }
+
+    withAccessibilityRole(role) {
+        return this.setAccessibilityRole(role);
+    }
+
+    withAccessibilityState(state) {
+        return this.setAccessibilityState(state);
+    }
+
+    withAccessibilityEnabled(enabled) {
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.disabled = !enabled;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    withAccessibilityBusy(busy) {
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.busy = busy;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    withAccessibilityExpanded(expanded) {
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.expanded = expanded;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    withAccessibilitySelected(selected) {
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.selected = selected;
+        this._updateAccessibilityAttributes();
+        return this;
+    }
+
+    withAccessibilityChecked(checked) {
+        this._accessibilityState = this._accessibilityState || {};
+        this._accessibilityState.checked = checked;
+        this._updateAccessibilityAttributes();
+        return this;
     }
 
     get layer() {

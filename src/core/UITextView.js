@@ -37,6 +37,9 @@ class UITextView extends UIScrollView {
             underline: true
         };
         this._text = text || '';
+        
+        this._isAccessibilityElement = true;
+        this._accessibilityTraits = ['textField', 'adjustable'];
     }
 
     get description() {

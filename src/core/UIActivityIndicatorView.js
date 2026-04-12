@@ -11,6 +11,9 @@ class UIActivityIndicatorView extends UIView {
         this.color = UIColor.systemBlue();
         this.hidesWhenStopped = true;
         this._isAnimating = false;
+        
+        this._isAccessibilityElement = true;
+        this._accessibilityTraits = ['progressIndicator'];
     }
 
     get description() {
@@ -27,6 +30,9 @@ class UIActivityIndicatorView extends UIView {
         this.element.className = 'ui-activityindicator';
         this.element.style.position = 'relative';
         this.element.style.display = 'inline-block';
+        this._accessibilityLabel = this._isAnimating ? 'Loading' : 'Loaded';
+        this._accessibilityValue = this._isAnimating ? 'In progress' : 'Stopped';
+        this._updateAccessibilityAttributes();
 
         const sizes = {
             small: 16,
