@@ -224,7 +224,7 @@ class CGPath {
     }
 
     containsPoint(point) {
-        return false;
+        return this.containsPoint_(point);
     }
 
     containsPoint_(point) {
@@ -1511,6 +1511,8 @@ class CAEmitterLayer extends CALayer {
     startEmitting() {
         this._isActive = true;
         this._birthRate = this._emissionRate;
+        this._lastTimestamp = performance.now();
+        this.#animateParticles();
         return this;
     }
 
@@ -1518,6 +1520,25 @@ class CAEmitterLayer extends CALayer {
         this._isActive = false;
         this._birthRate = 0;
         return this;
+    }
+
+    setNeedsDisplay() {
+        if (this._delegate && this._delegate.setNeedsDisplay) {
+            this._delegate.setNeedsDisplay();
+        }
+    }
+
+    #animateParticles() {
+        if (!this._isActive) return;
+        
+        const now = performance.now();
+        const deltaTime = Math.min((now - (this._lastTimestamp || now)) / 1000, 0.033);
+        this._lastTimestamp = now;
+        
+        this.simulate(deltaTime);
+        this.setNeedsDisplay();
+        
+        requestAnimationFrame(() => this.#animateParticles());
     }
 
     simulate(deltaTime) {

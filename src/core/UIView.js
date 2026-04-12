@@ -596,7 +596,9 @@ class UIView extends UIResponder {
         }
         
         this.element.style.transform = transform.toCSSTransform();
-        this.element.style.transformOrigin = `${this._layer.anchorPoint.x * 100}% ${this._layer.anchorPoint.y * 100}%`;
+        const originX = this._layer.anchorPoint.x * this._bounds.width;
+        const originY = this._layer.anchorPoint.y * this._bounds.height;
+        this.element.style.transformOrigin = `${originX}px ${originY}px`;
     }
 
     get description() {
@@ -1195,18 +1197,35 @@ class UIView extends UIResponder {
     addPulseAnimation(duration = 0.6, scale = 1.1) {
         if (!this.element) return this;
         
+        this.removeAnimations();
+        
+        const animName = `pulse_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         this.element.style.transformOrigin = 'center center';
-        this.element.style.animation = `pulse_${Date.now()} ${duration}s ease-in-out infinite alternate`;
+        this.element.style.animation = `${animName} ${duration}s ease-in-out infinite alternate`;
         
         const style = document.createElement('style');
         style.textContent = `
-            @keyframes pulse_${Date.now()} {
+            @keyframes ${animName} {
                 from { transform: scale(1); }
                 to { transform: scale(${scale}); }
             }
         `;
         document.head.appendChild(style);
         
+        this._animationStyles = this._animationStyles || [];
+        this._animationStyles.push(style);
+        
+        return this;
+    }
+
+    removeAnimations() {
+        if (this._animationStyles) {
+            this._animationStyles.forEach(style => style.remove());
+            this._animationStyles = [];
+        }
+        if (this.element) {
+            this.element.style.animation = '';
+        }
         return this;
     }
 
@@ -1222,24 +1241,43 @@ class UIView extends UIResponder {
     addRotationAnimation(duration = 1, fromAngle = 0, toAngle = Math.PI * 2, repeatCount = Infinity) {
         if (!this.element) return this;
         
-        const angle = (fromAngle * 180) / Math.PI;
+        this.removeAnimations();
+        
+        const startAngle = (fromAngle * 180) / Math.PI;
         const endAngle = (toAngle * 180) / Math.PI;
+        let currentAngle = startAngle;
+        let count = 0;
+        let lastTime = null;
+        let animating = true;
         
         this.element.style.transformOrigin = 'center center';
-        this.element.style.transition = `transform ${duration}s linear`;
-        this.element.style.transform = `rotate(${endAngle}deg)`;
         
-        if (repeatCount > 1 || repeatCount === Infinity) {
-            setTimeout(() => {
-                if (this.element) {
-                    this.element.style.transition = 'none';
-                    this.element.style.transform = `rotate(${angle}deg)`;
-                    setTimeout(() => {
-                        this.addRotationAnimation(duration, fromAngle, toAngle, repeatCount - 1);
-                    }, 50);
+        const animate = (timestamp) => {
+            if (!animating || !this.element) return;
+            
+            if (lastTime === null) lastTime = timestamp;
+            const delta = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            
+            const steps = delta / (duration / (Math.PI * 2));
+            currentAngle += ((endAngle - startAngle) * steps);
+            
+            if (currentAngle >= endAngle) {
+                if (repeatCount !== Infinity && count >= repeatCount - 1) {
+                    this.element.style.transform = `rotate(${endAngle}deg)`;
+                    return;
                 }
-            }, duration * 1000);
-        }
+                currentAngle = startAngle;
+                count++;
+            }
+            
+            this.element.style.transform = `rotate(${currentAngle}deg)`;
+            requestAnimationFrame(animate);
+        };
+        
+        requestAnimationFrame(animate);
+        
+        this._rotationAnimation = { stop: () => { animating = false; } };
         
         return this;
     }
