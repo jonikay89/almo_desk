@@ -22,6 +22,7 @@ class UISearchBar extends UIView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-searchbar';
         this.element.style.display = 'flex';

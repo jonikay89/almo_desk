@@ -123,6 +123,7 @@ class UIScrollView extends UIView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-scrollview';
         this.element.style.overflow = 'auto';

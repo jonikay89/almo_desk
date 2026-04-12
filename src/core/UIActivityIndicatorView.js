@@ -22,6 +22,7 @@ class UIActivityIndicatorView extends UIView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-activityindicator';
         this.element.style.position = 'relative';

@@ -12,10 +12,6 @@ class UIStackView extends UIView {
         this._alignment = 'center';
         this._spacing = 0;
         this._isLayoutFlipped = false;
-        this.element = document.createElement('div');
-        this.element.className = 'ui-stackview';
-        
-        arrangedSubviews.forEach(view => this.addArrangedSubview(view));
     }
 
     get description() {
@@ -68,6 +64,9 @@ class UIStackView extends UIView {
     }
 
     init() {
+        super.init();
+        this.element = document.createElement('div');
+        this.element.className = 'ui-stackview';
         this.element.style.display = 'flex';
         this.#updateLayout();
         return this;
@@ -115,7 +114,7 @@ class UIStackView extends UIView {
     }
 
     addArrangedSubview(view) {
-        if (!view) return;
+        if (!view) return this;
         
         this._arrangedSubviews.push(view);
         view.removeFromSuperview();
@@ -126,10 +125,11 @@ class UIStackView extends UIView {
         }
         
         this.#updateLayout();
+        return this;
     }
 
     removeArrangedSubview(view) {
-        if (!view) return;
+        if (!view) return this;
         
         const index = this._arrangedSubviews.indexOf(view);
         if (index > -1) {
@@ -142,10 +142,11 @@ class UIStackView extends UIView {
         
         view.superview = null;
         this.#updateLayout();
+        return this;
     }
 
     insertArrangedSubview(view, index) {
-        if (!view) return;
+        if (!view) return this;
         
         view.removeFromSuperview();
         view.superview = this;
@@ -166,6 +167,7 @@ class UIStackView extends UIView {
         }
         
         this.#updateLayout();
+        return this;
     }
 
     setAxis(axis) {

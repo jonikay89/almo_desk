@@ -52,6 +52,7 @@ class UIPickerView extends UIView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-pickerview';
         this.element.style.display = 'flex';
