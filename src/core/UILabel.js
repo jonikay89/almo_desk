@@ -3,12 +3,28 @@ import UIColor from './UIColor.js';
 import { kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { CALayer, CATextLayer, CAShapeLayer, CGPath } from './CALayer.js';
+import { TextStorage, AttributedString, ParagraphStyle } from './TextStorage.js';
 
 class UILabel extends UIView {
     constructor(text = '') {
         super();
-        this.text = text;
+        this._text = text;
         this._textColor = UIColor.black();
+        this._shadowColor = null;
+        this._shadowOffset = { width: 0, height: 0 };
+        this._lineHeight = null;
+        this._textStorage = TextStorage.Create();
+        this._textStorage.string = text;
+        this._textStorage.defaultAttributes = {
+            font: { size: 14, family: 'system-ui', weight: 'normal' },
+            textColor: UIColor.black(),
+            backgroundColor: null,
+            underline: false,
+            strikethrough: false,
+            link: null,
+            baselineOffset: 0
+        };
         this.fontSize = 14;
         this.fontFamily = 'system-ui, sans-serif';
         this.textAlignment = 'left';
@@ -18,12 +34,39 @@ class UILabel extends UIView {
         this.minimumScaleFactor = 0.5;
         this.fontWeight = 'normal';
         this.isEnabled = true;
-        this._shadowColor = null;
-        this._shadowOffset = { width: 0, height: 0 };
+        this._textLayer = null;
+        this._useLayerRendering = true;
+        this._layerContents = null;
+        this._preferredMaxLayoutWidth = 0;
+        this._baselineAlignment = 'first';
     }
 
     get description() {
-        return `UILabel(text: "${this.text}")`;
+        return `UILabel(text: "${this._text}")`;
+    }
+
+    get text() {
+        return this._text;
+    }
+
+    set text(value) {
+        this._text = value || '';
+        this._textStorage.string = this._text;
+        this.#updateTextLayer();
+        this.#updateStyle();
+    }
+
+    get attributedText() {
+        return this._textStorage;
+    }
+
+    set attributedText(value) {
+        if (value instanceof TextStorage) {
+            this._textStorage = value;
+            this._text = value.string;
+            this.#updateTextLayer();
+            this.#updateStyle();
+        }
     }
 
     get textColor() {
@@ -38,6 +81,7 @@ class UILabel extends UIView {
         } else {
             this._textColor = UIColor.black();
         }
+        this._textStorage.defaultAttributes.textColor = this._textColor;
         this.#updateStyle();
     }
 
@@ -59,6 +103,11 @@ class UILabel extends UIView {
             if (f.family) this.fontFamily = f.family;
             if (f.weight) this.fontWeight = f.weight;
         }
+        this._textStorage.defaultAttributes.font = {
+            size: this.fontSize,
+            family: this.fontFamily,
+            weight: this.fontWeight
+        };
         this.#updateStyle();
     }
 
@@ -68,6 +117,7 @@ class UILabel extends UIView {
 
     set fontSize(size) {
         this._fontSize = size;
+        this._textStorage.defaultAttributes.font.size = size;
         this.#updateStyle();
     }
 
@@ -77,6 +127,7 @@ class UILabel extends UIView {
 
     set textAlignment(alignment) {
         this._textAlignment = alignment;
+        this.#updateTextLayer();
         this.#updateStyle();
     }
 
@@ -89,25 +140,157 @@ class UILabel extends UIView {
         this.#updateStyle();
     }
 
+    get textStorage() {
+        return this._textStorage;
+    }
+
+    set textStorage(value) {
+        if (value instanceof TextStorage) {
+            this._textStorage = value;
+            this._text = value.string;
+            this.#updateTextLayer();
+        }
+    }
+
     init() {
-        this.element = document.createElement('span');
+        this.element = document.createElement('div');
         this.element.className = 'ui-label';
         this.element.style.display = 'inline-block';
-        this.element.style.whiteSpace = 'pre-wrap';
-        this.#updateText();
+        this.element.style.position = 'relative';
+        
+        this._textLayer = CATextLayer.layer();
+        this._textLayer.name = 'textLayer';
+        
+        this.#createTextLayerContent();
         this.#updateStyle();
+        
         return this;
     }
 
     deinit() {
-        this.text = '';
+        this._text = '';
         this.element = null;
+        this._textLayer = null;
+        this._layerContents = null;
     }
 
-    #updateText() {
-        if (this.element) {
-            this.element.textContent = this.text;
+    #createTextLayerContent() {
+        if (!this._textLayer) return;
+        
+        this._textLayer.bounds = { x: 0, y: 0, width: this._bounds.width || 100, height: this._bounds.height || 20 };
+        this._textLayer.string = this._text;
+        this._textLayer.fontSize = this.fontSize;
+        this._textLayer.textColor = this._textColor;
+        this._textLayer.textAlignment = this.textAlignment;
+        this._textLayer.fontFamily = this.fontFamily;
+        this._textLayer.opacity = this.isEnabled ? 1 : 0.5;
+        
+        this._layerContents = (ctx, bounds) => {
+            this.#renderTextInContext(ctx, bounds);
+        };
+    }
+
+    #renderTextInContext(ctx, bounds) {
+        const text = this._textStorage.string;
+        if (!text) return;
+
+        ctx.save();
+        
+        const attrs = this._textStorage.defaultAttributes;
+        const fontSize = attrs.font?.size || this.fontSize;
+        const fontFamily = attrs.font?.family || this.fontFamily;
+        const fontWeight = attrs.font?.weight || this.fontWeight;
+        
+        ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+        ctx.textBaseline = 'top';
+        
+        let textX = 0;
+        if (this.textAlignment === 'center') {
+            ctx.textAlign = 'center';
+            textX = bounds.width / 2;
+        } else if (this.textAlignment === 'right') {
+            ctx.textAlign = 'right';
+            textX = bounds.width;
+        } else {
+            ctx.textAlign = 'left';
+            textX = 0;
         }
+
+        const textColor = attrs.textColor || this._textColor;
+        ctx.fillStyle = textColor.css;
+
+        if (this.numberOfLines === 1) {
+            ctx.fillText(text, textX, 0);
+            
+            if (attrs.underline) {
+                const metrics = ctx.measureText(text);
+                const y = fontSize;
+                ctx.beginPath();
+                ctx.moveTo(textX === 0 ? 0 : textX - metrics.width, y + 2);
+                ctx.lineTo(textX === 0 ? metrics.width : textX, y + 2);
+                ctx.strokeStyle = textColor.css;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            
+            if (attrs.strikethrough) {
+                const metrics = ctx.measureText(text);
+                const y = fontSize / 2;
+                ctx.beginPath();
+                ctx.moveTo(textX === 0 ? 0 : textX - metrics.width, y);
+                ctx.lineTo(textX === 0 ? metrics.width : textX, y);
+                ctx.strokeStyle = textColor.css;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        } else {
+            const lines = this.#wrapText(text, bounds.width, ctx);
+            const maxLines = this.numberOfLines || lines.length;
+            const lineHeight = this.lineHeight;
+            
+            lines.slice(0, maxLines).forEach((line, index) => {
+                ctx.fillText(line, textX, index * lineHeight);
+            });
+        }
+        
+        ctx.restore();
+    }
+
+    #wrapText(text, maxWidth, ctx) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+
+        for (const word of words) {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            const metrics = ctx.measureText(testLine);
+
+            if (metrics.width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        }
+
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+
+        return lines;
+    }
+
+    #updateTextLayer() {
+        if (!this._textLayer) return;
+        
+        this._textLayer.string = this._text;
+        this._textLayer.fontSize = this.fontSize;
+        this._textLayer.textColor = this._textColor;
+        this._textLayer.textAlignment = this.textAlignment;
+        this._textLayer.fontFamily = this.fontFamily;
+        this._textLayer.opacity = this.isEnabled ? 1 : 0.5;
+        
+        this.#renderLayers();
     }
 
     #updateStyle() {
@@ -134,11 +317,67 @@ class UILabel extends UIView {
                 this.element.style.wordBreak = 'break-all';
             }
         }
+        
+        this.#updateTextLayer();
+        this.#renderLayers();
+    }
+
+    #renderLayers() {
+        if (!this.element || !this._useLayerRendering) return;
+        
+        const existingCanvas = this.element.querySelector('.layer-canvas');
+        if (existingCanvas) existingCanvas.remove();
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'layer-canvas';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.width = (this._bounds.width || 100) * 2;
+        canvas.height = (this._bounds.height || 20) * 2;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        
+        this.#renderTextInContext(ctx, this._bounds);
+        
+        this.element.style.position = 'relative';
+        if (this.element.firstChild !== canvas) {
+            this.element.insertBefore(canvas, this.element.firstChild);
+        }
+    }
+
+    layoutSubviews() {
+        super.layoutSubviews();
+        if (this._textLayer) {
+            this._textLayer.bounds = { 
+                x: 0, 
+                y: 0, 
+                width: this._bounds.width, 
+                height: this._bounds.height 
+            };
+        }
+        this.#renderLayers();
     }
 
     setText(text) {
         this.text = text;
-        this.#updateText();
+        return this;
+    }
+
+    setAttributedText(attributedText) {
+        if (attributedText instanceof TextStorage) {
+            this._textStorage = attributedText;
+            this._text = attributedText.string;
+        } else if (attributedText instanceof AttributedString) {
+            this._text = attributedText.string;
+            this._textStorage.string = this._text;
+        }
+        this.#updateTextLayer();
+        this.#updateStyle();
         return this;
     }
 
@@ -154,12 +393,14 @@ class UILabel extends UIView {
 
     setFontFamily(family) {
         this.fontFamily = family;
+        this._textStorage.defaultAttributes.font.family = family;
         this.#updateStyle();
         return this;
     }
 
     setFontWeight(weight) {
         this.fontWeight = weight;
+        this._textStorage.defaultAttributes.font.weight = weight;
         this.#updateStyle();
         return this;
     }
@@ -184,6 +425,42 @@ class UILabel extends UIView {
     setEnabled(enabled) {
         this.isEnabled = enabled;
         this.#updateStyle();
+        return this;
+    }
+
+    setLineHeight(height) {
+        this.lineHeight = height;
+        return this;
+    }
+
+    setShadowColor(color) {
+        this._shadowColor = color instanceof UIColor ? color : UIColor.colorWithHex(color);
+        if (this._shadowColor && this.element) {
+            this.element.style.textShadow = `${this._shadowOffset.width}px ${this._shadowOffset.height}px ${this._shadowColor.css}`;
+        }
+        return this;
+    }
+
+    setShadowOffset(offset) {
+        this._shadowOffset = offset;
+        if (this._shadowColor && this.element) {
+            this.element.style.textShadow = `${offset.width}px ${offset.height}px ${this._shadowColor.css}`;
+        }
+        return this;
+    }
+
+    setAttributedTextAttribute(name, value, range = null) {
+        this._textStorage.addAttribute(name, value, range);
+        this.#updateTextLayer();
+        return this;
+    }
+
+    appendAttributedString(attributedString) {
+        if (attributedString instanceof AttributedString) {
+            this._textStorage.appendString(attributedString.string, attributedString._attributes[0]?.attributes);
+        }
+        this._text = this._textStorage.string;
+        this.#updateTextLayer();
         return this;
     }
 
@@ -223,95 +500,65 @@ class UILabel extends UIView {
         return this.setEnabled(enabled);
     }
 
+    withLineHeight(height) {
+        return this.setLineHeight(height);
+    }
+
     withShadowColor(color) {
-        this._shadowColor = color;
-        this.#updateStyle();
-        return this;
+        return this.setShadowColor(color);
     }
 
     withShadowOffset(offset) {
-        this._shadowOffset = offset;
-        this.#updateStyle();
-        return this;
+        return this.setShadowOffset(offset);
     }
 
-    withLineHeight(height) {
-        this.lineHeight = height;
-        return this;
-    }
-
-    sizeToFit() {
-        if (this.element) {
-            this.element.style.width = 'auto';
-            this.element.style.height = 'auto';
-            const rect = this.element.getBoundingClientRect();
-            this.setFrame(this.frame.x, this.frame.y, rect.width, rect.height);
-        }
-    }
-
-    layoutSubviews() {
-        super.layoutSubviews();
+    withAttributedText(attributedText) {
+        return this.setAttributedText(attributedText);
     }
 
     encode() {
         return {
-            text: this.text,
+            text: this._text,
+            textColor: this._textColor?.hex,
             fontSize: this.fontSize,
             fontFamily: this.fontFamily,
             fontWeight: this.fontWeight,
             textAlignment: this.textAlignment,
             numberOfLines: this.numberOfLines,
+            lineBreakMode: this.lineBreakMode,
             isEnabled: this.isEnabled
         };
     }
 
     static decode(data) {
         const label = new UILabel(data.text || '');
-        label.fontSize = data.fontSize || 14;
-        label.fontFamily = data.fontFamily || 'system-ui, sans-serif';
-        label.fontWeight = data.fontWeight || 'normal';
-        label.textAlignment = data.textAlignment || 'left';
-        label.numberOfLines = data.numberOfLines || 1;
-        label.isEnabled = data.isEnabled !== false;
+        if (data.textColor) label.textColor = UIColor.colorWithHex(data.textColor);
+        if (data.fontSize) label.fontSize = data.fontSize;
+        if (data.fontFamily) label.fontFamily = data.fontFamily;
+        if (data.fontWeight) label.fontWeight = data.fontWeight;
+        if (data.textAlignment) label.textAlignment = data.textAlignment;
+        if (data.numberOfLines !== undefined) label.numberOfLines = data.numberOfLines;
+        if (data.lineBreakMode) label.lineBreakMode = data.lineBreakMode;
+        if (data.isEnabled !== undefined) label.isEnabled = data.isEnabled;
         return label;
     }
 
-    matchText(predicate) {
+    matchLabel(predicate) {
         if (typeof predicate === 'function') {
-            return predicate(this.text);
+            return predicate(this);
         }
         return Switch(predicate)
-            .case('empty', () => this.text.length === 0)
-            .case('nonEmpty', () => this.text.length > 0)
-            .case(Switch.let('value'), (m) => this.text === m.value)
-            .case(Switch.let('prefix'), (m) => this.text.startsWith(m.prefix))
-            .case(Switch.let('suffix'), (m) => this.text.endsWith(m.suffix))
-            .case(Switch.let('contains'), (m) => this.text.includes(m.contains))
-            .default(() => false)
-            .evaluate();
-    }
-
-    matchStyle(predicate) {
-        if (typeof predicate === 'function') {
-            return predicate({
-                fontSize: this.fontSize,
-                fontWeight: this.fontWeight,
-                textAlignment: this.textAlignment,
-                numberOfLines: this.numberOfLines,
-                isEnabled: this.isEnabled
-            });
-        }
-        return Switch(predicate)
-            .case({ bold: true }, () => this.fontWeight === 'bold' || this.fontWeight === '700')
-            .case({ light: true }, () => this.fontWeight === 'light' || this.fontWeight === '300')
-            .case({ centered: true }, () => this.textAlignment === 'center')
-            .case({ left: true }, () => this.textAlignment === 'left')
-            .case({ right: true }, () => this.textAlignment === 'right')
-            .case({ multiline: true }, () => this.numberOfLines > 1)
-            .case({ singleLine: true }, () => this.numberOfLines === 1)
-            .case({ disabled: true }, () => !this.isEnabled)
-            .case({ enabled: true }, () => this.isEnabled)
-            .case({ fontSize: Switch.let('size') }, (m) => this.fontSize === m.size)
+            .case({ empty: true }, () => !this._text || this._text.length === 0)
+            .case({ empty: false }, () => this._text && this._text.length > 0)
+            .case({ text: Switch.let('t') }, (m) => this._text === m.t)
+            .case({ contains: Switch.let('s') }, (m) => this._text?.includes(m.s))
+            .case({ startsWith: Switch.let('s') }, (m) => this._text?.startsWith(m.s))
+            .case({ endsWith: Switch.let('s') }, (m) => this._text?.endsWith(m.s))
+            .case({ aligned: 'center' }, () => this.textAlignment === 'center')
+            .case({ aligned: 'left' }, () => this.textAlignment === 'left')
+            .case({ aligned: 'right' }, () => this.textAlignment === 'right')
+            .case({ multiline: true }, () => this.numberOfLines !== 1)
+            .case({ multiline: false }, () => this.numberOfLines === 1)
             .default(() => false)
             .evaluate();
     }
@@ -335,18 +582,6 @@ class UILabel extends UIView {
 
     static whileCase(iterator, pattern) {
         return whileCase(pattern)(iterator);
-    }
-
-    matchOperator(pattern) {
-        return patternMatch(pattern, this);
-    }
-
-    ifLet(pattern) {
-        return ifLet(this, pattern);
-    }
-
-    guardLet(pattern) {
-        return guardLet(this, pattern);
     }
 
     switch() {

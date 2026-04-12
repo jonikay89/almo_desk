@@ -25,7 +25,7 @@
             OrderedSet, SortedSet, WeakDictionary,
             Regex, Predicate, Task, Lock, ReadWriteLock, AtomicInt, AtomicBool,
             CALayer, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer, CATransform3D,
-            CGPath
+            CGPath, TextStorage, AttributedString, ParagraphStyle
         } from './src/core/index.js';
 
         class DemoViewController {
@@ -85,6 +85,7 @@
                 yOffset = this.addSection('CALayer & Animations', [this.createLayerDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('CALayer on Components', [this.createLayerComponentDemos()], yOffset, padding, contentWidth);
                 yOffset = this.addSection('CGPath & Custom Drawing', [this.createCGPathDemos()], yOffset, padding, contentWidth);
+                yOffset = this.addSection('TextStorage & Attributed', [this.createTextStorageDemos()], yOffset, padding, contentWidth);
 
                 this.scrollView.setContentSize(contentWidth, yOffset + 40);
             }
@@ -1884,6 +1885,119 @@
                     const featLabel = new UILabel(feature);
                     featLabel.init();
                     featLabel.frame = { x: 0, y: 237 + i * 18, width: 300, height: 16 };
+                    featLabel.fontSize = 10;
+                    featLabel.textColor = UIColor.darkGray();
+                    container.addSubview(featLabel);
+                });
+
+                return container;
+            }
+
+            createTextStorageDemos() {
+                const container = new UIView();
+                container.init();
+                container.frame = { x: 0, y: 0, width: 300, height: 380 };
+
+                const titleLabel = new UILabel('TextStorage & Attributed String');
+                titleLabel.init();
+                titleLabel.frame = { x: 0, y: 0, width: 300, height: 24 };
+                titleLabel.fontSize = 14;
+                titleLabel.fontWeight = 'bold';
+                titleLabel.textColor = UIColor.black();
+                container.addSubview(titleLabel);
+
+                const textStorage = TextStorage.Create();
+                textStorage.string = 'Hello ';
+                textStorage.appendString('World', { textColor: UIColor.systemBlue() });
+                textStorage.appendString(' with ');
+                textStorage.appendString('Attributes', { 
+                    textColor: UIColor.systemPurple(),
+                    underline: true 
+                });
+
+                const attributedLabel = new UILabel(textStorage.string);
+                attributedLabel.init();
+                attributedLabel.frame = { x: 0, y: 35, width: 280, height: 30 };
+                attributedLabel.fontSize = 16;
+                attributedLabel.textColor = UIColor.black();
+                attributedLabel.setAttributedTextAttribute('textColor', UIColor.systemBlue(), { start: 0, end: 5 });
+                container.addSubview(attributedLabel);
+
+                const textStorageLabel = new UILabel('TextStorage Features:');
+                textStorageLabel.init();
+                textStorageLabel.frame = { x: 0, y: 75, width: 280, height: 20 };
+                textStorageLabel.fontSize = 12;
+                textStorageLabel.fontWeight = '600';
+                textStorageLabel.textColor = UIColor.black();
+                container.addSubview(textStorageLabel);
+
+                const attributedString = AttributedString.Create('Styled Text', {
+                    textColor: UIColor.systemRed(),
+                    font: { size: 16, family: 'system-ui', weight: 'bold' }
+                });
+
+                const attrLabel = new UILabel(attributedString.string);
+                attrLabel.init();
+                attrLabel.frame = { x: 0, y: 100, width: 280, height: 25 };
+                attrLabel.fontSize = 16;
+                attrLabel.textColor = UIColor.systemRed();
+                container.addSubview(attrLabel);
+
+                const paragraphStyle = ParagraphStyle.Create()
+                    .withAlignment('left')
+                    .withLineBreakMode('wordWrapping')
+                    .withLineHeightMultiple(1.5);
+
+                const multiStyleLabel = new UILabel('Multi-style text with paragraph styling');
+                multiStyleLabel.init();
+                multiStyleLabel.frame = { x: 0, y: 135, width: 280, height: 50 };
+                multiStyleLabel.fontSize = 14;
+                multiStyleLabel.textColor = UIColor.black();
+                multiStyleLabel.numberOfLines = 3;
+                container.addSubview(multiStyleLabel);
+
+                const textLayerLabel = new UILabel('Text rendered via CATextLayer');
+                textLayerLabel.init();
+                textLayerLabel.frame = { x: 0, y: 195, width: 280, height: 25 };
+                textLayerLabel.fontSize = 14;
+                textLayerLabel.fontWeight = 'bold';
+                textLayerLabel.textAlignment = 'center';
+                textLayerLabel.textColor = UIColor.systemIndigo();
+                container.addSubview(textLayerLabel);
+
+                const styledInput = new UITextField('Styled input');
+                styledInput.init();
+                styledInput.frame = { x: 0, y: 230, width: 280, height: 40 };
+                styledInput.withFontSize(14)
+                    .withTextColor(UIColor.black())
+                    .withBorderColor(UIColor.systemBlue())
+                    .withBorderWidth(1)
+                    .withCornerRadius(8);
+                container.addSubview(styledInput);
+
+                const styledTextView = new UITextView('Multi-line text view with styling');
+                styledTextView.init();
+                styledTextView.frame = { x: 0, y: 280, width: 280, height: 80 };
+                styledTextView.withFontSize(14)
+                    .withTextColor(UIColor.darkGray())
+                    .withBorderColor(UIColor.systemGreen())
+                    .withBorderWidth(1)
+                    .withCornerRadius(8);
+                container.addSubview(styledTextView);
+
+                const textStorageFeatures = [
+                    '• TextStorage for text management',
+                    '• AttributedString with styles',
+                    '• ParagraphStyle for layout',
+                    '• CATextLayer rendering',
+                    '• Chainable with* methods',
+                    '• Layer-based border & corner radius'
+                ];
+
+                textStorageFeatures.forEach((feature, i) => {
+                    const featLabel = new UILabel(feature);
+                    featLabel.init();
+                    featLabel.frame = { x: 0, y: 320 + i * 16, width: 300, height: 14 };
                     featLabel.fontSize = 10;
                     featLabel.textColor = UIColor.darkGray();
                     container.addSubview(featLabel);

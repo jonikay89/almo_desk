@@ -152,3 +152,4 @@ export {
     CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup, CASpringAnimation,
     CGPath
 } from './CALayer.js';
+export { TextStorage, AttributedString, ParagraphStyle } from './TextStorage.js';

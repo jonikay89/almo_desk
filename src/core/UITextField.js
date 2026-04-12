@@ -5,6 +5,8 @@ import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
 import { TextFieldDelegate } from './TypeAliases.js';
+import { TextStorage, AttributedString } from './TextStorage.js';
+import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
 
 defineTypeAlias('TextFieldDelegateAlias', TextFieldDelegate);
 
@@ -14,6 +16,12 @@ class UITextField extends UIControl {
         this.placeholder = placeholder;
         this.text = '';
         this._textColor = UIColor.black();
+        this._textStorage = TextStorage.Create();
+        this._textStorage.defaultAttributes = {
+            font: { size: 14, family: 'system-ui', weight: 'normal' },
+            textColor: UIColor.black(),
+            backgroundColor: null
+        };
         this.fontSize = 14;
         this.fontFamily = 'system-ui, sans-serif';
         this.textAlignment = 'left';
@@ -22,6 +30,9 @@ class UITextField extends UIControl {
         this.isEditing = false;
         this.clearButtonMode = 'never';
         this.borderStyle = 'rounded';
+        this._borderLayer = null;
+        this._selectionLayer = null;
+        this._cursorLayer = null;
     }
 
     get textColor() {
@@ -279,6 +290,82 @@ class UITextField extends UIControl {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
         }
+        this.#updateBorderLayer();
+    }
+
+    #updateBorderLayer() {
+        if (!this._borderLayer && this.element) {
+            this._borderLayer = CAShapeLayer.layer();
+            this._borderLayer.name = 'borderLayer';
+            this.element.style.position = 'relative';
+        }
+        
+        if (this._borderLayer) {
+            const path = CGPath.CreateRoundedRect(0, 0, this._bounds.width, this._bounds.height, 6);
+            this._borderLayer.path = path;
+            this._borderLayer.fillColor = null;
+            this._borderLayer.strokeColor = this._borderColor || UIColor.lightGray();
+            this._borderLayer.lineWidth = 1;
+            
+            if (!this._layer._sublayers.includes(this._borderLayer)) {
+                this._layer.addSublayer(this._borderLayer);
+            }
+        }
+    }
+
+    setBorderColor(color) {
+        this._borderColor = color instanceof UIColor ? color : UIColor.colorWithHex(color);
+        this.#updateBorderLayer();
+        return this;
+    }
+
+    setBorderWidth(width) {
+        this._borderWidth = width;
+        if (this._borderLayer) {
+            this._borderLayer.lineWidth = width;
+        }
+        return this;
+    }
+
+    setCornerRadius(radius) {
+        this._cornerRadius = radius;
+        this.#updateBorderLayer();
+        return this;
+    }
+
+    get textStorage() {
+        return this._textStorage;
+    }
+
+    setAttributedText(attributedText) {
+        if (attributedText instanceof TextStorage) {
+            this._textStorage = attributedText;
+            this.text = attributedText.string;
+        } else if (attributedText instanceof AttributedString) {
+            this._textStorage.string = attributedText.string;
+            this.text = attributedText.string;
+        }
+        return this;
+    }
+
+    get attributedText() {
+        return this._textStorage;
+    }
+
+    withBorderColor(color) {
+        return this.setBorderColor(color);
+    }
+
+    withBorderWidth(width) {
+        return this.setBorderWidth(width);
+    }
+
+    withCornerRadius(radius) {
+        return this.setCornerRadius(radius);
+    }
+
+    withAttributedText(attributedText) {
+        return this.setAttributedText(attributedText);
     }
 
     encode() {
