@@ -5,6 +5,8 @@ import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMa
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
 import { NavigationBarDelegate, NavigationBarDelegate as NavigationBarDelegateProtocol } from './TypeAliases.js';
 import { kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
+import UILabel from './UILabel.js';
+import UIImageView from './UIImageView.js';
 
 defineTypeAlias('NavigationBarDelegateAlias', NavigationBarDelegate);
 
@@ -96,31 +98,41 @@ class UINavigationBar extends UIView {
         }
 
         if (this.topItem) {
-            const titleLabel = document.createElement('span');
-            titleLabel.className = 'nav-title';
-            titleLabel.textContent = this.topItem.title || '';
-            titleLabel.style.flex = '1';
-            titleLabel.style.textAlign = 'center';
-            titleLabel.style.fontSize = '17px';
-            titleLabel.style.fontWeight = '600';
-            titleLabel.style.color = '#000';
-            this.element.appendChild(titleLabel);
+            if (this.topItem.titleLabel) {
+                this.topItem.titleLabel.element.style.flex = '1';
+                this.topItem.titleLabel.textAlignment = 'center';
+                this.element.appendChild(this.topItem.titleLabel.element);
+            } else {
+                const titleLabel = document.createElement('span');
+                titleLabel.className = 'nav-title';
+                titleLabel.textContent = this.topItem.title || '';
+                titleLabel.style.flex = '1';
+                titleLabel.style.textAlign = 'center';
+                titleLabel.style.fontSize = '17px';
+                titleLabel.style.fontWeight = '600';
+                titleLabel.style.color = '#000';
+                this.element.appendChild(titleLabel);
+            }
         }
 
         if (this.topItem && this.topItem.rightBarButtonItem) {
-            const rightButton = document.createElement('button');
-            rightButton.className = 'nav-right-button';
-            rightButton.textContent = this.topItem.rightBarButtonItem.title || '';
-            rightButton.style.background = 'none';
-            rightButton.style.border = 'none';
-            rightButton.style.color = UIColor.systemBlue().css;
-            rightButton.style.fontSize = '17px';
-            rightButton.style.cursor = 'pointer';
-            rightButton.style.padding = '8px';
-            if (this.topItem.rightBarButtonItem.action) {
-                rightButton.addEventListener('click', this.topItem.rightBarButtonItem.action);
+            if (this.topItem.rightBarButtonItem._titleLabel) {
+                this.element.appendChild(this.topItem.rightBarButtonItem.element);
+            } else {
+                const rightButton = document.createElement('button');
+                rightButton.className = 'nav-right-button';
+                rightButton.textContent = this.topItem.rightBarButtonItem.title || '';
+                rightButton.style.background = 'none';
+                rightButton.style.border = 'none';
+                rightButton.style.color = UIColor.systemBlue().css;
+                rightButton.style.fontSize = '17px';
+                rightButton.style.cursor = 'pointer';
+                rightButton.style.padding = '8px';
+                if (this.topItem.rightBarButtonItem.action) {
+                    rightButton.addEventListener('click', this.topItem.rightBarButtonItem.action);
+                }
+                this.element.appendChild(rightButton);
             }
-            this.element.appendChild(rightButton);
         }
     }
 
@@ -326,24 +338,60 @@ class UINavigationBar extends UIView {
     }
 }
 
-class UINavigationItem {
+class UINavigationItem extends UIView {
     constructor(title) {
+        super();
         this.title = title;
         this.leftBarButtonItem = null;
         this.rightBarButtonItem = null;
         this.backAction = null;
+        
+        this._titleLabel = null;
+    }
+
+    get titleLabel() {
+        return this._titleLabel;
     }
 
     get description() {
         return `UINavigationItem(title: ${this.title})`;
     }
 
+    init() {
+        super.init();
+        this.element = document.createElement('div');
+        this.element.className = 'ui-navigation-item';
+        this.element.style.display = 'flex';
+        this.element.style.alignItems = 'center';
+        this.element.style.flex = '1';
+        
+        this._titleLabel = new UILabel(this.title);
+        this._titleLabel.init();
+        this._titleLabel.fontSize = 17;
+        this._titleLabel.fontWeight = '600';
+        this._titleLabel.textAlignment = 'center';
+        this._titleLabel.element.style.color = '#000';
+        this.element.appendChild(this._titleLabel.element);
+        
+        return this;
+    }
+
+    setTitle(title) {
+        this.title = title;
+        if (this._titleLabel) {
+            this._titleLabel.text = title;
+        }
+        return this;
+    }
+
     setLeftBarButtonItem(item) {
         this.leftBarButtonItem = item;
+        return this;
     }
 
     setRightBarButtonItem(item) {
         this.rightBarButtonItem = item;
+        return this;
     }
 
     setHidesBackButton(hidesBackButton) {
@@ -438,37 +486,11 @@ class UINavigationItem {
         const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
         return getProperty(this, path);
     }
+
+    withTitle(title) {
+        return this.setTitle(title);
+    }
 }
-
-UINavigationItem.prototype.setTitle = function(title) {
-    this.title = title;
-    return this;
-};
-
-UINavigationItem.prototype.setLeftBarButtonItem = function(item) {
-    this.leftBarButtonItem = item;
-    return this;
-};
-
-UINavigationItem.prototype.setRightBarButtonItem = function(item) {
-    this.rightBarButtonItem = item;
-    return this;
-};
-
-UINavigationItem.prototype.updateTitle = function(keyPath, newValue) {
-    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
-    updateProperty(this, path, newValue);
-    return this;
-};
-
-UINavigationItem.prototype.getTitle = function() {
-    return this.title;
-};
-
-UINavigationItem.prototype.getValue = function(keyPath) {
-    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
-    return getProperty(this, path);
-};
 
 export default UINavigationBar;
 export { UINavigationItem };

@@ -5,6 +5,8 @@ import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
 import { TabBarDelegate, TabBarDelegate as TabBarDelegateProtocol } from './TypeAliases.js';
+import UILabel from './UILabel.js';
+import UIImageView from './UIImageView.js';
 
 defineTypeAlias('TabBarDelegateAlias', TabBarDelegate);
 
@@ -42,46 +44,17 @@ class UITabBar extends UIView {
         this.element.innerHTML = '';
 
         this.items.forEach((item, index) => {
-            const tabItem = document.createElement('div');
-            tabItem.className = 'ui-tabbar-item';
-            tabItem.style.display = 'flex';
-            tabItem.style.flexDirection = 'column';
-            tabItem.style.alignItems = 'center';
-            tabItem.style.justifyContent = 'center';
-            tabItem.style.flex = '1';
-            tabItem.style.height = '100%';
-            tabItem.style.cursor = 'pointer';
-            tabItem.style.padding = '4px 8px';
-            tabItem.dataset.index = index;
-
-            if (item.image) {
-                const img = document.createElement('img');
-                img.src = item.image;
-                img.alt = item.title || '';
-                img.style.width = '24px';
-                img.style.height = '24px';
-                img.style.objectFit = 'contain';
-                tabItem.appendChild(img);
-            } else if (item.emoji) {
-                const emoji = document.createElement('span');
-                emoji.textContent = item.emoji;
-                emoji.style.fontSize = '22px';
-                tabItem.appendChild(emoji);
+            if (!item.element) {
+                item.init();
             }
-
-            if (item.title) {
-                const label = document.createElement('span');
-                label.textContent = item.title;
-                label.style.fontSize = '10px';
-                label.style.marginTop = '2px';
-                tabItem.appendChild(label);
-            }
-
-            tabItem.addEventListener('click', () => {
+            
+            item.element.dataset.index = index;
+            
+            item.element.onclick = () => {
                 this.#selectItem(index);
-            });
+            };
 
-            this.element.appendChild(tabItem);
+            this.element.appendChild(item.element);
         });
 
         if (this.selectedItem) {
@@ -350,17 +323,94 @@ class UITabBar extends UIView {
     }
 }
 
-class UITabBarItem {
+class UITabBarItem extends UIView {
     constructor(title, image, selectedImage) {
+        super();
         this.title = title;
         this.image = image;
         this.selectedImage = selectedImage;
         this.badgeValue = null;
         this.tag = 0;
+        
+        this._titleLabel = null;
+        this._imageView = null;
+        this._badgeLabel = null;
+    }
+
+    get titleLabel() {
+        return this._titleLabel;
+    }
+
+    get imageView() {
+        return this._imageView;
     }
 
     get description() {
         return `UITabBarItem(title: "${this.title}", image: ${this.image || 'null'}, badgeValue: ${this.badgeValue || 'null'})`;
+    }
+
+    init() {
+        super.init();
+        this.element = document.createElement('div');
+        this.element.className = 'ui-tabbar-item';
+        this.element.style.display = 'flex';
+        this.element.style.flexDirection = 'column';
+        this.element.style.alignItems = 'center';
+        this.element.style.justifyContent = 'center';
+        this.element.style.flex = '1';
+        this.element.style.height = '100%';
+        this.element.style.cursor = 'pointer';
+        this.element.style.padding = '4px 8px';
+        
+        this._imageView = new UIImageView();
+        this._imageView.init();
+        this._imageView.contentMode = 'scaleAspectFit';
+        this._imageView.element.style.width = '24px';
+        this._imageView.element.style.height = '24px';
+        if (this.image) {
+            this._imageView.imageUrl = this.image;
+        }
+        this.element.appendChild(this._imageView.element);
+        
+        this._titleLabel = new UILabel(this.title);
+        this._titleLabel.init();
+        this._titleLabel.fontSize = 10;
+        this._titleLabel.textAlignment = 'center';
+        this._titleLabel.element.style.marginTop = '2px';
+        this._titleLabel.element.style.pointerEvents = 'none';
+        this.element.appendChild(this._titleLabel.element);
+        
+        return this;
+    }
+
+    setTitle(title) {
+        this.title = title;
+        if (this._titleLabel) {
+            this._titleLabel.text = title;
+        }
+        return this;
+    }
+
+    setImage(image) {
+        this.image = image;
+        if (this._imageView) {
+            this._imageView.imageUrl = image;
+        }
+        return this;
+    }
+
+    setSelectedImage(image) {
+        this.selectedImage = image;
+        return this;
+    }
+
+    setBadgeValue(badge) {
+        this.badgeValue = badge;
+        if (this._badgeLabel) {
+            this._badgeLabel.text = badge;
+            this._badgeLabel.element.style.display = badge ? 'block' : 'none';
+        }
+        return this;
     }
 
     badgeValueAsNumber() {
@@ -469,36 +519,19 @@ class UITabBarItem {
         const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
         return getProperty(this, path);
     }
+
+    withTitle(title) {
+        return this.setTitle(title);
+    }
+
+    withImage(image) {
+        return this.setImage(image);
+    }
+
+    withBadgeValue(badge) {
+        return this.setBadgeValue(badge);
+    }
 }
-
-UITabBarItem.prototype.setTitle = function(title) {
-    this.title = title;
-    return this;
-};
-
-UITabBarItem.prototype.setBadgeValue = function(badgeValue) {
-    this.badgeValue = badgeValue;
-    return this;
-};
-
-UITabBarItem.prototype.updateTitle = function(keyPath, newValue) {
-    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
-    updateProperty(this, path, newValue);
-    return this;
-};
-
-UITabBarItem.prototype.getTitle = function() {
-    return this.title;
-};
-
-UITabBarItem.prototype.getBadgeValue = function() {
-    return this.badgeValue;
-};
-
-UITabBarItem.prototype.getValue = function(keyPath) {
-    const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
-    return getProperty(this, path);
-};
 
 export default UITabBar;
 export { UITabBarItem };

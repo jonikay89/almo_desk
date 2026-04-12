@@ -3,22 +3,39 @@ import UIColor from './UIColor.js';
 import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import UILabel from './UILabel.js';
+import UIImageView from './UIImageView.js';
+import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
 
 class UICollectionViewCell extends UIView {
     constructor(reuseIdentifier = null) {
         super();
         this.reuseIdentifier = reuseIdentifier;
-        this.imageView = null;
-        this.label = null;
         this._selected = false;
         this._highlighted = false;
         this._contentView = null;
+        this._imageView = null;
+        this._textLabel = null;
+        this._backgroundImageView = null;
+    }
+
+    get contentView() {
+        return this._contentView;
+    }
+
+    get imageView() {
+        return this._imageView;
+    }
+
+    get textLabel() {
+        return this._textLabel;
     }
 
     init() {
         this.element = document.createElement('div');
         this.element.className = 'ui-collectionview-cell';
         this.element.style.display = 'flex';
+        this.element.style.flexDirection = 'column';
         this.element.style.alignItems = 'center';
         this.element.style.justifyContent = 'center';
         this.element.style.backgroundColor = UIColor.white().css;
@@ -27,16 +44,50 @@ class UICollectionViewCell extends UIView {
         this.element.style.overflow = 'hidden';
         this.element.style.cursor = 'pointer';
         this.element.style.userSelect = 'none';
+        this.element.style.position = 'relative';
 
         this._contentView = new UIView();
         this._contentView.init();
+        this._contentView.element.style.flex = '1';
+        this._contentView.element.style.width = '100%';
+        this._contentView.element.style.position = 'relative';
+        this._contentView.element.style.overflow = 'hidden';
+
+        this._imageView = new UIImageView();
+        this._imageView.init();
+        this._imageView.contentMode = 'scaleAspectFill';
+        this._imageView.element.style.width = '100%';
+        this._imageView.element.style.height = '100%';
+        this._imageView.element.style.display = 'block';
+        this._contentView.element.appendChild(this._imageView.element);
+
+        this._textLabel = new UILabel('');
+        this._textLabel.init();
+        this._textLabel.textAlignment = 'center';
+        this._textLabel.fontSize = 12;
+        this._textLabel.textColor = UIColor.white();
+        this._textLabel.numberOfLines = 1;
+        this._textLabel.element.style.position = 'absolute';
+        this._textLabel.element.style.bottom = '0';
+        this._textLabel.element.style.left = '0';
+        this._textLabel.element.style.right = '0';
+        this._textLabel.element.style.padding = '4px 8px';
+        this._textLabel.element.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        this._contentView.element.appendChild(this._textLabel.element);
+
         this.element.appendChild(this._contentView.element);
+        this.#setupLayers();
 
         return this;
     }
 
-    get contentView() {
-        return this._contentView;
+    #setupLayers() {
+        this._layer = CALayer.layer();
+        this._layer.name = 'cellLayer';
+        this._layer.frame = { x: 0, y: 0, width: 0, height: 0 };
+        this._layer.cornerRadius = 8;
+        this._layer.borderWidth = 1;
+        this._layer.borderColor = UIColor.colorWithHex('#ddd');
     }
 
     get isSelected() {
@@ -73,35 +124,18 @@ class UICollectionViewCell extends UIView {
     }
 
     setImage(url) {
-        if (!this.imageView) {
-            const img = document.createElement('img');
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            img.style.display = 'block';
-            this.imageView = img;
-            this.element.appendChild(img);
+        if (this._imageView) {
+            this._imageView.imageUrl = url;
+            this._imageView.element.style.display = url ? '' : 'none';
         }
-        this.imageView.src = url;
         return this;
     }
 
     setLabel(text) {
-        if (!this.label) {
-            const label = document.createElement('span');
-            label.style.position = 'absolute';
-            label.style.bottom = '0';
-            label.style.left = '0';
-            label.style.right = '0';
-            label.style.padding = '4px 8px';
-            label.style.backgroundColor = 'rgba(0,0,0,0.5)';
-            label.style.color = '#fff';
-            label.style.fontSize = '12px';
-            label.style.textAlign = 'center';
-            this.label = label;
-            this.element.appendChild(label);
+        if (this._textLabel) {
+            this._textLabel.text = text || '';
+            this._textLabel.element.style.display = text ? '' : 'none';
         }
-        this.label.textContent = text;
         return this;
     }
 
@@ -117,12 +151,51 @@ class UICollectionViewCell extends UIView {
         return this;
     }
 
-    prepareForReuse() {
-        if (this.imageView) {
-            this.imageView.src = '';
+    withImage(url) {
+        return this.setImage(url);
+    }
+
+    withLabel(text) {
+        return this.setLabel(text);
+    }
+
+    withCornerRadius(radius) {
+        if (this.element) {
+            this.element.style.borderRadius = `${radius}px`;
         }
-        if (this.label) {
-            this.label.textContent = '';
+        if (this._layer) {
+            this._layer.cornerRadius = radius;
+        }
+        return this;
+    }
+
+    withBorder(color, width = 1) {
+        if (this.element) {
+            this.element.style.border = `${width}px solid ${color}`;
+        }
+        if (this._layer) {
+            this._layer.borderColor = color instanceof UIColor ? color : UIColor.colorWithHex(color);
+            this._layer.borderWidth = width;
+        }
+        return this;
+    }
+
+    withShadow(color, offset, radius, opacity = 0.3) {
+        if (this._layer) {
+            this._layer.shadowColor = color;
+            this._layer.shadowOffset = offset;
+            this._layer.shadowRadius = radius;
+            this._layer.shadowOpacity = opacity;
+        }
+        return this;
+    }
+
+    prepareForReuse() {
+        if (this._imageView) {
+            this._imageView.imageUrl = null;
+        }
+        if (this._textLabel) {
+            this._textLabel.text = '';
         }
         this._selected = false;
         this._highlighted = false;
@@ -134,7 +207,7 @@ class UICollectionViewCell extends UIView {
     }
 
     get description() {
-        return `UICollectionViewCell(reuseIdentifier: ${this.reuseIdentifier || 'null'}, label: "${this.label?.textContent || ''}")`;
+        return `UICollectionViewCell(reuseIdentifier: ${this.reuseIdentifier || 'null'}, label: "${this._textLabel?.text || ''}")`;
     }
 
     isSelectedAsNumber() {
@@ -144,7 +217,7 @@ class UICollectionViewCell extends UIView {
     encode() {
         return {
             reuseIdentifier: this.reuseIdentifier,
-            label: this.label?.textContent || '',
+            label: this._textLabel?.text || '',
             _selected: this._selected,
             _highlighted: this._highlighted
         };
@@ -204,10 +277,10 @@ class UICollectionViewCell extends UIView {
         return Switch(predicate)
             .case('selected', () => this._selected)
             .case('highlighted', () => this._highlighted)
-            .case('empty', () => !this.imageView?.src && !this.label?.textContent)
-            .case('hasImage', () => !!this.imageView?.src)
-            .case('hasLabel', () => !!this.label?.textContent)
-            .case({ labelContains: Switch.let('text') }, (m) => this.label?.textContent?.includes(m.text))
+            .case('empty', () => !this._imageView?.image && !this._textLabel?.text)
+            .case('hasImage', () => !!this._imageView?.image)
+            .case('hasLabel', () => !!this._textLabel?.text)
+            .case({ labelContains: Switch.let('text') }, (m) => this._textLabel?.text?.includes(m.text))
             .default(() => false)
             .evaluate();
     }

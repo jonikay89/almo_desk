@@ -3,6 +3,9 @@ import UIColor from './UIColor.js';
 import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import UILabel from './UILabel.js';
+import UIImageView from './UIImageView.js';
+import { CALayer, CAShapeLayer } from './CALayer.js';
 
 class UITableViewCell extends UIView {
     constructor(reuseIdentifier = null) {
@@ -16,8 +19,22 @@ class UITableViewCell extends UIView {
         this._selected = false;
         this._highlighted = false;
         this._contentView = null;
-        this.textLabel = null;
-        this.detailLabel = null;
+        this._textLabel = null;
+        this._detailTextLabel = null;
+        this._imageView = null;
+        this._accessoryView = null;
+    }
+
+    get textLabel() {
+        return this._textLabel;
+    }
+
+    get detailTextLabel() {
+        return this._detailTextLabel;
+    }
+
+    get imageView() {
+        return this._imageView;
     }
 
     init() {
@@ -31,61 +48,70 @@ class UITableViewCell extends UIView {
         this.element.style.padding = '0 16px';
         this.element.style.cursor = 'pointer';
         this.element.style.userSelect = 'none';
+        this.element.style.position = 'relative';
 
         this._contentView = new UIView();
         this._contentView.init();
         this._contentView.element.style.flex = '1';
         this._contentView.element.style.overflow = 'hidden';
+        this._contentView.element.style.display = 'flex';
+        this._contentView.element.style.alignItems = 'center';
 
+        this._imageView = new UIImageView();
+        this._imageView.init();
+        this._imageView.contentMode = 'scaleAspectFill';
+        this._imageView.element.style.width = '40px';
+        this._imageView.element.style.height = '40px';
+        this._imageView.element.style.borderRadius = '4px';
+        this._imageView.element.style.marginRight = '12px';
+        this._imageView.element.style.flexShrink = '0';
+        this._imageView.element.style.objectFit = 'cover';
         if (this.image) {
-            const img = document.createElement('img');
-            img.src = this.image;
-            img.style.width = '40px';
-            img.style.height = '40px';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '4px';
-            img.style.marginRight = '12px';
-            img.style.flexShrink = '0';
-            this.imageView = img;
-            this.element.appendChild(img);
+            this._imageView.imageUrl = this.image;
         }
+        this._contentView.element.appendChild(this._imageView.element);
 
         const textContainer = document.createElement('div');
         textContainer.style.flex = '1';
         textContainer.style.overflow = 'hidden';
+        textContainer.style.display = 'flex';
+        textContainer.style.flexDirection = 'column';
+        textContainer.style.justifyContent = 'center';
 
-        const textLabel = document.createElement('span');
-        textLabel.className = 'cell-text';
-        textLabel.style.fontSize = '16px';
-        textLabel.style.color = '#000';
-        textLabel.style.whiteSpace = 'nowrap';
-        textLabel.style.overflow = 'hidden';
-        textLabel.style.textOverflow = 'ellipsis';
-        textLabel.textContent = this.text;
-        this.textLabel = textLabel;
-        textContainer.appendChild(textLabel);
+        this._textLabel = new UILabel(this.text);
+        this._textLabel.init();
+        this._textLabel.fontSize = 16;
+        this._textLabel.numberOfLines = 1;
+        this._textLabel.lineBreakMode = 'ellipsis';
+        this._textLabel.element.style.color = '#000';
+        this._textLabel.element.className = 'cell-text';
+        textContainer.appendChild(this._textLabel.element);
 
+        this._detailTextLabel = new UILabel(this.detailText);
+        this._detailTextLabel.init();
+        this._detailTextLabel.fontSize = 13;
+        this._detailTextLabel.textColor = UIColor.gray();
+        this._detailTextLabel.numberOfLines = 1;
+        this._detailTextLabel.lineBreakMode = 'ellipsis';
+        this._detailTextLabel.element.style.marginTop = '2px';
+        this._detailTextLabel.element.className = 'cell-detail-text';
         if (this.detailText) {
-            const detailLabel = document.createElement('span');
-            detailLabel.className = 'cell-detail-text';
-            detailLabel.style.display = 'block';
-            detailLabel.style.fontSize = '13px';
-            detailLabel.style.color = '#888';
-            detailLabel.style.marginTop = '2px';
-            detailLabel.style.whiteSpace = 'nowrap';
-            detailLabel.style.overflow = 'hidden';
-            detailLabel.style.textOverflow = 'ellipsis';
-            detailLabel.textContent = this.detailText;
-            this.detailLabel = detailLabel;
-            textContainer.appendChild(detailLabel);
+            textContainer.appendChild(this._detailTextLabel.element);
         }
 
         this._contentView.element.appendChild(textContainer);
         this.element.appendChild(this._contentView.element);
 
         this.#updateAccessory();
+        this.#setupLayers();
 
         return this;
+    }
+
+    #setupLayers() {
+        this._layer = CALayer.layer();
+        this._layer.name = 'cellLayer';
+        this._layer.frame = { x: 0, y: 0, width: 0, height: 0 };
     }
 
     get contentView() {
@@ -116,76 +142,96 @@ class UITableViewCell extends UIView {
 
         if (this._selected) {
             this.element.style.backgroundColor = UIColor.systemBlue().css;
-            if (this.textLabel) this.textLabel.style.color = '#fff';
-            if (this.detailLabel) this.detailLabel.style.color = '#fff';
+            if (this._textLabel) this._textLabel.textColor = UIColor.white();
+            if (this._detailTextLabel) this._detailTextLabel.textColor = UIColor.white();
         } else if (this._highlighted) {
             this.element.style.backgroundColor = UIColor.colorWithWhiteAlpha(0.9, 1).css;
-            if (this.textLabel) this.textLabel.style.color = '#000';
-            if (this.detailLabel) this.detailLabel.style.color = '#666';
+            if (this._textLabel) this._textLabel.textColor = UIColor.black();
+            if (this._detailTextLabel) this._detailTextLabel.textColor = UIColor.gray();
         } else {
             this.element.style.backgroundColor = UIColor.white().css;
-            if (this.textLabel) this.textLabel.style.color = '#000';
-            if (this.detailLabel) this.detailLabel.style.color = '#888';
+            if (this._textLabel) this._textLabel.textColor = UIColor.black();
+            if (this._detailTextLabel) this._detailTextLabel.textColor = UIColor.gray();
         }
     }
 
     #updateAccessory() {
-        const existingAccessory = this.element.querySelector('.accessory');
-        if (existingAccessory) {
-            existingAccessory.remove();
+        if (this._accessoryView) {
+            this._accessoryView.element.remove();
+            this._accessoryView = null;
         }
 
-        const accessory = document.createElement('div');
-        accessory.className = 'accessory';
-        accessory.style.marginLeft = '8px';
-        accessory.style.flexShrink = '0';
+        const accessoryContainer = document.createElement('div');
+        accessoryContainer.className = 'accessory';
+        accessoryContainer.style.marginLeft = '8px';
+        accessoryContainer.style.flexShink = '0';
+        accessoryContainer.style.display = 'flex';
+        accessoryContainer.style.alignItems = 'center';
 
         switch (this.accessoryType) {
             case 'disclosureIndicator':
-                accessory.innerHTML = '›';
-                accessory.style.fontSize = '20px';
-                accessory.style.color = '#ccc';
+                const disclosure = document.createElement('span');
+                disclosure.textContent = '›';
+                disclosure.style.fontSize = '20px';
+                disclosure.style.color = '#ccc';
+                accessoryContainer.appendChild(disclosure);
                 break;
             case 'checkmark':
-                accessory.innerHTML = '✓';
-                accessory.style.fontSize = '18px';
-                accessory.style.color = UIColor.systemBlue().css;
+                const checkmark = document.createElement('span');
+                checkmark.textContent = '✓';
+                checkmark.style.fontSize = '18px';
+                checkmark.style.color = UIColor.systemBlue().css;
+                accessoryContainer.appendChild(checkmark);
                 break;
             case 'detailButton':
-                accessory.innerHTML = 'ⓘ';
-                accessory.style.fontSize = '16px';
-                accessory.style.color = '#888';
+                const detailBtn = document.createElement('span');
+                detailBtn.textContent = 'ⓘ';
+                detailBtn.style.fontSize = '16px';
+                detailBtn.style.color = '#888';
+                accessoryContainer.appendChild(detailBtn);
                 break;
             case 'detailDisclosureButton':
-                accessory.innerHTML = 'ⓘ›';
-                accessory.style.fontSize = '16px';
-                accessory.style.color = '#888';
+                const detailDisclose = document.createElement('span');
+                detailDisclose.textContent = 'ⓘ›';
+                detailDisclose.style.fontSize = '16px';
+                detailDisclose.style.color = '#888';
+                accessoryContainer.appendChild(detailDisclose);
                 break;
             default:
+                this.element.appendChild(accessoryContainer);
                 return;
         }
 
-        this.element.appendChild(accessory);
+        this.element.appendChild(accessoryContainer);
     }
 
     setText(text) {
         this.text = text;
-        if (this.textLabel) {
-            this.textLabel.textContent = text;
+        if (this._textLabel) {
+            this._textLabel.text = text;
         }
         return this;
     }
 
     setDetailText(text) {
         this.detailText = text;
-        if (this.detailLabel) {
-            this.detailLabel.textContent = text;
+        if (this._detailTextLabel) {
+            if (text) {
+                this._detailTextLabel.text = text;
+                this._detailTextLabel.element.style.display = '';
+            } else {
+                this._detailTextLabel.element.style.display = 'none';
+            }
         }
         return this;
     }
 
     setImage(url) {
         this.image = url;
+        if (this._imageView) {
+            this._imageView.imageUrl = url;
+            this._imageView.element.style.display = url ? '' : 'none';
+        }
         return this;
     }
 
@@ -212,6 +258,26 @@ class UITableViewCell extends UIView {
         return this;
     }
 
+    withText(text) {
+        return this.setText(text);
+    }
+
+    withDetailText(text) {
+        return this.setDetailText(text);
+    }
+
+    withImage(url) {
+        return this.setImage(url);
+    }
+
+    withAccessoryType(type) {
+        return this.setAccessoryType(type);
+    }
+
+    withSelectionStyle(style) {
+        return this.setSelectionStyle(style);
+    }
+
     prepareForReuse() {
         this.text = '';
         this.detailText = '';
@@ -219,6 +285,9 @@ class UITableViewCell extends UIView {
         this.accessoryType = 'none';
         this._selected = false;
         this._highlighted = false;
+        if (this._textLabel) this._textLabel.text = '';
+        if (this._detailTextLabel) this._detailTextLabel.text = '';
+        if (this._imageView) this._imageView.imageUrl = null;
         this.#updateSelectionAppearance();
     }
 
@@ -319,6 +388,37 @@ class UITableViewCell extends UIView {
     getValue(keyPath) {
         const path = typeof keyPath === 'string' ? kp(keyPath) : keyPath;
         return getProperty(this, path);
+    }
+
+    withBorder(color, width, radius) {
+        if (this._layer) {
+            const shapeLayer = CAShapeLayer.layer();
+            shapeLayer.frame = this._bounds;
+            const rect = CGPath.CreateRect(0, 0, this._bounds.width, this._bounds.height);
+            shapeLayer.path = rect;
+            shapeLayer.fillColor = null;
+            shapeLayer.strokeColor = color;
+            shapeLayer.lineWidth = width;
+            this._layer.addSublayer(shapeLayer);
+        }
+        return this;
+    }
+
+    withCornerRadius(radius) {
+        if (this.element) {
+            this.element.style.borderRadius = `${radius}px`;
+        }
+        return this;
+    }
+
+    withShadow(color, offset, radius, opacity = 0.3) {
+        if (this._layer) {
+            this._layer.shadowColor = color;
+            this._layer.shadowOffset = offset;
+            this._layer.shadowRadius = radius;
+            this._layer.shadowOpacity = opacity;
+        }
+        return this;
     }
 }
 

@@ -226,6 +226,145 @@ class CGPath {
     containsPoint(point) {
         return false;
     }
+
+    containsPoint_(point) {
+        if (this._elements.length === 0) return false;
+        
+        let x = point.x, y = point.y;
+        let inside = false;
+        
+        for (let i = 0, j = this._elements.length - 1; i < this._elements.length; j = i++) {
+            const pi = this._elements[i];
+            const pj = this._elements[j];
+            
+            if (((pi.y > y) !== (pj.y > y)) &&
+                (x < (pj.x - pi.x) * (y - pi.y) / (pj.y - pi.y) + pi.x)) {
+                inside = !inside;
+            }
+        }
+        
+        return inside;
+    }
+
+    boundingRect() {
+        const box = this.boundingBox;
+        return { x: box.x, y: box.y, width: box.width, height: box.height };
+    }
+
+    unionPath(other) {
+        if (!other) return this.copy();
+        const combined = new CGPath();
+        combined._elements = [...this._elements, ...other._elements];
+        return combined;
+    }
+
+    transformBy(transform) {
+        const transformed = new CGPath();
+        for (const element of this._elements) {
+            const transformedElement = { ...element };
+            if (element.type === 'move' || element.type === 'line') {
+                transformedElement.x = transform.a * element.x + transform.c * element.y + transform.tx;
+                transformedElement.y = transform.b * element.x + transform.d * element.y + transform.ty;
+            } else if (element.type === 'curve') {
+                transformedElement.end.x = transform.a * element.end.x + transform.c * element.end.y + transform.tx;
+                transformedElement.end.y = transform.b * element.end.x + transform.d * element.end.y + transform.ty;
+                transformedElement.cp1.x = transform.a * element.cp1.x + transform.c * element.cp1.y + transform.tx;
+                transformedElement.cp1.y = transform.b * element.cp1.x + transform.d * element.cp1.y + transform.ty;
+                transformedElement.cp2.x = transform.a * element.cp2.x + transform.c * element.cp2.y + transform.tx;
+                transformedElement.cp2.y = transform.b * element.cp2.x + transform.d * element.cp2.y + transform.ty;
+            } else if (element.type === 'quadCurve') {
+                transformedElement.end.x = transform.a * element.end.x + transform.c * element.end.y + transform.tx;
+                transformedElement.end.y = transform.b * element.end.x + transform.d * element.end.y + transform.ty;
+                transformedElement.cp.x = transform.a * element.cp.x + transform.c * element.cp.y + transform.tx;
+                transformedElement.cp.y = transform.b * element.cp.x + transform.d * element.cp.y + transform.ty;
+            }
+            transformed._elements.push(transformedElement);
+        }
+        return transformed;
+    }
+}
+
+class CGAffineTransform {
+    constructor() {
+        this.a = 1; this.b = 0;
+        this.c = 0; this.d = 1;
+        this.tx = 0; this.ty = 0;
+    }
+
+    static identity() {
+        return new CGAffineTransform();
+    }
+
+    static MakeRotation(angle) {
+        const transform = new CGAffineTransform();
+        transform.a = Math.cos(angle);
+        transform.b = Math.sin(angle);
+        transform.c = -Math.sin(angle);
+        transform.d = Math.cos(angle);
+        return transform;
+    }
+
+    static MakeScale(sx, sy) {
+        const transform = new CGAffineTransform();
+        transform.a = sx;
+        transform.d = sy;
+        return transform;
+    }
+
+    static MakeTranslation(tx, ty) {
+        const transform = new CGAffineTransform();
+        transform.tx = tx;
+        transform.ty = ty;
+        return transform;
+    }
+
+    rotated(angle) {
+        return this.multiply(CGAffineTransform.MakeRotation(angle));
+    }
+
+    scaled(sx, sy) {
+        return this.multiply(CGAffineTransform.MakeScale(sx, sy));
+    }
+
+    translated(tx, ty) {
+        return this.multiply(CGAffineTransform.MakeTranslation(tx, ty));
+    }
+
+    multiply(other) {
+        const result = new CGAffineTransform();
+        result.a = this.a * other.a + this.c * other.b;
+        result.b = this.b * other.a + this.d * other.b;
+        result.c = this.a * other.c + this.c * other.d;
+        result.d = this.b * other.c + this.d * other.d;
+        result.tx = this.a * other.tx + this.c * other.ty + this.tx;
+        result.ty = this.b * other.tx + this.d * other.ty + this.ty;
+        return result;
+    }
+
+    inverted() {
+        const det = this.a * this.d - this.b * this.c;
+        if (det === 0) return null;
+        const result = new CGAffineTransform();
+        result.a = this.d / det;
+        result.b = -this.b / det;
+        result.c = -this.c / det;
+        result.d = this.a / det;
+        result.tx = (this.c * this.ty - this.d * this.tx) / det;
+        result.ty = (this.b * this.tx - this.a * this.ty) / det;
+        return result;
+    }
+
+    isIdentity() {
+        return this.a === 1 && this.b === 0 && this.c === 0 && this.d === 1 && this.tx === 0 && this.ty === 0;
+    }
+
+    toArray() {
+        return [this.a, this.b, this.c, this.d, this.tx, this.ty];
+    }
+
+    concat(transform) {
+        return this.multiply(transform);
+    }
 }
 
 class CATransform3D {
@@ -1508,6 +1647,18 @@ class CABasicAnimation {
         }
         return this.interpolate(this.fromValue, this.toValue, adjustedProgress);
     }
+
+    withDuration(duration) { this.duration = duration; return this; }
+    withBeginTime(beginTime) { this.beginTime = beginTime; return this; }
+    withRepeatCount(count) { this.repeatCount = count; return this; }
+    withRepeatDuration(duration) { this.repeatDuration = duration; return this; }
+    withAutoreverses(reverses) { this.autoreverses = reverses; return this; }
+    withTimingFunction(fn) { this.timingFunction = fn; return this; }
+    withSpeed(speed) { this.speed = speed; return this; }
+    withFillMode(mode) { this.fillMode = mode; return this; }
+    withIsRemovedOnCompletion(removed) { this.isRemovedOnCompletion = removed; return this; }
+    from(fromValue) { this.fromValue = fromValue; return this; }
+    to(toValue) { this.toValue = toValue; return this; }
 }
 
 class CAKeyframeAnimation extends CABasicAnimation {
@@ -1533,6 +1684,13 @@ class CAKeyframeAnimation extends CABasicAnimation {
         copy.path = this.path;
         return copy;
     }
+
+    withValues(values) { this.values = values; return this; }
+    withKeyTimes(keyTimes) { this.keyTimes = keyTimes; return this; }
+    withTimingFunctions(fns) { this.timingFunctions = fns; return this; }
+    withCalculationMode(mode) { this.calculationMode = mode; return this; }
+    withPath(path) { this.path = path; return this; }
+    addValue(value) { this.values.push(value); return this; }
 }
 
 class CAAnimationGroup {
@@ -1596,6 +1754,7 @@ class CASpringAnimation extends CABasicAnimation {
 
 export { 
     CGPath,
+    CGAffineTransform,
     CALayer, 
     CATransform3D, 
     CAGradientLayer, 

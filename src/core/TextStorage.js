@@ -1,5 +1,23 @@
 import UIColor from './UIColor.js';
 
+const AttributedStringKey = {
+    font: 'font',
+    textColor: 'textColor',
+    backgroundColor: 'backgroundColor',
+    underline: 'underline',
+    strikethrough: 'strikethrough',
+    link: 'link',
+    baselineOffset: 'baselineOffset',
+    kern: 'kern',
+    letterSpacing: 'letterSpacing',
+    paragraphStyle: 'paragraphStyle',
+    shadow: 'shadow',
+    strokeColor: 'strokeColor',
+    strokeWidth: 'strokeWidth',
+    expansion: 'expansion',
+    verticalGlyphForm: 'verticalGlyphForm'
+};
+
 class TextStorage {
     constructor() {
         this._string = '';
@@ -384,6 +402,57 @@ class AttributedString {
         attrs.attributes.paragraphStyle = style;
         return this;
     }
+
+    withShadow(color, offset = { width: 0, height: 1 }, radius = 1) {
+        const attrs = this._attributes[0] || { range: { start: 0, end: this._string.length }, attributes: {} };
+        attrs.attributes.shadow = { color, offset, radius };
+        return this;
+    }
+
+    withStrokeColor(color, width = 0) {
+        const attrs = this._attributes[0] || { range: { start: 0, end: this._string.length }, attributes: {} };
+        attrs.attributes.strokeColor = color;
+        attrs.attributes.strokeWidth = width;
+        return this;
+    }
+
+    withExpansion(expansion) {
+        const attrs = this._attributes[0] || { range: { start: 0, end: this._string.length }, attributes: {} };
+        attrs.attributes.expansion = expansion;
+        return this;
+    }
+
+    withKerning(kern) {
+        const attrs = this._attributes[0] || { range: { start: 0, end: this._string.length }, attributes: {} };
+        attrs.attributes.kern = kern;
+        return this;
+    }
+
+    withLetterSpacing(spacing) {
+        const attrs = this._attributes[0] || { range: { start: 0, end: this._string.length }, attributes: {} };
+        attrs.attributes.letterSpacing = spacing;
+        return this;
+    }
+
+    withVerticalGlyphForm(vertical) {
+        const attrs = this._attributes[0] || { range: { start: 0, end: this._string.length }, attributes: {} };
+        attrs.attributes.verticalGlyphForm = vertical;
+        return this;
+    }
+
+    withLigatures(enabled) {
+        const attrs = this._attributes[0] || { range: { start: 0, end: this._string.length }, attributes: {} };
+        attrs.attributes.ligatures = enabled;
+        return this;
+    }
+
+    append(string) {
+        return new AttributedString(this._string + string, this._attributes[0]?.attributes);
+    }
+
+    static Localized(string, table = null, bundle = null) {
+        return new AttributedString(string);
+    }
 }
 
 class ParagraphStyle {
@@ -398,6 +467,11 @@ class ParagraphStyle {
         this.minimumLineHeight = 0;
         this.paragraphSpacing = 0;
         this.paragraphSpacingBefore = 0;
+        this.lineBreakStrategy = 'standard';
+        this.baseWritingDirection = 'natural';
+        this.hyphenationFactor = 0;
+        this.tabStops = [];
+        this.defaultTabInterval = 0;
     }
 
     static Create() {
@@ -418,6 +492,91 @@ class ParagraphStyle {
         this.lineHeightMultiple = multiple;
         return this;
     }
+
+    withFirstLineHeadIndent(amount) {
+        this.firstLineHeadIndent = amount;
+        return this;
+    }
+
+    withHeadIndent(amount) {
+        this.headIndent = amount;
+        return this;
+    }
+
+    withTailIndent(amount) {
+        this.tailIndent = amount;
+        return this;
+    }
+
+    withMaximumLineHeight(height) {
+        this.maximumLineHeight = height;
+        return this;
+    }
+
+    withMinimumLineHeight(height) {
+        this.minimumLineHeight = height;
+        return this;
+    }
+
+    withParagraphSpacing(spacing) {
+        this.paragraphSpacing = spacing;
+        return this;
+    }
+
+    withParagraphSpacingBefore(spacing) {
+        this.paragraphSpacingBefore = spacing;
+        return this;
+    }
+
+    withLineBreakStrategy(strategy) {
+        this.lineBreakStrategy = strategy;
+        return this;
+    }
+
+    withBaseWritingDirection(direction) {
+        this.baseWritingDirection = direction;
+        return this;
+    }
+
+    withTabStops(tabStops) {
+        this.tabStops = tabStops;
+        return this;
+    }
+
+    withDefaultTabInterval(interval) {
+        this.defaultTabInterval = interval;
+        return this;
+    }
+
+    addTabStop(location, alignment = 'left') {
+        this.tabStops.push({ location, alignment });
+        return this;
+    }
+
+    removeTabStop(location) {
+        this.tabStops = this.tabStops.filter(tab => tab.location !== location);
+        return this;
+    }
+
+    copy() {
+        const copy = new ParagraphStyle();
+        copy.alignment = this.alignment;
+        copy.firstLineHeadIndent = this.firstLineHeadIndent;
+        copy.headIndent = this.headIndent;
+        copy.tailIndent = this.tailIndent;
+        copy.lineBreakMode = this.lineBreakMode;
+        copy.lineHeightMultiple = this.lineHeightMultiple;
+        copy.maximumLineHeight = this.maximumLineHeight;
+        copy.minimumLineHeight = this.minimumLineHeight;
+        copy.paragraphSpacing = this.paragraphSpacing;
+        copy.paragraphSpacingBefore = this.paragraphSpacingBefore;
+        copy.lineBreakStrategy = this.lineBreakStrategy;
+        copy.baseWritingDirection = this.baseWritingDirection;
+        copy.hyphenationFactor = this.hyphenationFactor;
+        copy.tabStops = [...this.tabStops];
+        copy.defaultTabInterval = this.defaultTabInterval;
+        return copy;
+    }
 }
 
-export { TextStorage, AttributedString, ParagraphStyle };
+export { TextStorage, AttributedString, ParagraphStyle, AttributedStringKey };

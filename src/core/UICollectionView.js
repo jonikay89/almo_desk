@@ -1,5 +1,6 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
+import { CGPath } from './CALayer.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
@@ -286,6 +287,54 @@ class UICollectionView extends UIScrollView {
 
     withShadow(color, opacity, offset, radius) {
         this.setShadow?.(color, opacity, offset, radius);
+        return this;
+    }
+
+    withGradient(colors, locations, startPoint, endPoint) {
+        if (this._layer) {
+            const { CAGradientLayer } = require('./CALayer.js');
+            const gradient = CAGradientLayer.layer();
+            gradient.colors = colors;
+            gradient.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+            if (locations) gradient.locations = locations;
+            if (startPoint) gradient.startPoint = startPoint;
+            if (endPoint) gradient.endPoint = endPoint;
+            gradient.name = 'collectionGradientLayer';
+            this._layer.addSublayer(gradient);
+            this.#renderLayers();
+        }
+        return this;
+    }
+
+    withBorder(color, width, radius) {
+        if (this._layer) {
+            const { CAShapeLayer } = require('./CALayer.js');
+            const shapeLayer = CAShapeLayer.layer();
+            shapeLayer.frame = this._bounds;
+            shapeLayer.path = CGPath.CreateRect(0, 0, this._bounds.width, this._bounds.height);
+            shapeLayer.fillColor = null;
+            shapeLayer.strokeColor = color;
+            shapeLayer.lineWidth = width;
+            if (radius) shapeLayer.cornerRadius = radius;
+            this._layer.addSublayer(shapeLayer);
+            this.#renderLayers();
+        }
+        return this;
+    }
+
+    withCornerRadius(radius) {
+        if (this.element) {
+            this.element.style.borderRadius = `${radius}px`;
+        }
+        return this;
+    }
+
+    withBackgroundColor(color) {
+        if (color instanceof UIColor) {
+            this.element.style.backgroundColor = color.css;
+        } else if (typeof color === 'string') {
+            this.element.style.backgroundColor = color;
+        }
         return this;
     }
 

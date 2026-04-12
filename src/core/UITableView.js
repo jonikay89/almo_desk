@@ -391,6 +391,38 @@ class UITableView extends UIScrollView {
         return this;
     }
 
+    withGradient(colors, locations, startPoint, endPoint) {
+        if (this._layer) {
+            const { CAGradientLayer } = require('./CALayer.js');
+            const gradient = CAGradientLayer.layer();
+            gradient.colors = colors;
+            gradient.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
+            if (locations) gradient.locations = locations;
+            if (startPoint) gradient.startPoint = startPoint;
+            if (endPoint) gradient.endPoint = endPoint;
+            gradient.name = 'tableGradientLayer';
+            this._layer.addSublayer(gradient);
+            this.#renderLayers();
+        }
+        return this;
+    }
+
+    withBorder(color, width, radius) {
+        if (this._layer) {
+            const { CAShapeLayer, CGPath } = require('./CALayer.js');
+            const shapeLayer = CAShapeLayer.layer();
+            shapeLayer.frame = this._bounds;
+            shapeLayer.path = CGPath.CreateRect(0, 0, this._bounds.width, this._bounds.height);
+            shapeLayer.fillColor = null;
+            shapeLayer.strokeColor = color;
+            shapeLayer.lineWidth = width;
+            if (radius) shapeLayer.cornerRadius = radius;
+            this._layer.addSublayer(shapeLayer);
+            this.#renderLayers();
+        }
+        return this;
+    }
+
     encode() {
         return {
             style: this.style,
