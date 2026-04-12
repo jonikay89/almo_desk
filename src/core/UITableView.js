@@ -118,6 +118,7 @@ class UITableView extends UIScrollView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-tableview';
         this.element.style.position = 'relative';

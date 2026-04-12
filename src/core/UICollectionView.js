@@ -110,6 +110,7 @@ class UICollectionView extends UIScrollView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-collectionview';
         this.element.style.position = 'relative';
@@ -659,7 +660,6 @@ class UICollectionViewFlowLayout {
     }
 
     #render() {
-        super.layoutSubviews();
     }
 }
 
