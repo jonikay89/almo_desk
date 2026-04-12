@@ -4,6 +4,8 @@ import { WeakRef } from './WeakReference.js';
 import { kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch } from './PatternMatching.js';
+import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
+import UIColor from './UIColor.js';
 
 class UIControl extends UIView {
     constructor() {
@@ -15,6 +17,9 @@ class UIControl extends UIView {
         this.contentHorizontalAlignment = 'center';
         this._targetActions = [];
         this._accessibilityTraits = ['button'];
+        this._controlLayer = null;
+        this._borderLayer = null;
+        this._backgroundLayer = null;
     }
 
     get description() {
@@ -70,12 +75,23 @@ class UIControl extends UIView {
         this.element.className = 'ui-control';
         this.element.style.userSelect = 'none';
         this.element.style.cursor = this.enabled ? 'pointer' : 'default';
+        this.#setupControlLayers();
         this._updateAccessibilityAttributes();
         return this;
     }
 
+    #setupControlLayers() {
+        this._controlLayer = CALayer.layer();
+        this._controlLayer.name = 'controlLayer';
+        this._controlLayer.frame = { x: 0, y: 0, width: 0, height: 0 };
+        this._layer.addSublayer(this._controlLayer);
+    }
+
     deinit() {
         this._targetActions = [];
+        this._controlLayer = null;
+        this._borderLayer = null;
+        this._backgroundLayer = null;
         this.element = null;
     }
 
@@ -142,6 +158,7 @@ class UIControl extends UIView {
                 return !(t === target && ta.action === action && ta.eventType === eventType);
             }
         );
+        return this;
     }
 
     allTargets() {
@@ -226,6 +243,126 @@ class UIControl extends UIView {
         if (this.element) {
             this.element.style.width = `${this.frame.width}px`;
             this.element.style.height = `${this.frame.height}px`;
+        }
+        if (this._controlLayer) {
+            this._controlLayer.frame = this._bounds;
+        }
+        if (this._borderLayer) {
+            this._borderLayer.frame = this._bounds;
+        }
+        if (this._backgroundLayer) {
+            this._backgroundLayer.frame = this._bounds;
+        }
+    }
+
+    withBorder(color, width, radius) {
+        if (this._layer) {
+            if (!this._borderLayer) {
+                this._borderLayer = CAShapeLayer.layer();
+                this._borderLayer.name = 'borderLayer';
+                this._layer.addSublayer(this._borderLayer);
+            }
+            this._borderLayer.path = CGPath.CreateRect(0, 0, this._bounds.width, this._bounds.height);
+            this._borderLayer.fillColor = null;
+            this._borderLayer.strokeColor = color;
+            this._borderLayer.lineWidth = width;
+            if (radius !== undefined) {
+                this._borderLayer.cornerRadius = radius;
+            }
+            this.#renderControlLayers();
+        }
+        return this;
+    }
+
+    withCornerRadius(radius) {
+        if (this.element) {
+            this.element.style.borderRadius = `${radius}px`;
+        }
+        if (this._borderLayer) {
+            this._borderLayer.cornerRadius = radius;
+        }
+        return this;
+    }
+
+    withShadow(color, opacity = 0.5, offset = { width: 0, height: 2 }, radius = 4) {
+        if (this._controlLayer) {
+            this._controlLayer.shadowColor = color;
+            this._controlLayer.shadowOpacity = opacity;
+            this._controlLayer.shadowOffset = offset;
+            this._controlLayer.shadowRadius = radius;
+        }
+        return this;
+    }
+
+    withBackgroundLayer(color) {
+        if (this._layer) {
+            if (!this._backgroundLayer) {
+                this._backgroundLayer = CALayer.layer();
+                this._backgroundLayer.name = 'backgroundLayer';
+                this._layer.insertSublayerAtIndex(this._backgroundLayer, 0);
+            }
+            this._backgroundLayer.frame = this._bounds;
+            this._backgroundLayer.backgroundColor = color;
+            this.#renderControlLayers();
+        }
+        return this;
+    }
+
+    #renderControlLayers() {
+        if (!this.element || !this._useLayerCanvas) return;
+        
+        const existingCanvas = this.element.querySelector('.control-canvas');
+        if (existingCanvas) existingCanvas.remove();
+
+        const hasLayers = (this._borderLayer || this._backgroundLayer);
+        if (!hasLayers) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'control-canvas';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.width = this._bounds.width * 2;
+        canvas.height = this._bounds.height * 2;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+
+        if (this._backgroundLayer) {
+            ctx.fillStyle = this._backgroundLayer.backgroundColor?.css || UIColor.clear().css;
+            ctx.fillRect(0, 0, this._bounds.width, this._bounds.height);
+        }
+
+        if (this._borderLayer) {
+            ctx.strokeStyle = this._borderLayer.strokeColor?.css || UIColor.black().css;
+            ctx.lineWidth = this._borderLayer.lineWidth || 1;
+            if (this._borderLayer.cornerRadius > 0) {
+                ctx.beginPath();
+                const r = this._borderLayer.cornerRadius;
+                const w = this._bounds.width;
+                const h = this._bounds.height;
+                ctx.moveTo(r, 0);
+                ctx.lineTo(w - r, 0);
+                ctx.quadraticCurveTo(w, 0, w, r);
+                ctx.lineTo(w, h - r);
+                ctx.quadraticCurveTo(w, h, w - r, h);
+                ctx.lineTo(r, h);
+                ctx.quadraticCurveTo(0, h, 0, h - r);
+                ctx.lineTo(0, r);
+                ctx.quadraticCurveTo(0, 0, r, 0);
+                ctx.closePath();
+                ctx.stroke();
+            } else {
+                ctx.strokeRect(0, 0, this._bounds.width, this._bounds.height);
+            }
+        }
+
+        this.element.style.position = 'relative';
+        if (this.element.firstChild !== canvas) {
+            this.element.insertBefore(canvas, this.element.firstChild);
         }
     }
 
