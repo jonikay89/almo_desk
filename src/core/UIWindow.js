@@ -2,7 +2,7 @@ import UIView from './UIView.js';
 import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
-import { CALayer, CAGradientLayer, CAShapeLayer } from './CALayer.js';
+import { CALayer, CAGradientLayer, CAShapeLayer, CGPath } from './CALayer.js';
 import UIColor from './UIColor.js';
 
 class UIWindow extends UIView {
@@ -181,7 +181,6 @@ class UIWindow extends UIView {
         if (this._windowLayer) {
             const shapeLayer = CAShapeLayer.layer();
             shapeLayer.frame = this._bounds;
-            const { CGPath } = require('./CALayer.js');
             shapeLayer.path = CGPath.CreateRect(0, 0, this._bounds.width, this._bounds.height);
             shapeLayer.fillColor = null;
             shapeLayer.strokeColor = color;

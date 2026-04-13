@@ -71,7 +71,9 @@ class UIControl extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
+        if (!this.element) {
+            this.element = document.createElement('div');
+        }
         this.element.className = 'ui-control';
         this.element.style.userSelect = 'none';
         this.element.style.cursor = this.enabled ? 'pointer' : 'default';

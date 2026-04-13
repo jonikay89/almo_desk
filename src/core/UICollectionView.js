@@ -1,6 +1,6 @@
 import UIScrollView from './UIScrollView.js';
 import UIColor from './UIColor.js';
-import { CGPath } from './CALayer.js';
+import { CGPath, CAGradientLayer, CAShapeLayer } from './CALayer.js';
 import { Optional, Result } from './Generics.js';
 import { WeakRef } from './WeakReference.js';
 import { NSValue, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
@@ -293,7 +293,6 @@ class UICollectionView extends UIScrollView {
 
     withGradient(colors, locations, startPoint, endPoint) {
         if (this._layer) {
-            const { CAGradientLayer } = require('./CALayer.js');
             const gradient = CAGradientLayer.layer();
             gradient.colors = colors;
             gradient.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };
@@ -309,7 +308,6 @@ class UICollectionView extends UIScrollView {
 
     withBorder(color, width, radius) {
         if (this._layer) {
-            const { CAShapeLayer } = require('./CALayer.js');
             const shapeLayer = CAShapeLayer.layer();
             shapeLayer.frame = this._bounds;
             shapeLayer.path = CGPath.CreateRect(0, 0, this._bounds.width, this._bounds.height);

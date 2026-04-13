@@ -76,18 +76,26 @@ class UITextField extends UIControl {
     init() {
         super.init();
         this.element.className = 'ui-textfield';
-        this.element.style.position = 'relative';
-        this.element.style.display = 'inline-flex';
-        this.element.style.alignItems = 'center';
+        this.element.style.boxSizing = 'border-box';
+        this.element.style.display = 'block';
+        this.element.style.padding = '0';
+        this.element.style.margin = '0';
 
         this.inputElement = document.createElement('input');
         this.inputElement.type = this.isSecureTextEntry ? 'password' : 'text';
         this.inputElement.placeholder = this.placeholder;
-        this.inputElement.style.border = 'none';
-        this.inputElement.style.background = 'transparent';
-        this.inputElement.style.outline = 'none';
+        this.inputElement.style.boxSizing = 'border-box';
         this.inputElement.style.width = '100%';
-        this.inputElement.style.padding = '8px 12px';
+        this.inputElement.style.height = '100%';
+        this.inputElement.style.margin = '0';
+        this.inputElement.style.padding = '0 12px';
+        this.inputElement.style.border = 'none';
+        this.inputElement.style.outline = 'none';
+        this.inputElement.style.background = 'transparent';
+        this.inputElement.style.lineHeight = 'normal';
+        this.inputElement.style.verticalAlign = 'middle';
+        this.inputElement.style.minHeight = '0';
+        this.inputElement.style.minWidth = '0';
         this.inputElement.style.fontSize = `${this.fontSize}px`;
         this.inputElement.style.fontFamily = this.fontFamily;
         this.inputElement.style.color = this._textColor.css;
@@ -108,13 +116,13 @@ class UITextField extends UIControl {
 
     #applyBorderStyle() {
         const styles = {
-            rounded: 'border: 1px solid #ccc; border-radius: 6px;',
-            square: 'border: 1px solid #ccc; border-radius: 0;',
-            line: 'border: none; border-bottom: 1px solid #ccc; border-radius: 0;',
-            none: 'border: none;'
+            rounded: 'border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;',
+            square: 'border: 1px solid #ccc; border-radius: 0; box-sizing: border-box;',
+            line: 'border: none; border-bottom: 1px solid #ccc; border-radius: 0; box-sizing: border-box;',
+            none: 'border: none; box-sizing: border-box;'
         };
         const style = styles[this.borderStyle] || styles.rounded;
-        this.element.setAttribute('style', this.element.getAttribute('style') + ';' + style);
+        this.element.style.cssText += ';' + style;
     }
 
     #setupEventListeners() {
@@ -153,6 +161,13 @@ class UITextField extends UIControl {
             this.inputElement.value = text;
         }
         return this;
+    }
+
+    getText() {
+        if (this.inputElement) {
+            return this.inputElement.value;
+        }
+        return this.text || '';
     }
 
     setPlaceholder(text) {

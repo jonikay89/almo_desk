@@ -58,7 +58,10 @@ class DesktopOS {
                     height: w.height,
                 });
                 win.os = this;
-                win.view.zIndex = w.zIndex ?? 100;
+                win.loadView();
+                if (win.view) {
+                    win.view.zIndex = w.zIndex ?? 100;
+                }
                 win.isMinimized = !!w.minimized;
                 return win;
             });

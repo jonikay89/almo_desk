@@ -19,6 +19,7 @@ class UIView extends UIResponder {
         this.tag = 0;
         this.subviews = [];
         this.element = document.createElement('div');
+        this.element.style.position = 'absolute';
         this.zIndex = 0;
         this.translatesAutoresizingMaskIntoConstraints = true;
         this._backgroundColor = null;

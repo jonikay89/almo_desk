@@ -1,4 +1,5 @@
 import UIViewController from './UIViewController.js';
+import UIView from './UIView.js';
 import { escapeHtml, createElement } from '../utils/index.js';
 import WidgetRegistry from '../widgets/index.js';
 
@@ -21,7 +22,11 @@ class WindowController extends UIViewController {
     }
 
     loadView() {
-        this.view.element = this.createView();
+        if (!this._view) {
+            this._view = new UIView();
+            this._view._frame = { x: 0, y: 0, width: 0, height: 0 };
+        }
+        this._view.element = this.createView();
         this.isViewLoaded = true;
     }
 
@@ -140,11 +145,14 @@ class WindowController extends UIViewController {
     }
 
     setFrame(x, y, width, height) {
-        super.setFrame(x, y, 
-            Math.max(CONFIG.MIN_WIDTH, width), 
-            Math.max(CONFIG.MIN_HEIGHT, height)
-        );
-        this.viewDidLayoutSubviews();
+        const w = Math.max(CONFIG.MIN_WIDTH, width);
+        const h = Math.max(CONFIG.MIN_HEIGHT, height);
+        if (this.view && this.view.setFrame) {
+            this.view.setFrame(x, y, w, h);
+        }
+        if (this.isViewLoaded) {
+            this.viewDidLayoutSubviews();
+        }
     }
 
     setActive(isActive) {
@@ -173,17 +181,18 @@ class WindowController extends UIViewController {
     }
 
     toJSON() {
+        const frame = this.view?.frame || { x: 0, y: 0, width: 0, height: 0 };
         return {
             id: this.windowId,
             title: this.title,
             widgetType: this.widgetType,
             extraData: this.extraData,
-            x: this.frame.x,
-            y: this.frame.y,
-            width: this.frame.width,
-            height: this.frame.height,
-            zIndex: this.view.zIndex,
-            minimized: this.view.element?.classList.contains('minimized'),
+            x: frame.x,
+            y: frame.y,
+            width: frame.width,
+            height: frame.height,
+            zIndex: this.view?.zIndex || 100,
+            minimized: this.view?.element?.classList.contains('minimized'),
         };
     }
 }

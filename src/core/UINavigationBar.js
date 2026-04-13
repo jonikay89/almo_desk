@@ -1,5 +1,6 @@
 import UIView from './UIView.js';
 import UIColor from './UIColor.js';
+import { CAGradientLayer } from './CALayer.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
@@ -217,7 +218,6 @@ class UINavigationBar extends UIView {
 
     withGradient(colors, locations, startPoint, endPoint) {
         if (this._layer) {
-            const { CAGradientLayer } = require('./CALayer.js');
             const gradient = CAGradientLayer.layer();
             gradient.colors = colors;
             gradient.frame = { x: 0, y: 0, width: this._bounds.width, height: this._bounds.height };

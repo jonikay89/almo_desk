@@ -107,6 +107,10 @@ class UIColor {
         return new UIColor(0, 0.478, 1, 1);
     }
 
+    static windowBackground() {
+        return new UIColor(0.95, 0.95, 0.95, 1);
+    }
+
     static systemGreen() {
         return new UIColor(0.204, 0.78, 0.349, 1);
     }

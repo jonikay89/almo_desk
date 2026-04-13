@@ -2,12 +2,18 @@
     background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 6px;
-    min-height: 36px;
+    box-sizing: border-box;
 }
 
 .ui-textfield:focus-within {
     border-color: #007aff;
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.ui-textfield input {
+    min-height: 0 !important;
+    line-height: normal !important;
+    box-sizing: border-box;
 }
 
 .ui-textfield input::placeholder {
