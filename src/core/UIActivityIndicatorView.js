@@ -26,79 +26,58 @@ class UIActivityIndicatorView extends UIView {
     init() {
         super.init();
         this._layer.cssClass = 'ui-activityindicator';
+        this.element.className = 'ui-activityindicator';
+        this._updateSpinnerColor();
         this._accessibilityLabel = this._isAnimating ? 'Loading' : 'Loaded';
         this._accessibilityValue = this._isAnimating ? 'In progress' : 'Stopped';
 
-        const sizes = {
-            small: 16,
-            medium: 24,
-            large: 36
-        };
+        const sizes = { small: 16, medium: 24, large: 36 };
         const size = sizes[this.style] || 24;
-
         this.element.style.width = `${size}px`;
         this.element.style.height = `${size}px`;
-
-        this.spinnerElement = document.createElement('div');
-        this.spinnerElement.style.width = '100%';
-        this.spinnerElement.style.height = '100%';
-        this.spinnerElement.style.borderRadius = '50%';
-        this.spinnerElement.style.border = `${size / 6}px solid rgba(0,0,0,0.1)`;
-        this.spinnerElement.style.borderTopColor = this.color.css;
-        this.spinnerElement.style.animation = 'ui-activity-spin 0.8s linear infinite';
-
-        const styleEl = document.createElement('style');
-        styleEl.textContent = `
-            @keyframes ui-activity-spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        `;
-        if (!document.querySelector('#ui-activity-styles')) {
-            styleEl.id = 'ui-activity-styles';
-            document.head.appendChild(styleEl);
-        }
-
-        this.element.appendChild(this.spinnerElement);
-
+        
         if (this.hidesWhenStopped && !this._isAnimating) {
-            this.element.style.display = 'none';
+            this.element.classList.add('hidden');
         }
 
         return this;
     }
 
+    _updateSpinnerColor() {
+        const spinner = this.element.querySelector('.ui-activityindicator-spinner');
+        if (spinner) {
+            spinner.style.borderTopColor = this.color.css;
+        }
+    }
+
     startAnimating() {
         this._isAnimating = true;
-        if (this.spinnerElement) {
-            this.spinnerElement.style.animation = 'ui-activity-spin 0.8s linear infinite';
-        }
-        if (this.hidesWhenStopped && this.element) {
-            this.element.style.display = 'inline-block';
-        }
+        this.element.classList.remove('hidden');
+        this.element.classList.add('spinning');
+        this._accessibilityLabel = 'Loading';
+        this._accessibilityValue = 'In progress';
     }
 
     stopAnimating() {
         this._isAnimating = false;
-        if (this.spinnerElement) {
-            this.spinnerElement.style.animation = 'none';
+        this.element.classList.remove('spinning');
+        if (this.hidesWhenStopped) {
+            this.element.classList.add('hidden');
         }
-        if (this.hidesWhenStopped && this.element) {
-            this.element.style.display = 'none';
-        }
+        this._accessibilityLabel = 'Loaded';
+        this._accessibilityValue = 'Stopped';
     }
 
     setStyle(style) {
         this.style = style;
-        if (this.element) {
-            const sizes = { small: 16, medium: 24, large: 36 };
-            const size = sizes[style] || 24;
-            this.element.style.width = `${size}px`;
-            this.element.style.height = `${size}px`;
-            if (this.spinnerElement) {
-                this.spinnerElement.style.borderWidth = `${size / 6}px`;
-            }
-        }
+        const sizes = { small: 16, medium: 24, large: 36 };
+        const size = sizes[style] || 24;
+        
+        this.element.classList.remove('small', 'medium', 'large');
+        this.element.classList.add(style);
+        
+        this.element.style.width = `${size}px`;
+        this.element.style.height = `${size}px`;
         return this;
     }
 
@@ -108,16 +87,16 @@ class UIActivityIndicatorView extends UIView {
         } else if (typeof color === 'string') {
             this.color = UIColor.colorWithHex(color);
         }
-        if (this.spinnerElement) {
-            this.spinnerElement.style.borderTopColor = this.color.css;
-        }
+        this._updateSpinnerColor();
         return this;
     }
 
     setHidesWhenStopped(hides) {
         this.hidesWhenStopped = hides;
-        if (!this._isAnimating && hides && this.element) {
-            this.element.style.display = 'none';
+        if (!this._isAnimating && hides) {
+            this.element.classList.add('hidden');
+        } else if (!this._isAnimating && !hides) {
+            this.element.classList.remove('hidden');
         }
         return this;
     }
