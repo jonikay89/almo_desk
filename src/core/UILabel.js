@@ -323,8 +323,30 @@ class UILabel extends UIView {
     }
 
     #renderLayers() {
-        // Layer rendering is handled by CALayer system
-        // CATextLayer handles text rendering
+        if (!this.element || !this._useLayerRendering) return;
+        
+        const existingCanvas = this.element.querySelector('.layer-canvas');
+        if (existingCanvas) existingCanvas.remove();
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'layer-canvas';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.width = (this._bounds.width || 100) * 2;
+        canvas.height = (this._bounds.height || 20) * 2;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        
+        this.#renderTextInContext(ctx, this._bounds);
+        
+        if (this.element.firstChild !== canvas) {
+            this.element.insertBefore(canvas, this.element.firstChild);
+        }
     }
 
     layoutSubviews() {
