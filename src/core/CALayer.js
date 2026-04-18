@@ -791,6 +791,22 @@ class CALayer {
         return this;
     }
 
+    bringSublayerToFront(sublayer) {
+        if (!sublayer) return;
+        const index = this._sublayers.indexOf(sublayer);
+        if (index === -1 || index === this._sublayers.length - 1) return;
+        this._sublayers.splice(index, 1);
+        this._sublayers.push(sublayer);
+    }
+
+    sendSublayerToBack(sublayer) {
+        if (!sublayer) return;
+        const index = this._sublayers.indexOf(sublayer);
+        if (index === -1 || index === 0) return;
+        this._sublayers.splice(index, 1);
+        this._sublayers.unshift(sublayer);
+    }
+
     sublayerIndex(layer) {
         return this._sublayers.indexOf(layer);
     }

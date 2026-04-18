@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIKit Components - Documentation & Demo</title>
+    <link rel="stylesheet" href="./styles/main.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            overflow-x: hidden;
+        }
+        
+        #app {
+            width: 100vw;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1d1d1f 0%, #2d2d30 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 0;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+        }
+        
+        .component-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .component-section h2 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #1d1d1f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .component-section h2 .tag {
+            font-size: 11px;
+            background: #007aff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .component-section h2 .tag.new {
+            background: #34c759;
+        }
+        
+        .component-section p {
+            color: #666;
+            font-size: 13px;
+            margin: 0 0 15px 0;
+        }
+        
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .class-item {
+            background: #f5f5f7;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .class-item.existing {
+            border-left: 3px solid #34c759;
+        }
+        
+        .class-item.missing {
+            border-left: 3px solid #ff3b30;
+            opacity: 0.6;
+        }
+        
+        .class-item .name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1d1d1f;
+        }
+        
+        .class-item .desc {
+            font-size: 12px;
+            color: #86868b;
+        }
+        
+        .class-item .file {
+            font-size: 11px;
+            color: #aaa;
+            font-family: monospace;
+        }
+        
+        .class-item.existing .file::before {
+            content: '✓ ';
+            color: #34c759;
+        }
+        
+        .class-item.missing .file::before {
+            content: '✗ ';
+            color: #ff3b30;
+        }
+        
+        .feature-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .feature-section h2 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .feature-item h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+        
+        .feature-item p {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .import-section {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+        
+        .import-section code {
+            color: #d4d4d4;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: pre;
+        }
+        
+        .import-section .keyword { color: #569cd6; }
+        .import-section .string { color: #ce9178; }
+        .import-section .comment { color: #6a9955; }
+        
+        .demo-box {
+            background: #f5f5f7;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .layer-box {
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .output-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .output-log .log-entry {
+            margin: 4px 0;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        
+        .legend-dot.existing { background: #34c759; }
+        .legend-dot.missing { background: #ff3b30; }
+    </style>
+</head>
+
+<body>
+    <div style="width: 100%; height: 100%; overflow: scroll; border: 1px solid black;">
+    <div id="app"></div>
+
+    
+
+    <script type="module">
+        import {
+            UIWindow,
+            UIView,
+            UIViewController,
+            UIResponder,
+            UIGestureRecognizer,
+            UITapGestureRecognizer,
+            UIPanGestureRecognizer,
+            UIPinchGestureRecognizer,
+            UILongPressGestureRecognizer,
+            UIRotationGestureRecognizer,
+            UIAccessibility,
+            UIColor,
+            CGPoint,
+            CGSize,
+            CGRect,
+            CALayer,
+            CAGradientLayer,
+            CAShapeLayer,
+            CATextLayer,
+            CGPath,
+            NSObject,
+            NSArray,
+            NSMutableArray,
+            NSDictionary,
+            NSMutableDictionary,
+            NSSet,
+            NSMutableSet,
+            Protocol,
+            Generic,
+            SwiftArray,
+            SwiftDictionary,
+            SwiftSet,
+            URL,
+            UUID,
+            Decimal,
+            FileManager,
+            UserDefaults,
+            CABasicAnimation,
+            CAKeyframeAnimation,
+            CAAnimationGroup,
+            CASpringAnimation
+        } from './src/core/index.js';
+
+        class ComponentDoc {
+            constructor() {
+                this.logs = [];
+                this.initApp();
+            }
+
+            initApp() {
+                const app = document.getElementById('app');
+                app.innerHTML = this.renderHTML();
+                this.runDemos();
+            }
+
+            log(message) {
+                const nativeDate = globalThis.Date;
+                const now = new nativeDate();
+                this.logs.unshift(`[${now.toLocaleTimeString()}] ${message}`);
+                if (this.logs.length > 20) this.logs.pop();
+                const logEl = document.getElementById('event-log');
+                if (logEl) {
+                    logEl.innerHTML = this.logs.map(m => `<div class="log-entry">${m}</div>`).join('');
+                }
+            }
+
+            renderHTML() {
+                const existingComponents = [
+                    { name: 'UIResponder', file: 'UIResponder.js', desc: 'Base responder class' },
+                    { name: 'UIView', file: 'UIView.js', desc: 'Core view with CALayer integration' },
+                    { name: 'UIViewController', file: 'UIViewController.js', desc: 'Controller with lifecycle' },
+                    { name: 'UIWindow', file: 'UIWindow.js', desc: 'Root window with rootViewController' },
+                    { name: 'UIColor', file: 'UIColor.js', desc: 'Color representation' },
+                    { name: 'UIGestureRecognizer', file: 'UIGestureRecognizer.js', desc: 'Base gesture recognizer' },
+                    { name: 'UITapGestureRecognizer', file: 'UITapGestureRecognizer.js', desc: 'Tap detection' },
+                    { name: 'UIPanGestureRecognizer', file: 'UIPanGestureRecognizer.js', desc: 'Pan/drag with velocity' },
+                    { name: 'UIPinchGestureRecognizer', file: 'UIPinchGestureRecognizer.js', desc: 'Pinch to zoom' },
+                    { name: 'UILongPressGestureRecognizer', file: 'UILongPressGestureRecognizer.js', desc: 'Long press detection' },
+                    { name: 'UIRotationGestureRecognizer', file: 'UIRotationGestureRecognizer.js', desc: 'Two-finger rotation' },
+                    { name: 'UIAccessibility', file: 'UIAccessibility.js', desc: 'Accessibility constants' },
+                ];
+
+                const missingComponents = [
+                    { name: 'UILabel', file: 'UILabel.js', desc: 'Text display label' },
+                    { name: 'UIControl', file: 'UIControl.js', desc: 'Base control class' },
+                    { name: 'UIButton', file: 'UIButton.js', desc: 'Interactive button' },
+                    { name: 'UITextField', file: 'UITextField.js', desc: 'Single-line text input' },
+                    { name: 'UITextView', file: 'UITextView.js', desc: 'Multi-line text input' },
+                    { name: 'UISwitch', file: 'UISwitch.js', desc: 'Toggle switch' },
+                    { name: 'UISlider', file: 'UISlider.js', desc: 'Value slider' },
+                    { name: 'UIStepper', file: 'UIStepper.js', desc: 'Increment/decrement' },
+                    { name: 'UISegmentedControl', file: 'UISegmentedControl.js', desc: 'Segmented buttons' },
+                    { name: 'UIScrollView', file: 'UIScrollView.js', desc: 'Scrollable container' },
+                    { name: 'UIStackView', file: 'UIStackView.js', desc: 'Arranged stack' },
+                    { name: 'UIActivityIndicatorView', file: 'UIActivityIndicatorView.js', desc: 'Loading spinner' },
+                    { name: 'UIProgressView', file: 'UIProgressView.js', desc: 'Progress bar' },
+                    { name: 'UIPageControl', file: 'UIPageControl.js', desc: 'Page indicator' },
+                    { name: 'UIDatePicker', file: 'UIDatePicker.js', desc: 'Date/time picker' },
+                    { name: 'UISearchBar', file: 'UISearchBar.js', desc: 'Search input' },
+                    { name: 'UITableView', file: 'UITableView.js', desc: 'Table view' },
+                    { name: 'UICollectionView', file: 'UICollectionView.js', desc: 'Collection view' },
+                    { name: 'UINavigationBar', file: 'UINavigationBar.js', desc: 'Navigation bar' },
+                    { name: 'UITabBar', file: 'UITabBar.js', desc: 'Tab bar' },
+                    { name: 'UIImageView', file: 'UIImageView.js', desc: 'Image display' },
+                    { name: 'UIImage', file: 'UIImage.js', desc: 'Image data' },
+                    { name: 'UIAlertController', file: 'UIAlertController.js', desc: 'Alert dialog' },
+                    { name: 'UIPickerView', file: 'UIPickerView.js', desc: 'Picker wheel' },
+                ];
+
+                return `
+                    <div class="header">
+                        <h1>UIKit Components Documentation</h1>
+                        <p>Web Desktop OS UIKit - Core components for building native-like interfaces</p>
+                    </div>
+
+                    <div class="feature-section">
+                        <h2>Core Architecture</h2>
+                        <div class="feature-grid">
+                            <div class="feature-item">
+                                <h4>MVC Pattern</h4>
+                                <p>UIView + UIViewController + UIWindow following Apple's UIKit pattern</p>
+                            </div>
+                            <div class="feature-item">
+                                <h4>CALayer Integration</h4>
+                                <p>Every UIView has a CALayer for rendering (configurable via layerClass)</p>
+                            </div>
+                            <div class="feature-item">
+                                <h4>Gesture Recognition</h4>
+                                <p>Built-in gesture recognizers with state machine and delegate support</p>
+                            </div>
+                            <div class="feature-item">
+                                <h4>Accessibility</h4>
+                                <p>Full ARIA support via UIResponder base class properties</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>UIView + CALayer Integration <span class="tag new">Core</span></h2>
+                        <p>Every UIView has a layer property (CALayer by default). Custom layer classes are set via static layerClass getter.</p>
+                        <div class="demo-box" id="demo-layer-box"></div>
+                        <div class="import-section">
+                            <code><span class="comment">// Custom layer class</span>
+<span class="keyword">class</span> CustomLayer <span class="keyword">extends</span> CALayer {}
+
+<span class="keyword">class</span> CustomView <span class="keyword">extends</span> UIView {
+    <span class="keyword">static</span> get layerClass() {
+        <span class="keyword">return</span> CustomLayer;
+    }
+}</code>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Gesture Recognizers <span class="tag new">New</span></h2>
+                        <p>Touch gesture recognition with state machine. States: possible → began → changed → ended/cancelled</p>
+                        <div class="class-grid">
+                            ${existingComponents.filter(c => c.name.includes('Gesture')).map(c => `
+                                <div class="class-item existing">
+                                    <div class="name">${c.name}</div>
+                                    <div class="desc">${c.desc}</div>
+                                    <div class="file">${c.file}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="demo-box" id="demo-gestures" style="flex-direction: column; align-items: flex-start; min-height: 120px;">
+                            <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">Gesture recognizer usage:</p>
+                        </div>
+                        <div class="import-section">
+                            <code><span class="keyword">import</span> { UITapGestureRecognizer, UIPanGestureRecognizer } <span class="keyword">from</span> <span class="string">'./src/core/index.js'</span>;
+
+<span class="comment">// Create gesture</span>
+<span class="keyword">const</span> tapGesture = <span class="keyword">new</span> UITapGestureRecognizer(<span class="keyword">this</span>, <span class="string">'handleTap'</span>);
+tapGesture.numberOfTapsRequired = <span class="keyword">2</span>;
+
+<span class="comment">// Add to view</span>
+view.addGestureRecognizer(tapGesture);
+
+<span class="comment">// Handler</span>
+handleTap(gesture) {
+    console.log(<span class="string">'Tapped at'</span>, gesture.locationInView(view));
+}</code>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Accessibility <span class="tag new">New</span></h2>
+                        <p>Built into UIResponder base class - all views inherit accessibility support automatically</p>
+                        <div class="demo-box" id="demo-accessibility" style="flex-direction: column; align-items: flex-start; min-height: 80px;"></div>
+                        <div class="import-section">
+                            <code><span class="comment">// Accessibility properties on any UIView</span>
+view.isAccessibilityElement = <span class="keyword">true</span>;
+view.accessibilityLabel = <span class="string">'Submit button'</span>;
+view.accessibilityHint = <span class="string">'Double tap to submit the form'</span>;
+view.accessibilityTraits = <span class="keyword">0x1</span>; <span class="comment">// Button trait</span>
+
+<span class="comment">// Announce for screen readers</span>
+view.announceForAccessibility(<span class="string">'Form submitted successfully'</span>);</code>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Color System</h2>
+                        <p>UIColor provides color creation, conversion, and system colors</p>
+                        <div class="demo-box" id="demo-colors">
+                            ${['#007aff', '#34c759', '#ff9500', '#ff3b30', '#5856d6', '#af52de', '#ff2d55'].map(c => 
+                                `<div class="color-swatch" style="background: ${c}" title="${c}"></div>`
+                            ).join('')}
+                        </div>
+                        <div class="import-section">
+                            <code><span class="comment">// Color creation</span>
+UIColor.white()           <span class="comment">// RGB(1,1,1)</span>
+UIColor.black()           <span class="comment">// RGB(0,0,0)</span>
+UIColor.colorWithHex(<span class="string">'#ff9500'</span>)
+UIColor.colorWithRed(r, g, b, a)
+UIColor.colorWithHSB(h, s, b, a)
+
+<span class="comment">// System colors</span>
+UIColor.systemRed()       <span class="comment">// #ff3b30</span>
+UIColor.systemBlue()      <span class="comment">// #007aff</span>
+UIColor.systemGreen()     <span class="comment">// #34c759</span></code>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Geometry Types</h2>
+                        <p>CGPoint, CGSize, CGRect for 2D geometry</p>
+                        <div class="demo-box" id="demo-geometry"></div>
+                        <div class="import-section">
+                            <code><span class="comment">// CGPoint - 2D coordinate</span>
+<span class="keyword">const</span> point = <span class="keyword">new</span> CGPoint(100, 200);
+point.x  <span class="comment">// 100</span>
+point.y  <span class="comment">// 200</span>
+
+<span class="comment">// CGSize - Dimensions</span>
+<span class="keyword">const</span> size = <span class="keyword">new</span> CGSize(50, 100);
+size.width   <span class="comment">// 50</span>
+size.height  <span class="comment">// 100</span>
+
+<span class="comment">// CGRect - Frame</span>
+<span class="keyword">const</span> rect = <span class="keyword">new</span> CGRect(0, 0, 300, 400);
+rect.x, rect.y, rect.width, rect.height
+rect.minX, rect.maxX, rect.minY, rect.maxY
+rect.center  <span class="comment">// {x, y}</span>
+rect.area    <span class="comment">// 120000</span></code>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>CALayer Types</h2>
+                        <p>Layer types for rendering different content</p>
+                        <div class="class-grid">
+                            <div class="class-item existing">
+                                <div class="name">CALayer</div>
+                                <div class="desc">Base layer with visual properties</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">CAGradientLayer</div>
+                                <div class="desc">Gradient fills</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">CAShapeLayer</div>
+                                <div class="desc">Vector paths and shapes</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">CATextLayer</div>
+                                <div class="desc">Text rendering</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">CGPath</div>
+                                <div class="desc">Vector path data</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                        </div>
+                        <div class="demo-box" id="demo-layers"></div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Animation</h2>
+                        <p>Core Animation-based animations</p>
+                        <div class="class-grid">
+                            <div class="class-item existing">
+                                <div class="name">CABasicAnimation</div>
+                                <div class="desc">Single property animation</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">CAKeyframeAnimation</div>
+                                <div class="desc">Keyframe-based animation</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">CAAnimationGroup</div>
+                                <div class="desc">Multiple animations together</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">CASpringAnimation</div>
+                                <div class="desc">Physics-based spring</div>
+                                <div class="file">CALayer.js</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Data Structures (Foundation)</h2>
+                        <p>Swift-like collections and types</p>
+                        <div class="class-grid">
+                            <div class="class-item existing">
+                                <div class="name">NSArray</div>
+                                <div class="desc">Immutable array</div>
+                                <div class="file">NSArray.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">NSMutableArray</div>
+                                <div class="desc">Mutable array</div>
+                                <div class="file">NSMutableArray.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">NSDictionary</div>
+                                <div class="desc">Immutable dictionary</div>
+                                <div class="file">NSDictionary.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">NSMutableDictionary</div>
+                                <div class="desc">Mutable dictionary</div>
+                                <div class="file">NSMutableDictionary.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">SwiftArray</div>
+                                <div class="desc">Swift-like array with methods</div>
+                                <div class="file">SwiftArray.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">SwiftDictionary</div>
+                                <div class="desc">Swift-like dictionary</div>
+                                <div class="file">SwiftDictionary.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">SwiftSet</div>
+                                <div class="desc">Swift-like set</div>
+                                <div class="file">SwiftSet.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">NSSet</div>
+                                <div class="desc">Foundation Set</div>
+                                <div class="file">NSSet.js</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Additional Types</h2>
+                        <div class="class-grid">
+                            <div class="class-item existing">
+                                <div class="name">NSObject</div>
+                                <div class="desc">Base object class</div>
+                                <div class="file">NSObject.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">Protocol</div>
+                                <div class="desc">Protocol/interface system</div>
+                                <div class="file">Protocol.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">Generic</div>
+                                <div class="desc">Generic type support</div>
+                                <div class="file">Generics.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">Date, URL, UUID</div>
+                                <div class="desc">Swift-like types</div>
+                                <div class="file">SwiftTypes.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">FileManager</div>
+                                <div class="desc">File system operations</div>
+                                <div class="file">SwiftTypes.js</div>
+                            </div>
+                            <div class="class-item existing">
+                                <div class="name">UserDefaults</div>
+                                <div class="desc">Key-value storage</div>
+                                <div class="file">SwiftTypes.js</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Components Status</h2>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-dot existing"></div>
+                                <span>Implemented</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot missing"></div>
+                                <span>Exported but not implemented</span>
+                            </div>
+                        </div>
+                        
+                        <h3 style="font-size: 14px; margin: 15px 0 10px 0;">Implemented (12)</h3>
+                        <div class="class-grid">
+                            ${existingComponents.map(c => `
+                                <div class="class-item existing">
+                                    <div class="name">${c.name}</div>
+                                    <div class="desc">${c.desc}</div>
+                                    <div class="file">${c.file}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <h3 style="font-size: 14px; margin: 20px 0 10px 0;">Exported in index.js but missing files (${missingComponents.length})</h3>
+                        <div class="class-grid">
+                            ${missingComponents.map(c => `
+                                <div class="class-item missing">
+                                    <div class="name">${c.name}</div>
+                                    <div class="desc">${c.desc}</div>
+                                    <div class="file">${c.file}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="component-section">
+                        <h2>Events Log</h2>
+                        <div class="output-log" id="event-log">
+                            <div class="log-entry">Ready</div>
+                        </div>
+                    </div>
+
+                    <div class="import-section">
+                        <h3 style="color: white; margin: 0 0 10px 0; font-size: 14px;">Full Import</h3>
+                        <code><span class="keyword">import</span> {
+    UIView, UIViewController, UIWindow, UIResponder,
+    UIGestureRecognizer, UITapGestureRecognizer, UIPanGestureRecognizer,
+    UIPinchGestureRecognizer, UILongPressGestureRecognizer, UIRotationGestureRecognizer,
+    UIColor, CGPoint, CGSize, CGRect,
+    CALayer, CAGradientLayer, CAShapeLayer, CGPath,
+    NSObject, NSArray, NSDictionary, SwiftArray,
+    CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup, CASpringAnimation
+} <span class="keyword">from</span> <span class="string">'./src/core/index.js'</span>;</code>
+                    </div>
+                `;
+            }
+
+            runDemos() {
+                this.demoLayerBox();
+                this.demoGestures();
+                this.demoAccessibility();
+                this.demoGeometry();
+                this.demoLayers();
+                this.log('Documentation loaded');
+            }
+
+            createEl(tag, styles) {
+                const el = document.createElement(tag);
+                Object.assign(el.style, styles);
+                return el;
+            }
+
+            demoLayerBox() {
+                const container = document.getElementById('demo-layer-box');
+                if (!container) return;
+
+                const view = new UIView();
+                view.frame = { x: 0, y: 0, width: 120, height: 60 };
+                view.backgroundColor = UIColor.colorWithHex('#007aff');
+                view.layer.cornerRadius = 8;
+                view._element = this.createEl('div', {
+                    width: '120px', height: '60px',
+                    background: '#007aff',
+                    borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontSize: '12px', fontWeight: '600'
+                });
+                view._element.textContent = 'UIView';
+                container.appendChild(view._element);
+
+                const layerBox = this.createEl('div', {
+                    width: '120px', height: '60px',
+                    background: 'linear-gradient(135deg, #ff9500, #ff3b30)',
+                    borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontSize: '12px', fontWeight: '600'
+                });
+                layerBox.textContent = 'CAGradientLayer';
+                container.appendChild(layerBox);
+
+                this.log('Layer integration demo rendered');
+            }
+
+            demoGestures() {
+                const container = document.getElementById('demo-gestures');
+                if (!container) return;
+
+                const view = new UIView();
+                view._element = this.createEl('div', {
+                    width: '100px', height: '60px',
+                    background: '#34c759',
+                    borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontSize: '12px', cursor: 'pointer'
+                });
+                view._element.textContent = 'Tap me!';
+                container.appendChild(view._element);
+
+                const tapGesture = new UITapGestureRecognizer({ 
+                    handleTap: (gesture) => {
+                        this.log(`Tap detected! State: ${gesture.state}`);
+                        view._element.style.transform = 'scale(0.9)';
+                        setTimeout(() => {
+                            view._element.style.transform = 'scale(1)';
+                        }, 100);
+                    }
+                }, 'handleTap');
+                view.addGestureRecognizer(tapGesture);
+
+                this.log('Gesture recognizer demo set up');
+            }
+
+            demoAccessibility() {
+                const container = document.getElementById('demo-accessibility');
+                if (!container) return;
+
+                const view = new UIView();
+                view.isAccessibilityElement = true;
+                view.accessibilityLabel = 'Interactive button';
+                view.accessibilityHint = 'Double tap to activate';
+                view.accessibilityTraits = 0x1;
+
+                container.innerHTML = `
+                    <div style="font-size: 12px; color: #666;">
+                        <div style="margin-bottom: 8px;"><strong>Accessibility Properties (on UIResponder):</strong></div>
+                        <div>• isAccessibilityElement: ${view.isAccessibilityElement}</div>
+                        <div>• accessibilityLabel: "${view.accessibilityLabel}"</div>
+                        <div>• accessibilityHint: "${view.accessibilityHint}"</div>
+                        <div>• accessibilityTraits: ${view.accessibilityTraits} (button)</div>
+                    </div>
+                `;
+
+                this.log('Accessibility demo rendered');
+            }
+
+            demoGeometry() {
+                const container = document.getElementById('demo-geometry');
+                if (!container) return;
+
+                const point = new CGPoint(50, 100);
+                const size = new CGSize(200, 150);
+                const rect = new CGRect(10, 20, 300, 400);
+
+                container.innerHTML = `
+                    <div style="font-size: 12px; color: #666;">
+                        <span style="margin-right: 20px;">CGPoint: (${point.x}, ${point.y})</span>
+                        <span style="margin-right: 20px;">CGSize: ${size.width}x${size.height}</span>
+                        <span>CGRect: (${rect.x}, ${rect.y}, ${rect.width}x${rect.height})</span>
+                    </div>
+                `;
+
+                this.log('Geometry types demo rendered');
+            }
+
+            demoLayers() {
+                const container = document.getElementById('demo-layers');
+                if (!container) return;
+
+                const boxes = [
+                    { name: 'CALayer', color: '#007aff', desc: 'Base' },
+                    { name: 'Gradient', color: 'linear-gradient(#ff9500, #ff3b30)', desc: 'CAGradientLayer' },
+                    { name: 'Shape', color: '#34c759', desc: 'CAShapeLayer' }
+                ];
+
+                boxes.forEach(box => {
+                    const el = this.createEl('div', {
+                        width: '80px', height: '50px',
+                        background: box.color,
+                        borderRadius: '6px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontSize: '10px'
+                    });
+                    el.textContent = box.name;
+                    container.appendChild(el);
+                });
+
+                this.log('Layer types demo rendered');
+            }
+        }
+
+        window.demoApp = new ComponentDoc();
+    </script>
+    </div>
+</body>
+</html>
