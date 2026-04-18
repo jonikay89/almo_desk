@@ -1,15 +1,15 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
 import { CAGradientLayer } from './CALayer.js';
-import { WeakRef } from './WeakReference.js';
-import { NSNumber, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { NSNumber } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
+import Switch from './Switch.js';
 import {
-    PickerViewDelegate,
-    PickerViewDataSource
+    PickerViewDataSource,
+    PickerViewDelegate
 } from './TypeAliases.js';
+import UIColor from './UIColor.js';
+import UIView from './UIView.js';
+import { WeakRef } from './WeakReference.js';
 
 defineTypeAlias('PickerViewDelegateBundle', PickerViewDelegate, PickerViewDataSource);
 
@@ -102,7 +102,7 @@ class UIPickerView extends UIView {
         container.style.height = '100%';
 
         const picker = document.createElement('div');
-        picker.style.position = 'relative';
+        picker.style.position = 'absolute';
         picker.style.width = '50px';
         picker.style.height = '120px';
         picker.style.overflow = 'hidden';
@@ -268,7 +268,7 @@ class UIPickerView extends UIView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

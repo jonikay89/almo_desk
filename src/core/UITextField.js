@@ -1,12 +1,12 @@
-import UIControl from './UIControl.js';
-import UIColor from './UIColor.js';
-import { Scanner, NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { CAShapeLayer, CGPath } from './CALayer.js';
+import { NSNumber, Scanner } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
+import Switch from './Switch.js';
+import { AttributedString, TextStorage } from './TextStorage.js';
 import { TextFieldDelegate } from './TypeAliases.js';
-import { TextStorage, AttributedString } from './TextStorage.js';
-import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
+import UIColor from './UIColor.js';
+import UIControl from './UIControl.js';
 
 defineTypeAlias('TextFieldDelegateAlias', TextFieldDelegate);
 
@@ -314,7 +314,7 @@ class UITextField extends UIControl {
         if (!this._borderLayer && this.element) {
             this._borderLayer = CAShapeLayer.layer();
             this._borderLayer.name = 'borderLayer';
-            this.element.style.position = 'relative';
+            this.element.style.position = 'absolute';
         }
         
         if (this._borderLayer) {

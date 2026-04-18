@@ -1,12 +1,12 @@
-import UIScrollView from './UIScrollView.js';
-import UIColor from './UIColor.js';
-import { Scanner, NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { CAShapeLayer, CGPath } from './CALayer.js';
+import { NSNumber, Scanner } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
+import Switch from './Switch.js';
+import { AttributedString, TextStorage } from './TextStorage.js';
 import { TextViewDelegate } from './TypeAliases.js';
-import { TextStorage, AttributedString } from './TextStorage.js';
-import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
+import UIColor from './UIColor.js';
+import UIScrollView from './UIScrollView.js';
 
 defineTypeAlias('TextViewDelegateAlias', TextViewDelegate);
 
@@ -81,7 +81,7 @@ class UITextView extends UIScrollView {
     init() {
         this.element = document.createElement('div');
         this.element.className = 'ui-textview';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.overflow = 'hidden';
 
         this.textElement = document.createElement('textarea');

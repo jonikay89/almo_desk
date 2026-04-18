@@ -4,6 +4,7 @@ import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
 import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { CALayer, CAGradientLayer, CAShapeLayer, CATextLayer, CAEmitterLayer, CATransform3D, CGPath } from './CALayer.js';
+import { getRenderer } from './render/index.js';
 
 class UIView extends UIResponder {
     constructor() {
@@ -19,7 +20,6 @@ class UIView extends UIResponder {
         this.tag = 0;
         this.subviews = [];
         this.element = document.createElement('div');
-        this.element.style.position = 'absolute';
         this.zIndex = 0;
         this.translatesAutoresizingMaskIntoConstraints = true;
         this._backgroundColor = null;
@@ -88,9 +88,8 @@ class UIView extends UIResponder {
 
     set hidden(value) {
         this._hidden = value;
-        if (this.element) {
-            this.element.style.display = value ? 'none' : '';
-        }
+        this._layer.isHidden = value;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get alpha() {
@@ -99,9 +98,8 @@ class UIView extends UIResponder {
 
     set alpha(value) {
         this._alpha = value;
-        if (this.element) {
-            this.element.style.opacity = value;
-        }
+        this._layer.opacity = value;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get backgroundColor() {
@@ -116,9 +114,8 @@ class UIView extends UIResponder {
         } else {
             this._backgroundColor = null;
         }
-        if (this.element) {
-            this.element.style.backgroundColor = this._backgroundColor ? this._backgroundColor.css : '';
-        }
+        this._layer.backgroundColor = this._backgroundColor;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get cornerRadius() {
@@ -127,9 +124,8 @@ class UIView extends UIResponder {
 
     set cornerRadius(radius) {
         this._cornerRadius = radius;
-        if (this.element) {
-            this.element.style.borderRadius = `${radius}px`;
-        }
+        this._layer.cornerRadius = radius;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get borderWidth() {
@@ -138,10 +134,8 @@ class UIView extends UIResponder {
 
     set borderWidth(width) {
         this._borderWidth = width;
-        if (this.element) {
-            this.element.style.borderWidth = `${width}px`;
-            this.element.style.borderStyle = width > 0 ? 'solid' : 'none';
-        }
+        this._layer.borderWidth = width;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get borderColor() {
@@ -156,9 +150,8 @@ class UIView extends UIResponder {
         } else {
             this._borderColor = null;
         }
-        if (this.element) {
-            this.element.style.borderColor = this._borderColor ? this._borderColor.css : '';
-        }
+        this._layer.borderColor = this._borderColor;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get isAccessibilityElement() {
@@ -548,10 +541,8 @@ class UIView extends UIResponder {
 
     set clipsToBounds(clips) {
         this._clipsToBounds = clips;
-        if (this.element) {
-            this.element.style.overflow = clips ? 'hidden' : '';
-        }
         this._layer.masksToBounds = clips;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get transform3D() {
@@ -560,7 +551,8 @@ class UIView extends UIResponder {
 
     set transform3D(value) {
         this._transform3D = value;
-        this.#updateTransform();
+        this._layer.transform = value;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get perspective() {
@@ -569,7 +561,8 @@ class UIView extends UIResponder {
 
     set perspective(value) {
         this._perspective = value;
-        this.#updateTransform();
+        this._layer.transform = this._transform3D;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get anchorPoint() {
@@ -578,6 +571,7 @@ class UIView extends UIResponder {
 
     set anchorPoint(value) {
         this._layer.anchorPoint = value;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get zPosition() {
@@ -586,20 +580,7 @@ class UIView extends UIResponder {
 
     set zPosition(value) {
         this._layer.zPosition = value;
-    }
-
-    #updateTransform() {
-        if (!this.element) return;
-        
-        let transform = this._transform3D;
-        if (this._perspective) {
-            transform = transform.multiply(CATransform3D.MakePerspective(this._perspectiveM34));
-        }
-        
-        this.element.style.transform = transform.toCSSTransform();
-        const originX = this._layer.anchorPoint.x * this._bounds.width;
-        const originY = this._layer.anchorPoint.y * this._bounds.height;
-        this.element.style.transformOrigin = `${originX}px ${originY}px`;
+        getRenderer().scheduleUpdate(this._layer);
     }
 
     get description() {
@@ -634,6 +615,7 @@ class UIView extends UIResponder {
         for (const subview of this.subviews) {
             subview.deinit();
         }
+        getRenderer().remove(this._layer);
         this.subviews = [];
         this.superview = null;
         this.window = null;
@@ -647,14 +629,14 @@ class UIView extends UIResponder {
     didMoveToWindow() {}
 
     layoutSubviews() {
-        if (this.element) {
-            this.element.style.left = `${this.frame.x}px`;
-            this.element.style.top = `${this.frame.y}px`;
-            this.element.style.width = `${this.frame.width}px`;
-            this.element.style.height = `${this.frame.height}px`;
-        }
-        if (this._layer && (this._gradientLayer || this._shapeLayers.length > 0 || this._textLayers.length > 0)) {
-            this.#renderLayers();
+        this._layer.frame = this._frame;
+        this._layer.bounds = this._bounds;
+        
+        const renderer = getRenderer();
+        if (!renderer.getElement(this._layer)) {
+            renderer.render(this._layer, this.element.parentElement || document.body, this.element);
+        } else {
+            renderer.scheduleUpdate(this._layer);
         }
     }
 
@@ -705,9 +687,8 @@ class UIView extends UIResponder {
 
     setZIndex(zIndex) {
         this.zIndex = zIndex;
-        if (this.element) {
-            this.element.style.zIndex = zIndex;
-        }
+        this._layer.zPosition = zIndex;
+        getRenderer().scheduleUpdate(this._layer);
         return this;
     }
 
@@ -880,9 +861,7 @@ class UIView extends UIResponder {
         this._layer.shadowOpacity = opacity;
         this._layer.shadowOffset = offset;
         this._layer.shadowRadius = radius;
-        if (this.element) {
-            this.element.style.boxShadow = `${offset.width}px ${offset.height}px ${radius}px rgba(${this._getShadowColorComponents(color)}, ${opacity})`;
-        }
+        getRenderer().scheduleUpdate(this._layer);
         return this;
     }
 
@@ -900,105 +879,13 @@ class UIView extends UIResponder {
     #renderLayers() {
         if (!this.element || !this._useLayerCanvas) return;
         
-        const existingCanvas = this.element.querySelector('.layer-canvas');
-        if (existingCanvas) {
-            existingCanvas.remove();
-        }
-
-        const hasSublayers = this._layer._sublayers && this._layer._sublayers.length > 0;
-        const hasGradient = this._gradientLayer;
-        const hasCustomDraw = this._customDrawHandler;
-        const hasContents = this._layerContents;
-
-        if (!hasSublayers && !hasGradient && !hasCustomDraw && !hasContents) return;
-
-        const canvas = document.createElement('canvas');
-        canvas.className = 'layer-canvas';
-        canvas.style.position = 'absolute';
-        canvas.style.left = '0';
-        canvas.style.top = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
-        canvas.width = this._bounds.width * 2;
-        canvas.height = this._bounds.height * 2;
+        const renderer = getRenderer();
         
-        const ctx = canvas.getContext('2d');
-        ctx.scale(2, 2);
-
-        if (this._layer.backgroundColor) {
-            ctx.fillStyle = this._layer.backgroundColor.css;
-            if (this._layer.cornerRadius > 0) {
-                this.#roundRect(ctx, 0, 0, this._bounds.width, this._bounds.height, this._layer.cornerRadius);
-                ctx.fill();
-            } else {
-                ctx.fillRect(0, 0, this._bounds.width, this._bounds.height);
-            }
+        if (!renderer.getElement(this._layer)) {
+            renderer.render(this._layer, this.element);
+        } else {
+            renderer.scheduleUpdate(this._layer);
         }
-
-        if (hasGradient && this._gradientLayer) {
-            const gradient = ctx.createLinearGradient(
-                this._gradientLayer.startPoint.x * this._bounds.width,
-                this._gradientLayer.startPoint.y * this._bounds.height,
-                this._gradientLayer.endPoint.x * this._bounds.width,
-                this._gradientLayer.endPoint.y * this._bounds.height
-            );
-            this._gradientLayer.colors.forEach((color, index) => {
-                const location = this._gradientLayer.locations[index] || (index / (this._gradientLayer.colors.length - 1 || 1));
-                gradient.addColorStop(location, color.css);
-            });
-            if (this._gradientLayer.cornerRadius > 0) {
-                this.#roundRect(ctx, 0, 0, this._bounds.width, this._bounds.height, this._gradientLayer.cornerRadius);
-                ctx.fillStyle = gradient;
-                ctx.fill();
-            } else {
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, this._bounds.width, this._bounds.height);
-            }
-        }
-
-        if (hasContents && this._layerContents) {
-            if (typeof this._layerContents === 'function') {
-                ctx.save();
-                ctx.translate(0, this._bounds.height);
-                ctx.scale(1, -1);
-                this._layerContents(ctx, this._bounds);
-                ctx.restore();
-            } else if (typeof this._layerContents === 'string' && this._layerContents.startsWith('data:image')) {
-                const img = new Image();
-                img.src = this._layerContents;
-                ctx.drawImage(img, 0, 0, this._bounds.width, this._bounds.height);
-            }
-        }
-
-        if (hasCustomDraw && this._customDrawHandler) {
-            ctx.save();
-            this._customDrawHandler(ctx, this._bounds);
-            ctx.restore();
-        }
-
-        for (const sublayer of this._layer._sublayers) {
-            sublayer.renderToContext(ctx);
-        }
-
-        this.element.style.position = 'relative';
-        if (this.element.firstChild !== canvas) {
-            this.element.insertBefore(canvas, this.element.firstChild);
-        }
-    }
-
-    #roundRect(ctx, x, y, width, height, radius) {
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
     }
 
     setGradient(colors, locations = null, startPoint = { x: 0.5, y: 0 }, endPoint = { x: 0.5, y: 1 }) {
@@ -1114,35 +1001,38 @@ class UIView extends UIResponder {
 
     rotate3D(angle, axis = 'z') {
         this._transform3D = this._transform3D.rotated(angle, axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
-        this.#updateTransform();
+        this._layer.transform = this._transform3D;
+        getRenderer().scheduleUpdate(this._layer);
         return this;
     }
 
     scale3D(sx, sy, sz = 1) {
         this._transform3D = this._transform3D.scaled(sx, sy, sz);
-        this.#updateTransform();
+        this._layer.transform = this._transform3D;
+        getRenderer().scheduleUpdate(this._layer);
         return this;
     }
 
     translate3D(tx, ty, tz = 0) {
         this._transform3D = this._transform3D.translated(tx, ty, tz);
-        this.#updateTransform();
+        this._layer.transform = this._transform3D;
+        getRenderer().scheduleUpdate(this._layer);
         return this;
     }
 
     applyPerspective(m34 = -1 / 1000) {
         this._perspectiveM34 = m34;
         this._perspective = true;
-        this.#updateTransform();
+        this._layer.transform = this._transform3D;
+        getRenderer().scheduleUpdate(this._layer);
         return this;
     }
 
     resetTransform3D() {
         this._transform3D = CATransform3D.identity();
         this._perspective = false;
-        if (this.element) {
-            this.element.style.transform = '';
-        }
+        this._layer.transform = this._transform3D;
+        getRenderer().scheduleUpdate(this._layer);
         return this;
     }
 
@@ -1196,13 +1086,10 @@ class UIView extends UIResponder {
     }
 
     addPulseAnimation(duration = 0.6, scale = 1.1) {
-        if (!this.element) return this;
-        
         this.removeAnimations();
         
         const animName = `pulse_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        this.element.style.transformOrigin = 'center center';
-        this.element.style.animation = `${animName} ${duration}s ease-in-out infinite alternate`;
+        this._layer.setCustomState('pulseAnimation', { duration, scale, name: animName });
         
         const style = document.createElement('style');
         style.textContent = `
@@ -1216,6 +1103,12 @@ class UIView extends UIResponder {
         this._animationStyles = this._animationStyles || [];
         this._animationStyles.push(style);
         
+        const element = getRenderer().getElement(this._layer);
+        if (element) {
+            element.style.transformOrigin = 'center center';
+            element.style.animation = `${animName} ${duration}s ease-in-out infinite alternate`;
+        }
+        
         return this;
     }
 
@@ -1224,24 +1117,25 @@ class UIView extends UIResponder {
             this._animationStyles.forEach(style => style.remove());
             this._animationStyles = [];
         }
-        if (this.element) {
-            this.element.style.animation = '';
+        const element = getRenderer().getElement(this._layer);
+        if (element) {
+            element.style.animation = '';
         }
+        this._layer.setCustomState('pulseAnimation', null);
+        this._layer.setCustomState('rotationAnimation', null);
         return this;
     }
 
     addFadeAnimation(duration = 0.3, from = 0, to = 1) {
-        if (!this.element) return this;
-        
-        this.element.style.transition = `opacity ${duration}s ease-in-out`;
-        this.element.style.opacity = to;
-        
+        const element = getRenderer().getElement(this._layer);
+        if (element) {
+            element.style.transition = `opacity ${duration}s ease-in-out`;
+            element.style.opacity = to;
+        }
         return this;
     }
 
     addRotationAnimation(duration = 1, fromAngle = 0, toAngle = Math.PI * 2, repeatCount = Infinity) {
-        if (!this.element) return this;
-        
         this.removeAnimations();
         
         const startAngle = (fromAngle * 180) / Math.PI;
@@ -1251,10 +1145,11 @@ class UIView extends UIResponder {
         let lastTime = null;
         let animating = true;
         
-        this.element.style.transformOrigin = 'center center';
+        this._rotationAnimation = { stop: () => { animating = false; } };
+        this._layer.setCustomState('rotationAnimation', this._rotationAnimation);
         
         const animate = (timestamp) => {
-            if (!animating || !this.element) return;
+            if (!animating) return;
             
             if (lastTime === null) lastTime = timestamp;
             const delta = (timestamp - lastTime) / 1000;
@@ -1265,20 +1160,25 @@ class UIView extends UIResponder {
             
             if (currentAngle >= endAngle) {
                 if (repeatCount !== Infinity && count >= repeatCount - 1) {
-                    this.element.style.transform = `rotate(${endAngle}deg)`;
+                    const element = getRenderer().getElement(this._layer);
+                    if (element) {
+                        element.style.transform = `rotate(${endAngle}deg)`;
+                    }
                     return;
                 }
                 currentAngle = startAngle;
                 count++;
             }
             
-            this.element.style.transform = `rotate(${currentAngle}deg)`;
+            const element = getRenderer().getElement(this._layer);
+            if (element) {
+                element.style.transformOrigin = 'center center';
+                element.style.transform = `rotate(${currentAngle}deg)`;
+            }
             requestAnimationFrame(animate);
         };
         
         requestAnimationFrame(animate);
-        
-        this._rotationAnimation = { stop: () => { animating = false; } };
         
         return this;
     }
@@ -1287,18 +1187,29 @@ class UIView extends UIResponder {
         view.removeFromSuperview();
         view.superview = this;
         this.subviews.push(view);
-        if (this.element && view.element) {
-            this.element.appendChild(view.element);
+        
+        const renderer = getRenderer();
+        const parentElement = renderer.getElement(this._layer) || this.element;
+        
+        if (parentElement && view.element) {
+            const viewElement = renderer.getElement(view._layer);
+            if (!viewElement) {
+                renderer.render(view._layer, parentElement, view.element);
+            } else if (viewElement.parentNode !== parentElement) {
+                parentElement.appendChild(viewElement);
+            }
         }
+        
         view.didMoveToSuperview();
     }
 
     removeFromSuperview() {
         if (this.superview) {
             this.superview.subviews = this.superview.subviews.filter(v => v !== this);
-            if (this.element && this.superview.element) {
-                this.superview.element.removeChild(this.element);
-            }
+            
+            const renderer = getRenderer();
+            renderer.remove(this._layer);
+            
             this.superview = null;
         }
     }

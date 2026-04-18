@@ -1,8 +1,8 @@
-import UIControl from './UIControl.js';
-import UIColor from './UIColor.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
+import { NSNumber } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIColor from './UIColor.js';
+import UIControl from './UIControl.js';
 
 class UISwitch extends UIControl {
     constructor() {
@@ -39,7 +39,7 @@ class UISwitch extends UIControl {
     init() {
         super.init();
         this.element.className = 'ui-switch';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.display = 'inline-flex';
         this.element.style.alignItems = 'center';
         this.element.style.justifyContent = 'center';
@@ -47,7 +47,7 @@ class UISwitch extends UIControl {
         this.element.style.userSelect = 'none';
 
         this.trackElement = document.createElement('div');
-        this.trackElement.style.position = 'relative';
+        this.trackElement.style.position = 'absolute';
         this.trackElement.style.width = '51px';
         this.trackElement.style.height = '31px';
         this.trackElement.style.borderRadius = '15.5px';
@@ -57,7 +57,7 @@ class UISwitch extends UIControl {
         this.trackElement.style.alignItems = 'center';
 
         this.thumbElement = document.createElement('div');
-        this.thumbElement.style.position = 'relative';
+        this.thumbElement.style.position = 'absolute';
         this.thumbElement.style.width = '27px';
         this.thumbElement.style.height = '27px';
         this.thumbElement.style.borderRadius = '13.5px';

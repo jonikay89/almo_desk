@@ -1,8 +1,8 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
+import { NSNumber } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIColor from './UIColor.js';
+import UIView from './UIView.js';
 
 class UIProgressView extends UIView {
     constructor() {
@@ -38,7 +38,7 @@ class UIProgressView extends UIView {
         super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-progressview';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.width = '200px';
         this.element.style.height = '4px';
         this.element.style.borderRadius = '2px';

@@ -1,12 +1,10 @@
-import UIView from './UIView.js';
-import UIWindow from './UIWindow.js';
-import UILabel from './UILabel.js';
-import UIButton from './UIButton.js';
-import UIImage from './UIImage.js';
-import UIColor from './UIColor.js';
-import UIScrollView from './UIScrollView.js';
-import WindowController from './WindowController.js';
 import { storage } from '../utils/index.js';
+import UIButton from './UIButton.js';
+import UIColor from './UIColor.js';
+import UILabel from './UILabel.js';
+import UIScrollView from './UIScrollView.js';
+import UIView from './UIView.js';
+import WindowController from './WindowController.js';
 
 const CONFIG = {
     MIN_WIDTH: 300,
@@ -98,6 +96,7 @@ class DesktopOS {
         
         const win = new WindowController({ id, title, widgetType, extraData, x, y, width: w, height: h });
         win.os = this;
+        win.loadViewIfNeeded();
         win.view.zIndex = maxZ + 1;
         
         this.windows.push(win);
@@ -206,7 +205,7 @@ class DesktopOS {
         this.desktopEl.innerHTML = '';
         
         this.desktopView.element = this.desktopEl;
-        this.desktopView.element.style.position = 'relative';
+        this.desktopView.element.style.position = 'absolute';
         this.desktopView.element.style.width = '100%';
         this.desktopView.element.style.height = '100%';
         

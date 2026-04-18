@@ -1,8 +1,7 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
-import { kp, getProperty, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIColor from './UIColor.js';
+import UIView from './UIView.js';
 
 class UIImageView extends UIView {
     constructor(image = null) {
@@ -126,7 +125,7 @@ class UIImageView extends UIView {
         this.element = document.createElement('div');
         this.element.className = 'ui-imageview';
         this.element.style.overflow = 'hidden';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         
         this._renderedImage = document.createElement('img');
         this._renderedImage.style.width = '100%';

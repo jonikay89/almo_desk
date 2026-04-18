@@ -1,8 +1,8 @@
-import UIControl from './UIControl.js';
-import UIColor from './UIColor.js';
-import { NSNumber, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
+import { NSNumber } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIColor from './UIColor.js';
+import UIControl from './UIControl.js';
 
 class UISegmentedControl extends UIControl {
     constructor(items = []) {
@@ -53,7 +53,7 @@ class UISegmentedControl extends UIControl {
     init() {
         super.init();
         this.element.className = 'ui-segmented-control';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.display = 'inline-flex';
         this.element.style.flexDirection = 'row';
         this.element.style.alignItems = 'center';

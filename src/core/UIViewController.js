@@ -1,10 +1,9 @@
+import { CALayer } from './CALayer.js';
+import { NSNumber } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
+import Switch from './Switch.js';
 import UIResponder from './UIResponder.js';
 import { WeakRef } from './WeakReference.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
-import { CALayer, CAGradientLayer, CAShapeLayer } from './CALayer.js';
-import UIColor from './UIColor.js';
 
 class UIViewController extends UIResponder {
     constructor() {
@@ -160,7 +159,7 @@ class UIViewController extends UIResponder {
     createView() {
         const view = document.createElement('div');
         view.className = 'ui-view-controller-view';
-        view.style.position = 'relative';
+        view.style.position = 'absolute';
         view.style.width = '100%';
         view.style.height = '100%';
         return view;

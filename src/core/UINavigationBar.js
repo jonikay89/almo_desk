@@ -1,13 +1,12 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
 import { CAGradientLayer } from './CALayer.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { compareBy, compareByDescending, getProperty, kp, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
+import Switch from './Switch.js';
 import { NavigationBarDelegate, NavigationBarDelegate as NavigationBarDelegateProtocol } from './TypeAliases.js';
-import { kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
+import UIColor from './UIColor.js';
 import UILabel from './UILabel.js';
-import UIImageView from './UIImageView.js';
+import UIView from './UIView.js';
 
 defineTypeAlias('NavigationBarDelegateAlias', NavigationBarDelegate);
 
@@ -40,7 +39,7 @@ class UINavigationBar extends UIView {
         this.element.style.backgroundColor = UIColor.systemBackground().css;
         this.element.style.borderBottom = '1px solid #ddd';
         this.element.style.padding = '0 16px';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.zIndex = '100';
 
         return this;
@@ -195,7 +194,7 @@ class UINavigationBar extends UIView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

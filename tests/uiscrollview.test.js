@@ -2,8 +2,8 @@
  * UIScrollView Test Suite
  * Tests for the UIScrollView class
  */
-import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
+import { beforeEach, describe, it } from 'node:test';
 
 class UIScrollView {
     constructor() {
@@ -23,7 +23,7 @@ class UIScrollView {
         this.element = document.createElement('div');
         this.element.className = 'ui-scrollview';
         this.element.style.overflow = 'auto';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         
         this.contentElement = document.createElement('div');
         this.contentElement.className = 'ui-scrollview-content';

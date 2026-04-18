@@ -1,15 +1,15 @@
-import UIScrollView from './UIScrollView.js';
-import UIColor from './UIColor.js';
+import { compareBy, compareByDescending, getProperty, kp, updateProperty } from './Foundation.js';
 import { Optional, Result } from './Generics.js';
-import { WeakRef } from './WeakReference.js';
-import { NSValue, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
+import Switch from './Switch.js';
 import {
-    TableViewDelegate,
-    TableViewDataSource
+    TableViewDataSource,
+    TableViewDelegate
 } from './TypeAliases.js';
+import UIColor from './UIColor.js';
+import UIScrollView from './UIScrollView.js';
+import { WeakRef } from './WeakReference.js';
 
 defineTypeAlias('TableViewDelegateBundle', TableViewDelegate, TableViewDataSource);
 
@@ -280,7 +280,7 @@ class UITableView extends UIScrollView {
         super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-tableview';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.overflow = 'auto';
         this.element.style.willChange = 'transform';
 
@@ -973,5 +973,5 @@ class UITableView extends UIScrollView {
     }
 }
 
-export { UITableView, TableViewCellPool, DiffResult, calculateLCS };
+export { DiffResult, TableViewCellPool, UITableView, calculateLCS };
 export default UITableView;

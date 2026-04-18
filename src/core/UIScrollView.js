@@ -1,11 +1,11 @@
-import UIView from './UIView.js';
+import { NSValue } from './Foundation.js';
 import { Optional, Result } from './Generics.js';
-import { WeakRef } from './WeakReference.js';
-import { NSValue, kp, getProperty, updateProperty } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
+import Switch from './Switch.js';
 import { ScrollViewDelegate } from './TypeAliases.js';
+import UIView from './UIView.js';
+import { WeakRef } from './WeakReference.js';
 
 defineTypeAlias('ScrollViewDelegateAlias', ScrollViewDelegate);
 
@@ -124,18 +124,25 @@ class UIScrollView extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
+        
+        if (!this.element) {
+            this.element = document.createElement('div');
+        }
         this.element.className = 'ui-scrollview';
         this.element.style.overflow = 'auto';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         
-        this.contentElement = document.createElement('div');
+        if (!this.contentElement) {
+            this.contentElement = document.createElement('div');
+        }
         this.contentElement.className = 'ui-scrollview-content';
         this.contentElement.style.position = 'absolute';
         this.contentElement.style.left = '0';
         this.contentElement.style.top = '0';
         
-        this.element.appendChild(this.contentElement);
+        if (!this.contentElement.parentNode) {
+            this.element.appendChild(this.contentElement);
+        }
         
         this.element.addEventListener('scroll', () => {
             this._contentOffset = { x: this.element.scrollLeft, y: this.element.scrollTop };

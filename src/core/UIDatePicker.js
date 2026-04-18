@@ -1,8 +1,6 @@
-import UIControl from './UIControl.js';
-import UIColor from './UIColor.js';
-import { kp, getProperty, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIControl from './UIControl.js';
 
 class UIDatePicker extends UIControl {
     constructor() {
@@ -51,7 +49,7 @@ class UIDatePicker extends UIControl {
     init() {
         super.init();
         this.element.className = 'ui-datepicker';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.display = 'inline-block';
         this.element.style.cursor = 'pointer';
         this.element.style.userSelect = 'none';
@@ -123,7 +121,7 @@ class UIDatePicker extends UIControl {
         container.style.alignItems = 'center';
 
         const picker = document.createElement('div');
-        picker.style.position = 'relative';
+        picker.style.position = 'absolute';
         picker.style.width = '45px';
         picker.style.height = '120px';
         picker.style.overflow = 'hidden';

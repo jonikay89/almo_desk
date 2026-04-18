@@ -6,6 +6,7 @@ import Switch from './Switch.js';
 import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
 import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
 import UIColor from './UIColor.js';
+import { getRenderer } from './render/index.js';
 
 class UIControl extends UIView {
     constructor() {
@@ -32,10 +33,9 @@ class UIControl extends UIView {
 
     set enabled(value) {
         this._enabled = value;
-        if (this.element) {
-            this.element.style.cursor = value ? 'pointer' : 'default';
-            this.element.style.opacity = value ? '1' : '0.5';
-        }
+        this._layer.setCustomState('disabled', !value);
+        this._layer.setCustomState('cursor', value ? 'pointer' : 'default');
+        getRenderer().scheduleUpdate(this._layer);
         this._accessibilityState = this._accessibilityState || {};
         this._accessibilityState.disabled = !value;
         this._updateAccessibilityAttributes();
@@ -47,9 +47,8 @@ class UIControl extends UIView {
 
     set selected(value) {
         this._selected = value;
-        if (this.element) {
-            this.element.classList.toggle('selected', value);
-        }
+        this._layer.setCustomState('selected', value);
+        getRenderer().scheduleUpdate(this._layer);
         this._accessibilityState = this._accessibilityState || {};
         this._accessibilityState.selected = value;
         this._updateAccessibilityAttributes();
@@ -61,9 +60,8 @@ class UIControl extends UIView {
 
     set highlighted(value) {
         this._highlighted = value;
-        if (this.element) {
-            this.element.classList.toggle('highlighted', value);
-        }
+        this._layer.setCustomState('highlighted', value);
+        getRenderer().scheduleUpdate(this._layer);
         this._accessibilityState = this._accessibilityState || {};
         this._accessibilityState.pressed = value;
         this._updateAccessibilityAttributes();
@@ -242,10 +240,6 @@ class UIControl extends UIView {
 
     layoutSubviews() {
         super.layoutSubviews();
-        if (this.element) {
-            this.element.style.width = `${this.frame.width}px`;
-            this.element.style.height = `${this.frame.height}px`;
-        }
         if (this._controlLayer) {
             this._controlLayer.frame = this._bounds;
         }
@@ -277,9 +271,7 @@ class UIControl extends UIView {
     }
 
     withCornerRadius(radius) {
-        if (this.element) {
-            this.element.style.borderRadius = `${radius}px`;
-        }
+        this.cornerRadius = radius;
         if (this._borderLayer) {
             this._borderLayer.cornerRadius = radius;
         }
@@ -311,60 +303,11 @@ class UIControl extends UIView {
     }
 
     #renderControlLayers() {
-        if (!this.element || !this._useLayerCanvas) return;
-        
-        const existingCanvas = this.element.querySelector('.control-canvas');
-        if (existingCanvas) existingCanvas.remove();
-
-        const hasLayers = (this._borderLayer || this._backgroundLayer);
-        if (!hasLayers) return;
-
-        const canvas = document.createElement('canvas');
-        canvas.className = 'control-canvas';
-        canvas.style.position = 'absolute';
-        canvas.style.left = '0';
-        canvas.style.top = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
-        canvas.width = this._bounds.width * 2;
-        canvas.height = this._bounds.height * 2;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.scale(2, 2);
-
         if (this._backgroundLayer) {
-            ctx.fillStyle = this._backgroundLayer.backgroundColor?.css || UIColor.clear().css;
-            ctx.fillRect(0, 0, this._bounds.width, this._bounds.height);
+            getRenderer().scheduleUpdate(this._backgroundLayer);
         }
-
         if (this._borderLayer) {
-            ctx.strokeStyle = this._borderLayer.strokeColor?.css || UIColor.black().css;
-            ctx.lineWidth = this._borderLayer.lineWidth || 1;
-            if (this._borderLayer.cornerRadius > 0) {
-                ctx.beginPath();
-                const r = this._borderLayer.cornerRadius;
-                const w = this._bounds.width;
-                const h = this._bounds.height;
-                ctx.moveTo(r, 0);
-                ctx.lineTo(w - r, 0);
-                ctx.quadraticCurveTo(w, 0, w, r);
-                ctx.lineTo(w, h - r);
-                ctx.quadraticCurveTo(w, h, w - r, h);
-                ctx.lineTo(r, h);
-                ctx.quadraticCurveTo(0, h, 0, h - r);
-                ctx.lineTo(0, r);
-                ctx.quadraticCurveTo(0, 0, r, 0);
-                ctx.closePath();
-                ctx.stroke();
-            } else {
-                ctx.strokeRect(0, 0, this._bounds.width, this._bounds.height);
-            }
-        }
-
-        this.element.style.position = 'relative';
-        if (this.element.firstChild !== canvas) {
-            this.element.insertBefore(canvas, this.element.firstChild);
+            getRenderer().scheduleUpdate(this._borderLayer);
         }
     }
 

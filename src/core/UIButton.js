@@ -1,10 +1,9 @@
-import UIControl from './UIControl.js';
-import UILabel from './UILabel.js';
-import UIImageView from './UIImageView.js';
-import UIColor from './UIColor.js';
-import { kp, getProperty, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIColor from './UIColor.js';
+import UIControl from './UIControl.js';
+import UIImageView from './UIImageView.js';
+import UILabel from './UILabel.js';
 
 class UIButton extends UIControl {
     constructor(title = '') {
@@ -107,7 +106,7 @@ class UIButton extends UIControl {
     init() {
         super.init();
         this.element.className = 'ui-button';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.display = 'inline-flex';
         this.element.style.alignItems = 'center';
         this.element.style.justifyContent = 'center';

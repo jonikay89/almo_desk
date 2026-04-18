@@ -1,10 +1,9 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
-import { kp, getProperty, updateProperty } from './Foundation.js';
+import { CATextLayer } from './CALayer.js';
+import { forCase, guardCase, ifCase, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
-import { CALayer, CATextLayer, CAShapeLayer, CGPath } from './CALayer.js';
-import { TextStorage, AttributedString, ParagraphStyle } from './TextStorage.js';
+import { AttributedString, TextStorage } from './TextStorage.js';
+import UIColor from './UIColor.js';
+import UIView from './UIView.js';
 
 class UILabel extends UIView {
     constructor(text = '') {
@@ -162,7 +161,7 @@ class UILabel extends UIView {
         this.element = document.createElement('div');
         this.element.className = 'ui-label';
         this.element.style.display = 'inline-block';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         
         this._textLayer = CATextLayer.layer();
         this._textLayer.name = 'textLayer';
@@ -352,7 +351,7 @@ class UILabel extends UIView {
         
         this.#renderTextInContext(ctx, this._bounds);
         
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         if (this.element.firstChild !== canvas) {
             this.element.insertBefore(canvas, this.element.firstChild);
         }

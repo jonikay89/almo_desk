@@ -282,6 +282,58 @@ class CGPath {
         }
         return transformed;
     }
+
+    toSVGPathData() {
+        if (!this._elements || this._elements.length === 0) return '';
+
+        const commands = [];
+        
+        for (const element of this._elements) {
+            const cmd = this.elementToSVGCommand(element);
+            if (cmd) commands.push(cmd);
+        }
+
+        return commands.join(' ');
+    }
+
+    elementToSVGCommand(element) {
+        switch (element.type) {
+            case 'move':
+                return `M ${element.x} ${element.y}`;
+            case 'line':
+                return `L ${element.x} ${element.y}`;
+            case 'curve':
+                return `C ${element.cp1.x} ${element.cp1.y} ${element.cp2.x} ${element.cp2.y} ${element.end.x} ${element.end.y}`;
+            case 'quadCurve':
+                return `Q ${element.cp.x} ${element.cp.y} ${element.end.x} ${element.end.y}`;
+            case 'arc':
+                return this.arcToSVGCommand(element);
+            case 'arcTo':
+                return null;
+            case 'close':
+                return 'Z';
+            default:
+                return null;
+        }
+    }
+
+    arcToSVGCommand(element) {
+        const { cx, cy, radius, startAngle, endAngle, clockwise } = element;
+        
+        const startX = cx + radius * Math.cos(startAngle);
+        const startY = cy + radius * Math.sin(startAngle);
+        const endX = cx + radius * Math.cos(endAngle);
+        const endY = cy + radius * Math.sin(endAngle);
+        
+        let angleDiff = endAngle - startAngle;
+        if (clockwise && angleDiff < 0) angleDiff += Math.PI * 2;
+        if (!clockwise && angleDiff > 0) angleDiff -= Math.PI * 2;
+        
+        const largeArcFlag = Math.abs(angleDiff) > Math.PI ? 1 : 0;
+        const sweepFlag = clockwise ? 1 : 0;
+        
+        return `A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${endX} ${endY}`;
+    }
 }
 
 class CGAffineTransform {
@@ -538,6 +590,7 @@ class CALayer {
         this._shouldRasterize = false;
         this._edgeAntialiasing = true;
         this._opaque = false;
+        this._customState = {};
     }
 
     static layer() {
@@ -896,6 +949,42 @@ class CALayer {
     withTransform(transform) { return this.setTransform(transform); }
     withMask(mask) { return this.setMask(mask); }
     withName(name) { this.name = name; return this; }
+
+    setCustomState(key, value) {
+        this._customState = this._customState || {};
+        this._customState[key] = value;
+    }
+
+    getCustomState(key) {
+        return this._customState?.[key];
+    }
+
+    clearCustomState() {
+        this._customState = {};
+    }
+
+    computeStyles() {
+        return {
+            frame: this._frame,
+            bounds: this._bounds,
+            position: this._position,
+            backgroundColor: this._backgroundColor,
+            borderColor: this._borderColor,
+            borderWidth: this._borderWidth,
+            cornerRadius: this._cornerRadius,
+            opacity: this._opacity,
+            isHidden: this._isHidden,
+            zPosition: this._zPosition,
+            masksToBounds: this._masksToBounds,
+            shadowColor: this._shadowColor,
+            shadowOpacity: this._shadowOpacity,
+            shadowOffset: this._shadowOffset,
+            shadowRadius: this._shadowRadius,
+            transform: this._transform,
+            anchorPoint: this._anchorPoint,
+            customState: this._customState
+        };
+    }
 
     rotate(angle, axis = 'z') {
         const axes = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];

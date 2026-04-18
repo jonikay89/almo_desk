@@ -1,11 +1,11 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
+import { CALayer } from './CALayer.js';
+import { NSNumber, getProperty, kp, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
-import UILabel from './UILabel.js';
+import UIColor from './UIColor.js';
 import UIImageView from './UIImageView.js';
-import { CALayer, CAShapeLayer, CGPath } from './CALayer.js';
+import UILabel from './UILabel.js';
+import UIView from './UIView.js';
 
 class UICollectionViewCell extends UIView {
     constructor(reuseIdentifier = null) {
@@ -44,13 +44,13 @@ class UICollectionViewCell extends UIView {
         this.element.style.overflow = 'hidden';
         this.element.style.cursor = 'pointer';
         this.element.style.userSelect = 'none';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
 
         this._contentView = new UIView();
         this._contentView.init();
         this._contentView.element.style.flex = '1';
         this._contentView.element.style.width = '100%';
-        this._contentView.element.style.position = 'relative';
+        this._contentView.element.style.position = 'absolute';
         this._contentView.element.style.overflow = 'hidden';
 
         this._imageView = new UIImageView();

@@ -1,11 +1,11 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
-import UILabel from './UILabel.js';
-import UIImageView from './UIImageView.js';
 import { CALayer, CAShapeLayer } from './CALayer.js';
+import { NSNumber, getProperty, kp, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
+import Switch from './Switch.js';
+import UIColor from './UIColor.js';
+import UIImageView from './UIImageView.js';
+import UILabel from './UILabel.js';
+import UIView from './UIView.js';
 
 class UITableViewCell extends UIView {
     constructor(reuseIdentifier = null) {
@@ -48,7 +48,7 @@ class UITableViewCell extends UIView {
         this.element.style.padding = '0 16px';
         this.element.style.cursor = 'pointer';
         this.element.style.userSelect = 'none';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
 
         this._contentView = new UIView();
         this._contentView.init();

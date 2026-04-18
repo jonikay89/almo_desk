@@ -1,9 +1,9 @@
-import UIView from './UIView.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
+import { CAGradientLayer, CALayer, CAShapeLayer, CGPath } from './CALayer.js';
+import { NSNumber } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
-import { CALayer, CAGradientLayer, CAShapeLayer, CGPath } from './CALayer.js';
 import UIColor from './UIColor.js';
+import UIView from './UIView.js';
 
 class UIWindow extends UIView {
     constructor() {
@@ -236,7 +236,7 @@ class UIWindow extends UIView {
             }
         }
 
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         if (this.element.firstChild !== canvas) {
             this.element.insertBefore(canvas, this.element.firstChild);
         }

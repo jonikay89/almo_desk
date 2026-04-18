@@ -1,8 +1,7 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIColor from './UIColor.js';
+import UIView from './UIView.js';
 
 class UIActivityIndicatorView extends UIView {
     constructor() {
@@ -28,7 +27,7 @@ class UIActivityIndicatorView extends UIView {
         super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-activityindicator';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.display = 'inline-block';
         this._accessibilityLabel = this._isAnimating ? 'Loading' : 'Loaded';
         this._accessibilityValue = this._isAnimating ? 'In progress' : 'Stopped';

@@ -100,9 +100,10 @@
                 const containerWidth = window.innerWidth - 40;
                 const fieldHeight = 36;
                 const padding = 10;
+                const spacing = 10;
                 const fieldWidth = Math.min(400, containerWidth - 40);
                 const fieldX = (containerWidth - fieldWidth) / 2;
-                const totalHeight = padding + (fieldHeight + padding) * 3;
+                const totalHeight = padding + (fieldHeight + spacing) * 3;
                 
                 container.frame = { x: 0, y: 0, width: containerWidth, height: totalHeight };
                 container.cornerRadius = 8.0;
@@ -110,20 +111,20 @@
 
                 const nameField = new UITextField('Enter your name');
                 nameField.init();
-                nameField.frame = { x: 0, y: 0, width: fieldWidth, height: fieldHeight };
+                nameField.frame = { x: fieldX, y: padding, width: fieldWidth, height: fieldHeight };
                 nameField.borderStyle = 'rounded';
                 container.addSubview(nameField);
 
                 const emailField = new UITextField('email@example.com');
                 emailField.init();
-                emailField.frame = { x: 0, y: 0.0, width: fieldWidth, height: fieldHeight };
+                emailField.frame = { x: fieldX, y: padding + (fieldHeight + spacing) * 1, width: fieldWidth, height: fieldHeight };
                 emailField.keyboardType = 'emailAddress';
                 emailField.borderStyle = 'rounded';
                 container.addSubview(emailField);
 
                 const passwordField = new UITextField('Password');
                 passwordField.init();
-                passwordField.frame = { x: 0, y: 10, width: fieldWidth, height: fieldHeight };
+                passwordField.frame = { x: fieldX, y: padding + (fieldHeight + spacing) * 2, width: fieldWidth, height: fieldHeight };
                 passwordField.isSecureTextEntry = true;
                 passwordField.borderStyle = 'rounded';
                 container.addSubview(passwordField);

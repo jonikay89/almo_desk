@@ -1,16 +1,16 @@
-import UIScrollView from './UIScrollView.js';
-import UIColor from './UIColor.js';
-import { CGPath, CAGradientLayer, CAShapeLayer } from './CALayer.js';
+import { CAGradientLayer, CAShapeLayer, CGPath } from './CALayer.js';
+import { NSValue, compareBy, compareByDescending, getProperty, kp, updateProperty } from './Foundation.js';
 import { Optional, Result } from './Generics.js';
-import { WeakRef } from './WeakReference.js';
-import { NSValue, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias } from './Protocol.js';
+import Switch from './Switch.js';
 import {
-    CollectionViewDelegate,
-    CollectionViewDataSource
+    CollectionViewDataSource,
+    CollectionViewDelegate
 } from './TypeAliases.js';
+import UIColor from './UIColor.js';
+import UIScrollView from './UIScrollView.js';
+import { WeakRef } from './WeakReference.js';
 
 defineTypeAlias('CollectionViewDelegateBundle', CollectionViewDelegate, CollectionViewDataSource);
 
@@ -113,12 +113,12 @@ class UICollectionView extends UIScrollView {
         super.init();
         this.element = document.createElement('div');
         this.element.className = 'ui-collectionview';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.overflow = 'auto';
 
         this.contentElement = document.createElement('div');
         this.contentElement.className = 'ui-collectionview-content';
-        this.contentElement.style.position = 'relative';
+        this.contentElement.style.position = 'absolute';
         this.contentElement.style.minWidth = '100%';
         this.contentElement.style.minHeight = '100%';
 
@@ -247,7 +247,7 @@ class UICollectionView extends UIScrollView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

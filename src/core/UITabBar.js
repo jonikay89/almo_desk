@@ -1,13 +1,13 @@
-import UIView from './UIView.js';
-import UIColor from './UIColor.js';
 import { CAGradientLayer } from './CALayer.js';
-import { NSNumber, kp, getProperty, updateProperty, compareBy, compareByDescending } from './Foundation.js';
-import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import { NSNumber, compareBy, compareByDescending, getProperty, kp, updateProperty } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import { defineTypeAlias, invokeProtocolMethod } from './Protocol.js';
+import Switch from './Switch.js';
 import { TabBarDelegate, TabBarDelegate as TabBarDelegateProtocol } from './TypeAliases.js';
-import UILabel from './UILabel.js';
+import UIColor from './UIColor.js';
 import UIImageView from './UIImageView.js';
+import UILabel from './UILabel.js';
+import UIView from './UIView.js';
 
 defineTypeAlias('TabBarDelegateAlias', TabBarDelegate);
 
@@ -30,7 +30,7 @@ class UITabBar extends UIView {
         this.element.style.height = '49px';
         this.element.style.backgroundColor = UIColor.systemBackground().css;
         this.element.style.borderTop = '1px solid #ddd';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.zIndex = '100';
 
         return this;
@@ -159,7 +159,7 @@ class UITabBar extends UIView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

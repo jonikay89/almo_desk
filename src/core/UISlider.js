@@ -1,8 +1,8 @@
-import UIControl from './UIControl.js';
-import UIColor from './UIColor.js';
-import { NSNumber, kp, getProperty, updateProperty } from './Foundation.js';
+import { NSNumber } from './Foundation.js';
+import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
-import { ifCase, guardCase, whileCase, forCase, patternMatch, ifLet, guardLet } from './PatternMatching.js';
+import UIColor from './UIColor.js';
+import UIControl from './UIControl.js';
 
 class UISlider extends UIControl {
     constructor() {
@@ -56,7 +56,7 @@ class UISlider extends UIControl {
     init() {
         super.init();
         this.element.className = 'ui-slider';
-        this.element.style.position = 'relative';
+        this.element.style.position = 'absolute';
         this.element.style.display = 'inline-flex';
         this.element.style.alignItems = 'center';
         this.element.style.cursor = 'pointer';
@@ -65,7 +65,7 @@ class UISlider extends UIControl {
         this.element.style.padding = '0 10px';
 
         this.trackElement = document.createElement('div');
-        this.trackElement.style.position = 'relative';
+        this.trackElement.style.position = 'absolute';
         this.trackElement.style.flexGrow = '1';
         this.trackElement.style.height = '4px';
         this.trackElement.style.borderRadius = '2px';
