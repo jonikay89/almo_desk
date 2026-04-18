@@ -722,6 +722,9 @@ class CALayer {
     get cssClass() { return this._cssClass; }
     set cssClass(value) { this._cssClass = value; }
 
+    get positioning() { return this._positioning || 'absolute'; }
+    set positioning(value) { this._positioning = value; }
+
     get delegate() { return this._delegate; }
     set delegate(value) { this._delegate = value; }
 

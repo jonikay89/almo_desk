@@ -155,6 +155,11 @@ class UIControl extends UIView {
         return this;
     }
 
+    on(eventType, callback) {
+        this._targetActions.push({ callback, eventType });
+        return this;
+    }
+
     allTargets() {
         const targets = this._targetActions
             .map(ta => ta.targetRef.target)
@@ -208,10 +213,16 @@ class UIControl extends UIView {
         
         for (const ta of matchingTargets) {
             if (this.enabled) {
-                const target = ta.targetRef.target;
-                if (target) {
+                if (ta.callback) {
                     try {
-                        const result = target[ta.action]?.({ type: eventType, currentTarget: this });
+                        const result = ta.callback({ type: eventType, action, currentTarget: this });
+                        results.push(Result.success(result));
+                    } catch (error) {
+                        results.push(Result.failure(error));
+                    }
+                } else if (ta.targetRef?.target) {
+                    try {
+                        const result = ta.targetRef.target[ta.action]?.({ type: eventType, action, currentTarget: this });
                         results.push(Result.success(result));
                     } catch (error) {
                         results.push(Result.failure(error));

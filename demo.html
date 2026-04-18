@@ -201,10 +201,15 @@
                 volumeLabel.textColor = UIColor.gray();
                 container.addSubview(volumeLabel);
 
+                volumeSlider.on('valueChanged', () => {
+                    volumeLabel.text = `${Math.round(volumeSlider.value * 100)}%`;
+                    console.log(`Volume changed to: ${volumeLabel.text}%`);
+                });
+
                 const brightSlider = new UISlider();
                 brightSlider.init();
                 brightSlider.frame = { x: 0, y: 50, width: 220, height: 30 };
-                brightSlider.value = 0.5;
+                brightSlider.value = 0.2;
                 brightSlider.minimumTrackTintColor = UIColor.systemYellow();
                 container.addSubview(brightSlider);
 

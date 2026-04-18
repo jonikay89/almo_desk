@@ -274,14 +274,18 @@ class CALayerRenderer {
     applyStyles(layer, element) {
         const styles = this.computeStyles(layer);
         
-        Object.assign(element.style, styles);
-        
         if (layer._customState) {
             this.applyCustomState(layer._customState, element);
         }
         
         if (layer._cssClass) {
             element.className = layer._cssClass;
+        }
+        
+        Object.assign(element.style, styles);
+        
+        if (layer.positioning === 'relative') {
+            element.style.position = 'relative';
         }
     }
 

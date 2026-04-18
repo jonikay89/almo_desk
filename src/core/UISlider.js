@@ -1,5 +1,4 @@
 import { NSNumber } from './Foundation.js';
-import { forCase, guardCase, guardLet, ifCase, ifLet, patternMatch, whileCase } from './PatternMatching.js';
 import Switch from './Switch.js';
 import UIColor from './UIColor.js';
 import UIControl from './UIControl.js';
@@ -16,6 +15,7 @@ class UISlider extends UIControl {
         this.isContinuous = true;
         
         this._accessibilityTraits = ['adjustable'];
+        this._isDragging = false;
     }
 
     get value() {
@@ -23,18 +23,7 @@ class UISlider extends UIControl {
     }
 
     set value(val) {
-        this._value = Math.max(this._minimumValue, Math.min(this._maximumValue, val));
-        this._accessibilityValue = `${this._value}`;
-        this.#updateAppearance();
-        this._updateAccessibilityAttributes();
-    }
-
-    get minimumValue() {
-        return this._minimumValue;
-    }
-
-    get maximumValue() {
-        return this._maximumValue;
+        this.setValue(val, false);
     }
 
     get description() {
@@ -56,81 +45,59 @@ class UISlider extends UIControl {
     init() {
         super.init();
         this._layer.cssClass = 'ui-slider';
+        this._layer.positioning = 'relative';
+        
+        this._trackElement = document.createElement('div');
+        this._trackElement.className = 'ui-slider-track';
+        this._trackElement.style.backgroundColor = this.maximumTrackTintColor.css;
 
-        this.trackElement = document.createElement('div');
-        this.trackElement.style.position = 'absolute';
-        this.trackElement.style.flexGrow = '1';
-        this.trackElement.style.height = '4px';
-        this.trackElement.style.borderRadius = '2px';
-        this.trackElement.style.backgroundColor = this.maximumTrackTintColor.css;
+        this._trackFillElement = document.createElement('div');
+        this._trackFillElement.className = 'ui-slider-track-fill';
+        this._trackFillElement.style.backgroundColor = this.minimumTrackTintColor.css;
+        this._trackElement.appendChild(this._trackFillElement);
 
-        this.minimumTrackElement = document.createElement('div');
-        this.minimumTrackElement.style.position = 'absolute';
-        this.minimumTrackElement.style.left = '0';
-        this.minimumTrackElement.style.top = '0';
-        this.minimumTrackElement.style.height = '100%';
-        this.minimumTrackElement.style.borderRadius = '2px';
-        this.minimumTrackElement.style.backgroundColor = this.minimumTrackTintColor.css;
+        this._thumbElement = document.createElement('div');
+        this._thumbElement.className = 'ui-slider-thumb';
+        this._thumbElement.style.backgroundColor = this.thumbTintColor.css;
 
-        this.trackElement.appendChild(this.minimumTrackElement);
-        this.element.appendChild(this.trackElement);
-
-        this.thumbElement = document.createElement('div');
-        this.thumbElement.style.position = 'absolute';
-        this.thumbElement.style.width = '20px';
-        this.thumbElement.style.height = '20px';
-        this.thumbElement.style.borderRadius = '50%';
-        this.thumbElement.style.backgroundColor = this.thumbTintColor.css;
-        this.thumbElement.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
-        this.thumbElement.style.cursor = 'grab';
-        this.thumbElement.style.transition = 'transform 0.1s ease';
-
-        this.element.appendChild(this.thumbElement);
-
-        this.#updateAppearance();
-        this.#setupEventListeners();
-
+        this.element.appendChild(this._trackElement);
+        this.element.appendChild(this._thumbElement);
+        
+        this._setupEventListeners();
+        this._updateAppearance();
+        
         return this;
     }
 
-    #setupEventListeners() {
-        let isDragging = false;
-
+    _setupEventListeners() {
         const updateValue = (clientX) => {
-            const rect = this.trackElement.getBoundingClientRect();
+            const rect = this._trackElement.getBoundingClientRect();
             const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
             const newValue = this._minimumValue + percent * (this._maximumValue - this._minimumValue);
             
-            const oldValue = this._value;
-            this._value = newValue;
-            this.#updateAppearance();
-
-            if (this.isContinuous && oldValue !== newValue) {
-                this.sendAction('valueChanged', 'input');
+            if (newValue !== this._value) {
+                this._value = newValue;
+                this._updateAppearance();
+                this.sendAction('valueChanged', 'valueChanged');
             }
         };
 
         this.element.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            this.thumbElement.style.cursor = 'grabbing';
+            this._isDragging = true;
+            this._thumbElement.classList.add('active');
             updateValue(e.clientX);
-            this.sendAction('editingDidBegin', 'mousedown');
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
+            if (this._isDragging) {
                 updateValue(e.clientX);
             }
         });
 
         document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                this.thumbElement.style.cursor = 'grab';
-                if (!this.isContinuous) {
-                    this.sendAction('valueChanged', 'mouseup');
-                }
-                this.sendAction('editingDidEnd', 'mouseup');
+            if (this._isDragging) {
+                this._isDragging = false;
+                this._thumbElement.classList.remove('active');
             }
         });
 
@@ -146,8 +113,8 @@ class UISlider extends UIControl {
 
             if (newValue !== this._value) {
                 this._value = newValue;
-                this.#updateAppearance();
-                this.sendAction('valueChanged', 'keydown');
+                this._updateAppearance();
+                this.sendAction('valueChanged', 'valueChanged');
             }
         });
 
@@ -157,52 +124,42 @@ class UISlider extends UIControl {
         this.element.setAttribute('aria-valuemax', this._maximumValue);
     }
 
-    #updateAppearance() {
-        if (!this.trackElement || !this.minimumTrackElement || !this.thumbElement) return;
+    _updateAppearance() {
+        if (!this._trackElement || !this._trackFillElement || !this._thumbElement) return;
 
         const percent = (this._value - this._minimumValue) / (this._maximumValue - this._minimumValue);
-        const trackWidth = this.trackElement.offsetWidth || 100;
-        const thumbOffset = 10;
+        const trackWidth = this._trackElement.offsetWidth || 100;
+        const thumbSize = 20;
 
-        this.minimumTrackElement.style.width = `${percent * (trackWidth - thumbOffset * 2)}px`;
-        this.thumbElement.style.left = `${percent * (trackWidth - thumbOffset * 2) + thumbOffset - 10}px`;
+        this._trackFillElement.style.width = `${percent * 100}%`;
+        this._thumbElement.style.left = `${percent * trackWidth - thumbSize / 2}px`;
 
-        if (this.element) {
-            this.element.setAttribute('aria-valuenow', this._value);
-        }
+        this.element.setAttribute('aria-valuenow', this._value.toFixed(2));
+    }
+
+    layoutSubviews() {
+        super.layoutSubviews();
+        this._updateAppearance();
     }
 
     setValue(value, animated = false) {
         const clampedValue = Math.max(this._minimumValue, Math.min(this._maximumValue, value));
-        
-        if (this.minimumTrackElement && this.thumbElement) {
-            if (animated) {
-                this.minimumTrackElement.style.transition = 'width 0.2s ease';
-                this.thumbElement.style.transition = 'left 0.2s ease';
-            } else {
-                this.minimumTrackElement.style.transition = 'none';
-                this.thumbElement.style.transition = 'none';
-            }
-        }
-
         this._value = clampedValue;
-        if (this.minimumTrackElement && this.thumbElement) {
-            this.#updateAppearance();
-        }
+        this._updateAppearance();
         return this;
     }
 
     setMinimumValue(min) {
         this._minimumValue = min;
         if (this._value < min) this._value = min;
-        this.#updateAppearance();
+        this._updateAppearance();
         return this;
     }
 
     setMaximumValue(max) {
         this._maximumValue = max;
         if (this._value > max) this._value = max;
-        this.#updateAppearance();
+        this._updateAppearance();
         return this;
     }
 
@@ -212,8 +169,8 @@ class UISlider extends UIControl {
         } else if (typeof color === 'string') {
             this.minimumTrackTintColor = UIColor.colorWithHex(color);
         }
-        if (this.minimumTrackElement) {
-            this.minimumTrackElement.style.backgroundColor = this.minimumTrackTintColor.css;
+        if (this._trackFillElement) {
+            this._trackFillElement.style.backgroundColor = this.minimumTrackTintColor.css;
         }
         return this;
     }
@@ -224,8 +181,8 @@ class UISlider extends UIControl {
         } else if (typeof color === 'string') {
             this.maximumTrackTintColor = UIColor.colorWithHex(color);
         }
-        if (this.trackElement) {
-            this.trackElement.style.backgroundColor = this.maximumTrackTintColor.css;
+        if (this._trackElement) {
+            this._trackElement.style.backgroundColor = this.maximumTrackTintColor.css;
         }
         return this;
     }
@@ -236,8 +193,8 @@ class UISlider extends UIControl {
         } else if (typeof color === 'string') {
             this.thumbTintColor = UIColor.colorWithHex(color);
         }
-        if (this.thumbElement) {
-            this.thumbElement.style.backgroundColor = this.thumbTintColor.css;
+        if (this._thumbElement) {
+            this._thumbElement.style.backgroundColor = this.thumbTintColor.css;
         }
         return this;
     }
@@ -275,15 +232,6 @@ class UISlider extends UIControl {
         return this.setContinuous(continuous);
     }
 
-    layoutSubviews() {
-        super.layoutSubviews();
-        if (this.element) {
-            this.element.style.width = `${this.frame.width}px`;
-            this.element.style.height = `${this.frame.height}px`;
-        }
-        this.#updateAppearance();
-    }
-
     encode() {
         return {
             value: this._value,
@@ -298,43 +246,6 @@ class UISlider extends UIControl {
         slider._minimumValue = data.minimumValue;
         slider._maximumValue = data.maximumValue;
         return slider;
-    }
-
-    ifCase(pattern, handler) {
-        return ifCase(pattern)(this).then(handler);
-    }
-
-    guardCase(pattern) {
-        return guardCase(pattern)(this);
-    }
-
-    static forCase(collection, pattern, handler) {
-        for (const item of collection) {
-            const result = forCase(pattern)(item);
-            if (result !== undefined) {
-                handler(result);
-            }
-        }
-    }
-
-    static whileCase(iterator, pattern) {
-        return whileCase(pattern)(iterator);
-    }
-
-    matchOperator(pattern) {
-        return patternMatch(pattern, this);
-    }
-
-    ifLet(pattern) {
-        return ifLet(this, pattern);
-    }
-
-    guardLet(pattern) {
-        return guardLet(this, pattern);
-    }
-
-    switch() {
-        return Switch(this);
     }
 }
 

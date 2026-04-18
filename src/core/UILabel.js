@@ -159,6 +159,7 @@ class UILabel extends UIView {
     init() {
         super.init();
         this._layer.cssClass = 'ui-label';
+        this.element.className = 'ui-label';
         
         this._textLayer = CATextLayer.layer();
         this._textLayer.name = 'textLayer';
@@ -324,6 +325,7 @@ class UILabel extends UIView {
 
     #renderLayers() {
         if (!this.element || !this._useLayerRendering) return;
+        if (!this._bounds.width || !this._bounds.height) return;
         
         const existingCanvas = this.element.querySelector('.layer-canvas');
         if (existingCanvas) existingCanvas.remove();
