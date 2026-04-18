@@ -32,19 +32,8 @@ class UICollectionViewCell extends UIView {
     }
 
     init() {
-        this.element = document.createElement('div');
-        this.element.className = 'ui-collectionview-cell';
-        this.element.style.display = 'flex';
-        this.element.style.flexDirection = 'column';
-        this.element.style.alignItems = 'center';
-        this.element.style.justifyContent = 'center';
-        this.element.style.backgroundColor = UIColor.white().css;
-        this.element.style.borderRadius = '8px';
-        this.element.style.border = '1px solid #ddd';
-        this.element.style.overflow = 'hidden';
-        this.element.style.cursor = 'pointer';
-        this.element.style.userSelect = 'none';
-        this.element.style.position = 'absolute';
+        super.init();
+        this._layer.cssClass = 'ui-collectionview-cell';
 
         this._contentView = new UIView();
         this._contentView.init();

@@ -38,13 +38,7 @@ class UISwitch extends UIControl {
 
     init() {
         super.init();
-        this.element.className = 'ui-switch';
-        this.element.style.position = 'absolute';
-        this.element.style.display = 'inline-flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.justifyContent = 'center';
-        this.element.style.cursor = 'pointer';
-        this.element.style.userSelect = 'none';
+        this._layer.cssClass = 'ui-switch';
 
         this.trackElement = document.createElement('div');
         this.trackElement.style.position = 'absolute';

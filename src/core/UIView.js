@@ -19,7 +19,7 @@ class UIView extends UIResponder {
         this._clipsToBounds = false;
         this.tag = 0;
         this.subviews = [];
-        this.element = document.createElement('div');
+        this._element = null;
         this.zIndex = 0;
         this.translatesAutoresizingMaskIntoConstraints = true;
         this._backgroundColor = null;
@@ -53,6 +53,17 @@ class UIView extends UIResponder {
         this._accessibilityActions = [];
         this._notifiesAccessibilityWhenMoved = false;
         this._shouldGroupAccessibilityChildren = false;
+    }
+
+    get element() {
+        if (!this._element) {
+            this._element = document.createElement('div');
+        }
+        return this._element;
+    }
+
+    set element(value) {
+        this._element = value;
     }
 
     get frame() {
@@ -608,6 +619,7 @@ class UIView extends UIResponder {
     }
 
     init() {
+        this._updateAccessibilityAttributes();
         return this;
     }
 
@@ -619,7 +631,7 @@ class UIView extends UIResponder {
         this.subviews = [];
         this.superview = null;
         this.window = null;
-        this.element = null;
+        this._element = null;
     }
 
     didMoveToSuperview() {}

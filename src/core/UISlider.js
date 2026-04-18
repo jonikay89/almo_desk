@@ -55,14 +55,7 @@ class UISlider extends UIControl {
 
     init() {
         super.init();
-        this.element.className = 'ui-slider';
-        this.element.style.position = 'absolute';
-        this.element.style.display = 'inline-flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.cursor = 'pointer';
-        this.element.style.userSelect = 'none';
-        this.element.style.height = '30px';
-        this.element.style.padding = '0 10px';
+        this._layer.cssClass = 'ui-slider';
 
         this.trackElement = document.createElement('div');
         this.trackElement.style.position = 'absolute';

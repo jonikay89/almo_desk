@@ -1,0 +1,190 @@
+.ui-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ui-label {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.ui-label.multiline {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+}
+
+.ui-label.ellipsis {
+    text-overflow: ellipsis;
+}
+
+.ui-label.word-break {
+    word-break: break-all;
+}
+
+.ui-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ui-activityindicator {
+    display: inline-block;
+}
+
+.ui-imageview {
+    overflow: hidden;
+}
+
+.ui-progressview {
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.ui-slider {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    height: 30px;
+    padding: 0 10px;
+}
+
+.ui-stepper {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ccc;
+}
+
+.ui-segmented-control {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    padding: 2px;
+    border: 1px solid #ccc;
+    overflow: hidden;
+}
+
+.ui-scrollview {
+    overflow: auto;
+}
+
+.ui-tableview {
+    overflow: auto;
+    will-change: transform;
+}
+
+.ui-collectionview {
+    overflow: auto;
+}
+
+.ui-navigationbar {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    border-bottom: 1px solid #ddd;
+    padding: 0 16px;
+    z-index: 100;
+}
+
+.ui-tabbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 49px;
+    border-top: 1px solid #ddd;
+    z-index: 100;
+}
+
+.ui-tableview-cell {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    padding: 0 16px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ui-collectionview-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    overflow: hidden;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ui-textview {
+    overflow: hidden;
+}
+
+.ui-window {
+    overflow: hidden;
+}
+
+.ui-pickerview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--system-background, #fff);
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 8px;
+    height: 150px;
+    max-width: 300px;
+}
+
+.ui-datepicker {
+    display: inline-block;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ui-searchbar {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.ui-pagecontrol {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ui-stackview {
+    display: flex;
+}
+
+.ui-view-controller-view {
+    width: 100%;
+    height: 100%;
+}
+
+.ui-control {
+    user-select: none;
+    cursor: pointer;
+}

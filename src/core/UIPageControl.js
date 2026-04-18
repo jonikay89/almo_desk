@@ -53,11 +53,7 @@ class UIPageControl extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-pagecontrol';
-        this.element.style.display = 'flex';
-        this.element.style.gap = '8px';
-        this.element.style.alignItems = 'center';
+        this._layer.cssClass = 'ui-pagecontrol';
 
         this.dotsContainer = document.createElement('div');
         this.dotsContainer.style.display = 'flex';

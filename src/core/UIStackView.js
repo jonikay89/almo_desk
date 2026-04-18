@@ -65,9 +65,7 @@ class UIStackView extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-stackview';
-        this.element.style.display = 'flex';
+        this._layer.cssClass = 'ui-stackview';
         this.#updateLayout();
         return this;
     }

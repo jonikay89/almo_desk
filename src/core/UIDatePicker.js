@@ -48,11 +48,7 @@ class UIDatePicker extends UIControl {
 
     init() {
         super.init();
-        this.element.className = 'ui-datepicker';
-        this.element.style.position = 'absolute';
-        this.element.style.display = 'inline-block';
-        this.element.style.cursor = 'pointer';
-        this.element.style.userSelect = 'none';
+        this._layer.cssClass = 'ui-datepicker';
 
         this.#createWheelsView();
 

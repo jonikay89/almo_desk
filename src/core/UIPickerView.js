@@ -54,17 +54,7 @@ class UIPickerView extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-pickerview';
-        this.element.style.display = 'flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.justifyContent = 'center';
-        this.element.style.backgroundColor = UIColor.systemBackground().css;
-        this.element.style.borderRadius = '8px';
-        this.element.style.border = '1px solid #ccc';
-        this.element.style.padding = '8px';
-        this.element.style.height = '150px';
-        this.element.style.maxWidth = '300px';
+        this._layer.cssClass = 'ui-pickerview';
 
         return this;
     }
@@ -268,7 +258,6 @@ class UIPickerView extends UIView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

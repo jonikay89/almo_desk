@@ -79,10 +79,8 @@ class UITextView extends UIScrollView {
     }
 
     init() {
-        this.element = document.createElement('div');
-        this.element.className = 'ui-textview';
-        this.element.style.position = 'absolute';
-        this.element.style.overflow = 'hidden';
+        super.init();
+        this._layer.cssClass = 'ui-textview';
 
         this.textElement = document.createElement('textarea');
         this.textElement.style.position = 'absolute';

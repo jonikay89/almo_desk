@@ -188,8 +188,8 @@ class UIImage extends UIView {
     }
 
     init() {
-        this.element = document.createElement('div');
-        this.element.className = 'ui-image';
+        super.init();
+        this._layer.cssClass = 'ui-image';
         this.element.style.overflow = 'hidden';
         this.element.style.backgroundColor = 'transparent';
         

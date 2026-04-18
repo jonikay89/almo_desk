@@ -25,13 +25,9 @@ class UIActivityIndicatorView extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-activityindicator';
-        this.element.style.position = 'absolute';
-        this.element.style.display = 'inline-block';
+        this._layer.cssClass = 'ui-activityindicator';
         this._accessibilityLabel = this._isAnimating ? 'Loading' : 'Loaded';
         this._accessibilityValue = this._isAnimating ? 'In progress' : 'Stopped';
-        this._updateAccessibilityAttributes();
 
         const sizes = {
             small: 16,

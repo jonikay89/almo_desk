@@ -279,6 +279,10 @@ class CALayerRenderer {
         if (layer._customState) {
             this.applyCustomState(layer._customState, element);
         }
+        
+        if (layer._cssClass) {
+            element.className = layer._cssClass;
+        }
     }
 
     /**
@@ -294,6 +298,9 @@ class CALayerRenderer {
         styles.top = `${layer._frame?.y || 0}px`;
         styles.width = `${layer._frame?.width || 0}px`;
         styles.height = `${layer._frame?.height || 0}px`;
+        styles.boxSizing = 'border-box';
+        styles.margin = '0';
+        styles.padding = '0';
 
         if (layer._backgroundColor) {
             styles.backgroundColor = this.colorToCSS(layer._backgroundColor);

@@ -36,14 +36,10 @@ class UIProgressView extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-progressview';
-        this.element.style.position = 'absolute';
+        this._layer.cssClass = 'ui-progressview';
         this.element.style.width = '200px';
         this.element.style.height = '4px';
-        this.element.style.borderRadius = '2px';
         this.element.style.backgroundColor = this.trackTintColor.css;
-        this.element.style.overflow = 'hidden';
 
         this.progressElement = document.createElement('div');
         this.progressElement.style.position = 'absolute';

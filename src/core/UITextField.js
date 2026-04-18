@@ -75,11 +75,7 @@ class UITextField extends UIControl {
 
     init() {
         super.init();
-        this.element.className = 'ui-textfield';
-        this.element.style.boxSizing = 'border-box';
-        this.element.style.display = 'block';
-        this.element.style.padding = '0';
-        this.element.style.margin = '0';
+        this._layer.cssClass = 'ui-textfield';
 
         this.inputElement = document.createElement('input');
         this.inputElement.type = this.isSecureTextEntry ? 'password' : 'text';
@@ -87,15 +83,12 @@ class UITextField extends UIControl {
         this.inputElement.style.boxSizing = 'border-box';
         this.inputElement.style.width = '100%';
         this.inputElement.style.height = '100%';
-        this.inputElement.style.margin = '0';
         this.inputElement.style.padding = '0 12px';
         this.inputElement.style.border = 'none';
         this.inputElement.style.outline = 'none';
         this.inputElement.style.background = 'transparent';
         this.inputElement.style.lineHeight = 'normal';
         this.inputElement.style.verticalAlign = 'middle';
-        this.inputElement.style.minHeight = '0';
-        this.inputElement.style.minWidth = '0';
         this.inputElement.style.fontSize = `${this.fontSize}px`;
         this.inputElement.style.fontFamily = this.fontFamily;
         this.inputElement.style.color = this._textColor.css;
@@ -116,10 +109,10 @@ class UITextField extends UIControl {
 
     #applyBorderStyle() {
         const styles = {
-            rounded: 'border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;',
-            square: 'border: 1px solid #ccc; border-radius: 0; box-sizing: border-box;',
-            line: 'border: none; border-bottom: 1px solid #ccc; border-radius: 0; box-sizing: border-box;',
-            none: 'border: none; box-sizing: border-box;'
+            rounded: 'border: 1px solid #ccc; border-radius: 6px;',
+            square: 'border: 1px solid #ccc; border-radius: 0;',
+            line: 'border: none; border-bottom: 1px solid #ccc; border-radius: 0;',
+            none: 'border: none;'
         };
         const style = styles[this.borderStyle] || styles.rounded;
         this.element.style.cssText += ';' + style;
@@ -303,18 +296,13 @@ class UITextField extends UIControl {
 
     layoutSubviews() {
         super.layoutSubviews();
-        if (this.element) {
-            this.element.style.width = `${this.frame.width}px`;
-            this.element.style.height = `${this.frame.height}px`;
-        }
         this.#updateBorderLayer();
     }
 
     #updateBorderLayer() {
-        if (!this._borderLayer && this.element) {
+        if (!this._borderLayer) {
             this._borderLayer = CAShapeLayer.layer();
             this._borderLayer.name = 'borderLayer';
-            this.element.style.position = 'absolute';
         }
         
         if (this._borderLayer) {

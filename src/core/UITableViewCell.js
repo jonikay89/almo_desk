@@ -38,17 +38,8 @@ class UITableViewCell extends UIView {
     }
 
     init() {
-        this.element = document.createElement('div');
-        this.element.className = 'ui-tableview-cell';
-        this.element.style.display = 'flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.height = '100%';
-        this.element.style.backgroundColor = UIColor.white().css;
-        this.element.style.borderBottom = '1px solid #eee';
-        this.element.style.padding = '0 16px';
-        this.element.style.cursor = 'pointer';
-        this.element.style.userSelect = 'none';
-        this.element.style.position = 'absolute';
+        super.init();
+        this._layer.cssClass = 'ui-tableview-cell';
 
         this._contentView = new UIView();
         this._contentView.init();

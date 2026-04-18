@@ -22,16 +22,8 @@ class UITabBar extends UIView {
     }
 
     init() {
-        this.element = document.createElement('div');
-        this.element.className = 'ui-tabbar';
-        this.element.style.display = 'flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.justifyContent = 'space-around';
-        this.element.style.height = '49px';
-        this.element.style.backgroundColor = UIColor.systemBackground().css;
-        this.element.style.borderTop = '1px solid #ddd';
-        this.element.style.position = 'absolute';
-        this.element.style.zIndex = '100';
+        super.init();
+        this._layer.cssClass = 'ui-tabbar';
 
         return this;
     }
@@ -159,7 +151,6 @@ class UITabBar extends UIView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

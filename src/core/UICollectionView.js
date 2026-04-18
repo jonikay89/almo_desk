@@ -111,10 +111,7 @@ class UICollectionView extends UIScrollView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-collectionview';
-        this.element.style.position = 'absolute';
-        this.element.style.overflow = 'auto';
+        this._layer.cssClass = 'ui-collectionview';
 
         this.contentElement = document.createElement('div');
         this.contentElement.className = 'ui-collectionview-content';
@@ -247,7 +244,6 @@ class UICollectionView extends UIScrollView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

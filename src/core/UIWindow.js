@@ -19,11 +19,7 @@ class UIWindow extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-window';
-        this.element.style.position = 'absolute';
-        this.element.style.overflow = 'hidden';
-        this.element.style.backgroundColor = UIColor.windowBackground().css;
+        this._layer.cssClass = 'ui-window';
         this.#setupWindowLayers();
         return this;
     }
@@ -236,7 +232,6 @@ class UIWindow extends UIView {
             }
         }
 
-        this.element.style.position = 'absolute';
         if (this.element.firstChild !== canvas) {
             this.element.insertBefore(canvas, this.element.firstChild);
         }

@@ -158,10 +158,7 @@ class UILabel extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-label';
-        this.element.style.display = 'inline-block';
-        this.element.style.position = 'absolute';
+        this._layer.cssClass = 'ui-label';
         
         this._textLayer = CATextLayer.layer();
         this._textLayer.name = 'textLayer';
@@ -169,16 +166,15 @@ class UILabel extends UIView {
         this.#createTextLayerContent();
         this.#updateStyle();
         this._accessibilityValue = this._text;
-        this._updateAccessibilityAttributes();
         
         return this;
     }
 
     deinit() {
         this._text = '';
-        this.element = null;
         this._textLayer = null;
         this._layerContents = null;
+        super.deinit();
     }
 
     #createTextLayerContent() {
@@ -301,60 +297,34 @@ class UILabel extends UIView {
     }
 
     #updateStyle() {
-        if (this.element) {
-            this.element.style.color = this._textColor ? this._textColor.css : '#000';
-            this.element.style.fontSize = `${this.fontSize}px`;
-            this.element.style.fontFamily = this.fontFamily;
-            this.element.style.textAlign = this.textAlignment;
-            this.element.style.fontWeight = this.fontWeight;
-            this.element.style.overflow = 'hidden';
-            this.element.style.textOverflow = this.lineBreakMode === 'ellipsis' ? 'ellipsis' : 'clip';
-            this.element.style.opacity = this.isEnabled ? '1' : '0.5';
-            this.element.style.lineHeight = `${this.lineHeight}px`;
-            
-            if (this.numberOfLines === 1) {
-                this.element.style.whiteSpace = 'nowrap';
-            } else {
-                this.element.style.display = '-webkit-box';
-                this.element.style.WebkitLineClamp = this.numberOfLines;
-                this.element.style.WebkitBoxOrient = 'vertical';
-            }
-
-            if (this.adjustsFontSizeToFitWidth) {
-                this.element.style.wordBreak = 'break-all';
-            }
+        if (!this._textLayer) return;
+        
+        let cssClass = 'ui-label';
+        if (this.numberOfLines !== 1) {
+            cssClass += ' multiline';
+            this._textLayer.maximumNumberOfLines = this.numberOfLines;
+        } else {
+            this._textLayer.maximumNumberOfLines = 0;
         }
         
+        if (this.lineBreakMode === 'ellipsis') {
+            cssClass += ' ellipsis';
+            this._textLayer.truncationMode = 'end';
+        }
+        
+        if (this.adjustsFontSizeToFitWidth) {
+            cssClass += ' word-break';
+        }
+        
+        this._layer.cssClass = cssClass;
+        this._textLayer.opacity = this.isEnabled ? 1 : 0.5;
+        
         this.#updateTextLayer();
-        this.#renderLayers();
     }
 
     #renderLayers() {
-        if (!this.element || !this._useLayerRendering) return;
-        
-        const existingCanvas = this.element.querySelector('.layer-canvas');
-        if (existingCanvas) existingCanvas.remove();
-
-        const canvas = document.createElement('canvas');
-        canvas.className = 'layer-canvas';
-        canvas.style.position = 'absolute';
-        canvas.style.left = '0';
-        canvas.style.top = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
-        canvas.width = (this._bounds.width || 100) * 2;
-        canvas.height = (this._bounds.height || 20) * 2;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.scale(2, 2);
-        
-        this.#renderTextInContext(ctx, this._bounds);
-        
-        this.element.style.position = 'absolute';
-        if (this.element.firstChild !== canvas) {
-            this.element.insertBefore(canvas, this.element.firstChild);
-        }
+        // Layer rendering is handled by CALayer system
+        // CATextLayer handles text rendering
     }
 
     layoutSubviews() {
@@ -442,18 +412,23 @@ class UILabel extends UIView {
 
     setShadowColor(color) {
         this._shadowColor = color instanceof UIColor ? color : UIColor.colorWithHex(color);
-        if (this._shadowColor && this.element) {
-            this.element.style.textShadow = `${this._shadowOffset.width}px ${this._shadowOffset.height}px ${this._shadowColor.css}`;
-        }
+        this.#updateShadow();
         return this;
     }
 
     setShadowOffset(offset) {
         this._shadowOffset = offset;
-        if (this._shadowColor && this.element) {
-            this.element.style.textShadow = `${offset.width}px ${offset.height}px ${this._shadowColor.css}`;
-        }
+        this.#updateShadow();
         return this;
+    }
+
+    #updateShadow() {
+        if (this._shadowColor) {
+            this._layer.setShadowColor(this._shadowColor);
+            this._layer.setShadowOpacity(this._shadowOpacity);
+            this._layer.setShadowOffset(this._shadowOffset.width, this._shadowOffset.height);
+            this._layer.setShadowRadius(this._shadowRadius);
+        }
     }
 
     setAttributedTextAttribute(name, value, range = null) {

@@ -31,16 +31,9 @@ class UINavigationBar extends UIView {
     }
 
     init() {
+        super.init();
         this.element = document.createElement('nav');
-        this.element.className = 'ui-navigationbar';
-        this.element.style.display = 'flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.height = '44px';
-        this.element.style.backgroundColor = UIColor.systemBackground().css;
-        this.element.style.borderBottom = '1px solid #ddd';
-        this.element.style.padding = '0 16px';
-        this.element.style.position = 'absolute';
-        this.element.style.zIndex = '100';
+        this._layer.cssClass = 'ui-navigationbar';
 
         return this;
     }
@@ -194,7 +187,6 @@ class UINavigationBar extends UIView {
         for (const sublayer of this._layer._sublayers) {
             sublayer.renderToContext(ctx);
         }
-        this.element.style.position = 'absolute';
         this.element.insertBefore(canvas, this.element.firstChild);
     }
 

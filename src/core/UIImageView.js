@@ -122,10 +122,7 @@ class UIImageView extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-imageview';
-        this.element.style.overflow = 'hidden';
-        this.element.style.position = 'absolute';
+        this._layer.cssClass = 'ui-imageview';
         
         this._renderedImage = document.createElement('img');
         this._renderedImage.style.width = '100%';

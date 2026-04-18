@@ -159,7 +159,6 @@ class UIViewController extends UIResponder {
     createView() {
         const view = document.createElement('div');
         view.className = 'ui-view-controller-view';
-        view.style.position = 'absolute';
         view.style.width = '100%';
         view.style.height = '100%';
         return view;

@@ -105,11 +105,7 @@ class UIButton extends UIControl {
 
     init() {
         super.init();
-        this.element.className = 'ui-button';
-        this.element.style.position = 'absolute';
-        this.element.style.display = 'inline-flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.justifyContent = 'center';
+        this._layer.cssClass = 'ui-button';
         
         this._titleLabel = new UILabel(this._title);
         this._titleLabel.init();

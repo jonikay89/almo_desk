@@ -125,12 +125,7 @@ class UIScrollView extends UIView {
     init() {
         super.init();
         
-        if (!this.element) {
-            this.element = document.createElement('div');
-        }
-        this.element.className = 'ui-scrollview';
-        this.element.style.overflow = 'auto';
-        this.element.style.position = 'absolute';
+        this._layer.cssClass = 'ui-scrollview';
         
         if (!this.contentElement) {
             this.contentElement = document.createElement('div');

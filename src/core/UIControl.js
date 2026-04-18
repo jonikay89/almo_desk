@@ -69,14 +69,8 @@ class UIControl extends UIView {
 
     init() {
         super.init();
-        if (!this.element) {
-            this.element = document.createElement('div');
-        }
-        this.element.className = 'ui-control';
-        this.element.style.userSelect = 'none';
-        this.element.style.cursor = this.enabled ? 'pointer' : 'default';
+        this._layer.cssClass = 'ui-control';
         this.#setupControlLayers();
-        this._updateAccessibilityAttributes();
         return this;
     }
 
@@ -92,7 +86,7 @@ class UIControl extends UIView {
         this._controlLayer = null;
         this._borderLayer = null;
         this._backgroundLayer = null;
-        this.element = null;
+        super.deinit();
     }
 
     setEnabled(enabled) {

@@ -79,16 +79,7 @@ class UIStepper extends UIControl {
 
     init() {
         super.init();
-        this.element.className = 'ui-stepper';
-        this.element.style.position = 'absolute';
-        this.element.style.display = 'inline-flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.cursor = 'pointer';
-        this.element.style.userSelect = 'none';
-        this.element.style.backgroundColor = '#f0f0f0';
-        this.element.style.borderRadius = '6px';
-        this.element.style.overflow = 'hidden';
-        this.element.style.border = '1px solid #ccc';
+        this._layer.cssClass = 'ui-stepper';
 
         this.decrementButton = document.createElement('button');
         this.decrementButton.style.border = 'none';

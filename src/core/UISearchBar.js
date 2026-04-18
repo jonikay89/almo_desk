@@ -23,14 +23,7 @@ class UISearchBar extends UIView {
 
     init() {
         super.init();
-        this.element = document.createElement('div');
-        this.element.className = 'ui-searchbar';
-        this.element.style.display = 'flex';
-        this.element.style.alignItems = 'center';
-        this.element.style.height = '44px';
-        this.element.style.backgroundColor = UIColor.systemBackground().css;
-        this.element.style.padding = '0 8px';
-        this.element.style.borderBottom = '1px solid #ddd';
+        this._layer.cssClass = 'ui-searchbar';
 
         this.searchContainer = document.createElement('div');
         this.searchContainer.style.display = 'flex';

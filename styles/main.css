@@ -3,6 +3,7 @@
 @import './window.css';
 @import './taskbar.css';
 @import './controls.css';
+@import './components.css';
 @import './widgets/clock.css';
 @import './widgets/notes.css';
 @import './widgets/code-editor.css';

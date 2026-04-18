@@ -591,6 +591,7 @@ class CALayer {
         this._edgeAntialiasing = true;
         this._opaque = false;
         this._customState = {};
+        this._cssClass = '';
     }
 
     static layer() {
@@ -717,6 +718,9 @@ class CALayer {
 
     get name() { return this._name; }
     set name(value) { this._name = value; }
+
+    get cssClass() { return this._cssClass; }
+    set cssClass(value) { this._cssClass = value; }
 
     get delegate() { return this._delegate; }
     set delegate(value) { this._delegate = value; }
