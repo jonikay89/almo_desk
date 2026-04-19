@@ -41,6 +41,10 @@ class UIView extends UIResponder {
         this._sublayers = [];
         this._observables = {};
         this._bindings = [];
+        this._dragInteractions = [];
+        this._dropInteractions = [];
+        this._dragDelegate = null;
+        this._dropDelegate = null;
     }
 
     static layer() {
@@ -612,6 +616,113 @@ class UIView extends UIResponder {
             }
         }
         return handled;
+    }
+
+    addDragInteraction(interaction) {
+        if (!interaction) return;
+        if (this._dragInteractions.includes(interaction)) return;
+        this._dragInteractions.push(interaction);
+        interaction._attachToView(this);
+    }
+
+    removeDragInteraction(interaction) {
+        const index = this._dragInteractions.indexOf(interaction);
+        if (index !== -1) {
+            this._dragInteractions.splice(index, 1);
+            interaction._detachFromView();
+        }
+    }
+
+    dragInteractions() {
+        return [...this._dragInteractions];
+    }
+
+    hasDragInteraction() {
+        return this._dragInteractions.length > 0;
+    }
+
+    addDropInteraction(interaction) {
+        if (!interaction) return;
+        if (this._dropInteractions.includes(interaction)) return;
+        this._dropInteractions.push(interaction);
+        interaction._attachToView(this);
+    }
+
+    removeDropInteraction(interaction) {
+        const index = this._dropInteractions.indexOf(interaction);
+        if (index !== -1) {
+            this._dropInteractions.splice(index, 1);
+            interaction._detachFromView();
+        }
+    }
+
+    dropInteractions() {
+        return [...this._dropInteractions];
+    }
+
+    hasDropInteraction() {
+        return this._dropInteractions.length > 0;
+    }
+
+    _beginDrag(items, point, event) {
+        for (const interaction of this._dragInteractions) {
+            const session = interaction._beginDrag(items, point, event);
+            if (session) return session;
+        }
+        return null;
+    }
+
+    _handleDragMove(point, event) {
+        for (const interaction of this._dragInteractions) {
+            interaction._updateDrag(point, event);
+        }
+    }
+
+    _handleDragEnd(point, event) {
+        for (const interaction of this._dragInteractions) {
+            interaction._endDrag(point, event);
+        }
+    }
+
+    _handleDragCancel() {
+        for (const interaction of this._dragInteractions) {
+            interaction._cancelDrag();
+        }
+    }
+
+    _handleDropEnter(session, point) {
+        let proposal = null;
+        for (const interaction of this._dropInteractions) {
+            proposal = interaction._dragEntered(session, point);
+            if (proposal) break;
+        }
+        return proposal;
+    }
+
+    _handleDropUpdate(session, point) {
+        for (const interaction of this._dropInteractions) {
+            const proposal = interaction._dragUpdated(session, point);
+            if (proposal) return proposal;
+        }
+        return null;
+    }
+
+    _handleDropExit(session) {
+        for (const interaction of this._dropInteractions) {
+            interaction._dragExited(session);
+        }
+    }
+
+    _handleDrop(session) {
+        for (const interaction of this._dropInteractions) {
+            interaction._performDrop(session);
+        }
+    }
+
+    _handleDropEnd(session, operation) {
+        for (const interaction of this._dropInteractions) {
+            interaction._dragEnded(session, operation);
+        }
     }
 }
 

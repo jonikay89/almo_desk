@@ -8,6 +8,8 @@ const UIWindow = (await import('../src/core/UIWindow.js')).default;
 const { CALayer } = await import('../src/core/CALayer.js');
 const { Observable, Binding, ObservableObject } = await import('../src/core/Observable.js');
 const { ObservableArray } = await import('../src/core/ObservableArray.js');
+const { UIDragItem, UIDragSession, UIDragPreview, UIDragPreviewParameters, UIDragInteraction } = await import('../src/core/UIDragInteraction.js');
+const { UIDropProposal, UIDropSession, UIDropInteractionDelegate, UIDropInteraction } = await import('../src/core/UIDropInteraction.js');
 
 describe('UIResponder', () => {
     let responder;
@@ -941,5 +943,199 @@ describe('UIViewController Binding Support', () => {
         vc2.$observe('_label', (v) => { vc2Received = v; });
         vc1.$set('_label', 'Hello');
         assert.strictEqual(vc2Received, 'Hello');
+    });
+});
+
+describe('UIDragItem', () => {
+    it('should create drag item with item provider', () => {
+        const item = new UIDragItem('test-provider', { id: 1 });
+        assert.strictEqual(item.itemProvider, 'test-provider');
+        assert.deepStrictEqual(item.localObject, { id: 1 });
+    });
+
+    it('should allow setting preview provider', () => {
+        const item = new UIDragItem('provider');
+        const preview = { view: { id: 'preview' } };
+        item.previewProvider = () => preview;
+        assert.ok(item.previewProvider());
+    });
+
+    it('should store suggested title', () => {
+        const item = new UIDragItem('provider');
+        item.suggestedTitle = 'Test Title';
+        assert.strictEqual(item.suggestedTitle, 'Test Title');
+    });
+});
+
+describe('UIDragPreview', () => {
+    it('should create drag preview with view', () => {
+        const view = { id: 'test-view' };
+        const preview = new UIDragPreview(view, { cornerRadius: 8 });
+        assert.strictEqual(preview.view, view);
+        assert.strictEqual(preview.params.cornerRadius, 8);
+    });
+});
+
+describe('UIDragInteraction', () => {
+    it('should create drag interaction with delegate', () => {
+        const delegate = { dragInteractionWillBegin: () => {} };
+        const interaction = new UIDragInteraction(delegate);
+        assert.strictEqual(interaction.delegate, delegate);
+        assert.strictEqual(interaction.isEnabled, true);
+    });
+
+    it('should allow disabling', () => {
+        const interaction = new UIDragInteraction({});
+        interaction.isEnabled = false;
+        assert.strictEqual(interaction.isEnabled, false);
+    });
+
+    it('should manage allowed types', () => {
+        const interaction = new UIDragInteraction({});
+        interaction.addAllowedType('custom');
+        assert.ok(interaction.allowedTypes.includes('custom'));
+        interaction.removeAllowedType('custom');
+        assert.ok(!interaction.allowedTypes.includes('custom'));
+    });
+
+    it('should not begin drag when disabled', () => {
+        const interaction = new UIDragInteraction({});
+        interaction.isEnabled = false;
+        const session = interaction._beginDrag([], { x: 0, y: 0 }, null);
+        assert.strictEqual(session, null);
+    });
+});
+
+describe('UIDropProposal', () => {
+    it('should create drop proposal with operation', () => {
+        const proposal = new UIDropProposal('copy');
+        assert.strictEqual(proposal.operation, 'copy');
+    });
+
+    it('should allow changing operation', () => {
+        const proposal = new UIDropProposal('copy');
+        proposal.operation = 'move';
+        assert.strictEqual(proposal.operation, 'move');
+    });
+
+    it('should manage prefetching', () => {
+        const proposal = new UIDropProposal('copy');
+        assert.strictEqual(proposal.isPrefetchingEnabled, true);
+        proposal.isPrefetchingEnabled = false;
+        assert.strictEqual(proposal.isPrefetchingEnabled, false);
+    });
+});
+
+describe('UIDropSession', () => {
+    it('should create session with items', () => {
+        const items = [new UIDragItem('provider1'), new UIDragItem('provider2')];
+        const session = new UIDropSession(items);
+        assert.strictEqual(session.count, 2);
+        assert.strictEqual(session.items.length, 2);
+    });
+
+    it('should track progress', () => {
+        const session = new UIDropSession([]);
+        session.progress = 0.5;
+        assert.strictEqual(session.progress, 0.5);
+    });
+
+    it('should clamp progress values', () => {
+        const session = new UIDropSession([]);
+        session.progress = 1.5;
+        assert.strictEqual(session.progress, 1);
+        session.progress = -0.5;
+        assert.strictEqual(session.progress, 0);
+    });
+});
+
+describe('UIDropInteraction', () => {
+    it('should create drop interaction with delegate', () => {
+        const delegate = new UIDropInteractionDelegate();
+        const interaction = new UIDropInteraction(delegate);
+        assert.strictEqual(interaction.delegate, delegate);
+        assert.strictEqual(interaction.isEnabled, true);
+    });
+
+    it('should allow disabling', () => {
+        const interaction = new UIDropInteraction({});
+        interaction.isEnabled = false;
+        assert.strictEqual(interaction.isEnabled, false);
+    });
+
+    it('should manage allowed types', () => {
+        const interaction = new UIDropInteraction({});
+        interaction.addAllowedType('custom');
+        assert.ok(interaction.allowedTypes.includes('custom'));
+        interaction.removeAllowedType('custom');
+        assert.ok(!interaction.allowedTypes.includes('custom'));
+    });
+
+    it('should return CANCEL when drop is disabled', () => {
+        const interaction = new UIDropInteraction({});
+        interaction.isEnabled = false;
+        const session = new UIDropSession([]);
+        const proposal = interaction._dragEntered(session, { x: 0, y: 0 });
+        assert.strictEqual(proposal.operation, 'cancel');
+    });
+});
+
+describe('UIView Drag & Drop', () => {
+    it('should add and remove drag interactions', () => {
+        const view = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        const interaction = new UIDragInteraction({});
+        
+        view.addDragInteraction(interaction);
+        assert.strictEqual(view.dragInteractions().length, 1);
+        assert.strictEqual(view.hasDragInteraction(), true);
+        
+        view.removeDragInteraction(interaction);
+        assert.strictEqual(view.dragInteractions().length, 0);
+        assert.strictEqual(view.hasDragInteraction(), false);
+    });
+
+    it('should add and remove drop interactions', () => {
+        const view = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        const interaction = new UIDropInteraction({});
+        
+        view.addDropInteraction(interaction);
+        assert.strictEqual(view.dropInteractions().length, 1);
+        assert.strictEqual(view.hasDropInteraction(), true);
+        
+        view.removeDropInteraction(interaction);
+        assert.strictEqual(view.dropInteractions().length, 0);
+        assert.strictEqual(view.hasDropInteraction(), false);
+    });
+
+    it('should not add duplicate interactions', () => {
+        const view = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        const interaction = new UIDragInteraction({});
+        
+        view.addDragInteraction(interaction);
+        view.addDragInteraction(interaction);
+        assert.strictEqual(view.dragInteractions().length, 1);
+    });
+
+    it('should handle drag begin', () => {
+        const view = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        const interaction = new UIDragInteraction({});
+        view.addDragInteraction(interaction);
+        
+        const itemProvider = { type: 'text', getValue: () => 'test' };
+        const items = [new UIDragItem(itemProvider, { id: 1 })];
+        const session = view._beginDrag(items, { x: 50, y: 50 }, null);
+        assert.ok(session != null);
+    });
+
+    it('should handle drop enter', () => {
+        const view = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        const interaction = new UIDropInteraction({});
+        view.addDropInteraction(interaction);
+        
+        const itemProvider = { type: 'text', getValue: () => 'test' };
+        const items = [new UIDragItem(itemProvider)];
+        const session = new UIDropSession(items);
+        const proposal = view._handleDropEnter(session, { x: 50, y: 50 });
+        assert.ok(proposal != null);
     });
 });

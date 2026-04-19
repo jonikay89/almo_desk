@@ -93,6 +93,19 @@ export { default as UIAlertController } from './UIAlertController.js';
 export { default as UIPickerView } from './UIPickerView.js';
 export { Observable, Binding, observable, computed, ObservableObject } from './Observable.js';
 export { ObservableArray } from './ObservableArray.js';
+export { 
+    UIDragItem, 
+    UIDragSession,
+    UIDragPreview, 
+    UIDragPreviewParameters, 
+    UIDragInteraction 
+} from './UIDragInteraction.js';
+export { 
+    UIDropProposal, 
+    UIDropSession, 
+    UIDropInteractionDelegate, 
+    UIDropInteraction 
+} from './UIDropInteraction.js';
 export {
     CustomStringConvertible,
     RawRepresentable,

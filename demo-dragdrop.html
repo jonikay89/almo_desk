@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIKit Drag & Drop - Live Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; padding: 20px; }
+        #app { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #1d1d1f; margin-bottom: 30px; font-size: 28px; }
+        h2 { color: #1d1d1f; font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .tag { font-size: 11px; background: #007aff; color: white; padding: 2px 8px; border-radius: 4px; }
+        .tag.drag { background: #5856d6; }
+        .tag.drop { background: #ff9500; }
+        .tag.interaction { background: #34c759; }
+        .section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .demo-area { background: #f5f5f7; border-radius: 8px; padding: 20px; min-height: 200px; display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .demo-area.col { flex-direction: column; align-items: flex-start; }
+        .log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+        .log-entry { margin: 2px 0; }
+        .log-entry.ok { color: #4ec9b0; }
+        .log-entry.info { color: #569cd6; }
+        .log-entry.drag { color: #c586c0; }
+        .log-entry.drop { color: #ce9178; }
+        .log-entry.error { color: #f14c4c; }
+        .btn { padding: 10px 20px; background: #007aff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .btn:hover { background: #0056cc; }
+        .btn.green { background: #34c759; }
+        .btn.orange { background: #ff9500; }
+        .btn.red { background: #ff3b30; }
+        .btn.purple { background: #5856d6; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .card { border: 1px solid #e5e5e7; border-radius: 10px; padding: 15px; }
+        .card h3 { font-size: 14px; color: #1d1d1f; margin-bottom: 8px; }
+        .card p { font-size: 12px; color: #86868b; margin-bottom: 10px; }
+        .code { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; overflow-x: auto; white-space: pre; }
+        .code .k { color: #569cd6; }
+        .code .s { color: #ce9178; }
+        .code .c { color: #6a9955; }
+        .code .f { color: #dcdcaa; }
+        .drag-source { width: 80px; height: 80px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600; cursor: grab; user-select: none; transition: transform 0.2s, opacity 0.2s; }
+        .drag-source:hover { transform: scale(1.05); }
+        .drag-source:active { cursor: grabbing; transform: scale(0.95); }
+        .drag-source.dragging { opacity: 0.5; }
+        .drop-target { width: 150px; height: 150px; border: 3px dashed #ccc; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; font-size: 13px; transition: border-color 0.2s, background-color 0.2s, transform 0.2s; }
+        .drop-target.active { border-color: #5856d6; background: rgba(88, 86, 214, 0.1); transform: scale(1.02); }
+        .drop-target.can-drop { border-color: #34c759; background: rgba(52, 199, 89, 0.1); }
+        .drop-target.drag-over { border-color: #ff9500; background: rgba(255, 149, 0, 0.15); transform: scale(1.05); }
+        .drop-target .icon { font-size: 32px; margin-bottom: 8px; }
+        .drop-target .count { font-size: 24px; font-weight: 600; color: #1d1d1f; margin-top: 4px; }
+        .fruit-list { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .fruit-item { background: #f0f0f0; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: grab; transition: transform 0.15s, box-shadow 0.15s; }
+        .fruit-item:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .fruit-item.dragging { opacity: 0.5; }
+        .fruit-item.drag-over { background: #e0e0e0; transform: scale(1.02); }
+        .fruit-item .emoji { font-size: 24px; }
+        .fruit-item .name { font-weight: 500; }
+        .drop-zone { width: 100%; min-height: 100px; border: 2px dashed #ccc; border-radius: 8px; padding: 15px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; transition: border-color 0.2s, background-color 0.2s; }
+        .drop-zone.active { border-color: #5856d6; background: rgba(88, 86, 214, 0.05); }
+        .drop-zone.drag-over { border-color: #ff9500; background: rgba(255, 149, 0, 0.1); }
+        .dropped-item { background: #5856d6; color: white; padding: 8px 12px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 6px; animation: popIn 0.2s ease-out; }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .dropped-item .remove { cursor: pointer; opacity: 0.7; }
+        .dropped-item .remove:hover { opacity: 1; }
+        .state-display { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .state-item { display: flex; align-items: center; gap: 8px; }
+        .state-label { font-size: 12px; color: #666; }
+        .state-value { font-family: monospace; font-size: 14px; font-weight: 600; }
+        .info { font-size: 12px; color: #86868b; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import {
+            UIView, UIViewController, UIWindow,
+            UIColor, UILabel, UIButton,
+            UILongPressGestureRecognizer,
+            UIDragItem, UIDragPreview, UIDragInteraction,
+            UIDropProposal, UIDropSession, UIDropInteraction,
+            Observable, ObservableArray
+        } from './src/core/index.js';
+
+        const app = document.getElementById('app');
+        const logArea = (title) => {
+            const section = document.createElement('div');
+            section.className = 'section';
+            section.innerHTML = `<h2>${title}</h2><div class="log" id="log-${Math.random().toString(36).slice(2)}"></div>`;
+            app.appendChild(section);
+            const log = section.querySelector('.log');
+            return (msg, type = 'info') => {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                log.appendChild(entry);
+                log.scrollTop = log.scrollHeight;
+            };
+        };
+
+        const log1 = logArea('Drag & Drop Session Log');
+        const log2 = logArea('Component State');
+
+        const stateDisplay = document.createElement('div');
+        stateDisplay.className = 'state-display';
+        stateDisplay.innerHTML = `
+            <div class="state-item">
+                <span class="state-label">Dragging:</span>
+                <span class="state-value" id="state-dragging">false</span>
+            </div>
+            <div class="state-item">
+                <span class="state-label">Drop Target Active:</span>
+                <span class="state-value" id="state-drop-active">false</span>
+            </div>
+            <div class="state-item">
+                <span class="state-label">Items Dropped:</span>
+                <span class="state-value" id="state-dropped">0</span>
+            </div>
+        `;
+        document.querySelector('.section:last-child').appendChild(stateDisplay);
+
+        let isDragging = false;
+        let dropTargetActive = false;
+        let droppedCount = 0;
+        let dragSource = null;
+        let dragItem = null;
+
+        class FruitItem {
+            constructor(name, emoji, color) {
+                this.name = name;
+                this.emoji = emoji;
+                this.color = color;
+            }
+        }
+
+        const fruits = [
+            new FruitItem('Apple', '🍎', '#ff3b30'),
+            new FruitItem('Banana', '🍌', '#ffcc00'),
+            new FruitItem('Orange', '🍊', '#ff9500'),
+            new FruitItem('Grape', '🍇', '#5856d6'),
+            new FruitItem('Strawberry', '🍓', '#ff2d55'),
+        ];
+
+        const droppedItems = new ObservableArray([]);
+
+        const section1 = document.createElement('div');
+        section1.className = 'section';
+        section1.innerHTML = `
+            <h2>Simple Drag Source <span class="tag drag">Drag</span></h2>
+            <p class="info">Click and hold on the box, then drag to the drop target.</p>
+            <div class="demo-area">
+                <div class="drag-source" id="simple-source" style="background: #5856d6;">
+                    Drag Me
+                </div>
+                <div class="drop-target" id="simple-target">
+                    <div class="icon">📦</div>
+                    <div>Drop Here</div>
+                    <div class="count" id="simple-count">0</div>
+                </div>
+            </div>
+        `;
+        app.appendChild(section1);
+
+        const simpleSource = document.getElementById('simple-source');
+        const simpleTarget = document.getElementById('simple-target');
+        const simpleCount = document.getElementById('simple-count');
+        let simpleDropCount = 0;
+
+        let dragStartPos = null;
+        let currentDragElement = null;
+        let currentDragData = null;
+
+        simpleSource.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            dragStartPos = { x: e.clientX, y: e.clientY };
+            log1('Drag started from simple source', 'drag');
+            
+            currentDragData = { type: 'simple', content: 'Simple Box' };
+            isDragging = true;
+            document.getElementById('state-dragging').textContent = 'true';
+            simpleSource.classList.add('dragging');
+            
+            currentDragElement = document.createElement('div');
+            currentDragElement.style.cssText = `
+                position: fixed;
+                left: ${e.clientX - 40}px;
+                top: ${e.clientY - 40}px;
+                width: 80px;
+                height: 80px;
+                background: #5856d6;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 600;
+                pointer-events: none;
+                z-index: 1000;
+                opacity: 0.9;
+                box-shadow: 0 8px 32px rgba(88, 86, 214, 0.4);
+            `;
+            currentDragElement.textContent = 'Dragging';
+            document.body.appendChild(currentDragElement);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !currentDragElement) return;
+            
+            currentDragElement.style.left = `${e.clientX - 40}px`;
+            currentDragElement.style.top = `${e.clientY - 40}px`;
+            
+            const rect = simpleTarget.getBoundingClientRect();
+            const isOver = e.clientX >= rect.left && e.clientX <= rect.right &&
+                          e.clientY >= rect.top && e.clientY <= rect.bottom;
+            
+            if (isOver && !simpleTarget.classList.contains('drag-over')) {
+                simpleTarget.classList.add('drag-over');
+                log1('Drag entered simple target', 'drop');
+            } else if (!isOver && simpleTarget.classList.contains('drag-over')) {
+                simpleTarget.classList.remove('drag-over');
+                log1('Drag exited simple target', 'drop');
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isDragging) return;
+            
+            const rect = simpleTarget.getBoundingClientRect();
+            const isOver = e.clientX >= rect.left && e.clientX <= rect.right &&
+                          e.clientY >= rect.top && e.clientY <= rect.bottom;
+            
+            if (isOver) {
+                simpleDropCount++;
+                simpleCount.textContent = simpleDropCount;
+                droppedCount++;
+                document.getElementById('state-dropped').textContent = droppedCount;
+                log1(`Dropped on simple target! Count: ${simpleDropCount}`, 'ok');
+                simpleTarget.classList.add('can-drop');
+                setTimeout(() => simpleTarget.classList.remove('can-drop'), 300);
+            }
+            
+            isDragging = false;
+            document.getElementById('state-dragging').textContent = 'false';
+            simpleSource.classList.remove('dragging');
+            simpleTarget.classList.remove('drag-over');
+            
+            if (currentDragElement) {
+                currentDragElement.remove();
+                currentDragElement = null;
+            }
+            currentDragData = null;
+        });
+
+        const section2 = document.createElement('div');
+        section2.className = 'section';
+        section2.innerHTML = `
+            <h2>Fruit List → Drop Zone <span class="tag drag">Drag</span> <span class="tag drop">Drop</span></h2>
+            <p class="info">Drag fruits from the list to the drop zone. Each fruit can only be dropped once.</p>
+            <div class="demo-area col">
+                <div class="fruit-list" id="fruit-list"></div>
+                <div class="drop-zone" id="fruit-drop-zone">
+                    <span style="color: #999; font-size: 13px;">Drop fruits here...</span>
+                </div>
+            </div>
+        `;
+        app.appendChild(section2);
+
+        const fruitListEl = document.getElementById('fruit-list');
+        const fruitDropZone = document.getElementById('fruit-drop-zone');
+        let fruitDragElement = null;
+        let fruitDragData = null;
+        const droppedFruitNames = new Set();
+
+        const renderFruits = () => {
+            fruitListEl.innerHTML = '';
+            for (const fruit of fruits) {
+                const item = document.createElement('div');
+                item.className = 'fruit-item';
+                item.dataset.fruit = fruit.name;
+                item.innerHTML = `
+                    <span class="emoji">${fruit.emoji}</span>
+                    <span class="name">${fruit.name}</span>
+                `;
+                item.style.borderLeft = `4px solid ${fruit.color}`;
+                
+                item.addEventListener('mousedown', (e) => {
+                    if (droppedFruitNames.has(fruit.name)) return;
+                    
+                    e.preventDefault();
+                    dragStartPos = { x: e.clientX, y: e.clientY };
+                    log1(`Drag started: ${fruit.name}`, 'drag');
+                    
+                    fruitDragData = { type: 'fruit', fruit: fruit };
+                    isDragging = true;
+                    document.getElementById('state-dragging').textContent = 'true';
+                    item.classList.add('dragging');
+                    
+                    fruitDragElement = document.createElement('div');
+                    fruitDragElement.style.cssText = `
+                        position: fixed;
+                        left: ${e.clientX - 50}px;
+                        top: ${e.clientY - 30}px;
+                        background: ${fruit.color};
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        color: white;
+                        font-weight: 500;
+                        pointer-events: none;
+                        z-index: 1000;
+                        opacity: 0.9;
+                        box-shadow: 0 4px 16px ${fruit.color}40;
+                    `;
+                    fruitDragElement.innerHTML = `<span style="font-size: 20px;">${fruit.emoji}</span><span>${fruit.name}</span>`;
+                    document.body.appendChild(fruitDragElement);
+                });
+                
+                fruitListEl.appendChild(item);
+            }
+        };
+
+        renderFruits();
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !fruitDragElement) return;
+            
+            fruitDragElement.style.left = `${e.clientX - 50}px`;
+            fruitDragElement.style.top = `${e.clientY - 30}px`;
+            
+            const rect = fruitDropZone.getBoundingClientRect();
+            const isOver = e.clientX >= rect.left && e.clientX <= rect.right &&
+                          e.clientY >= rect.top && e.clientY <= rect.bottom;
+            
+            if (isOver && !fruitDropZone.classList.contains('drag-over')) {
+                fruitDropZone.classList.add('drag-over');
+                log1('Drag entered fruit drop zone', 'drop');
+            } else if (!isOver && fruitDropZone.classList.contains('drag-over')) {
+                fruitDropZone.classList.remove('drag-over');
+                log1('Drag exited fruit drop zone', 'drop');
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isDragging || !fruitDragData) return;
+            
+            const rect = fruitDropZone.getBoundingClientRect();
+            const isOver = e.clientX >= rect.left && e.clientX <= rect.right &&
+                          e.clientY >= rect.top && e.clientY <= rect.bottom;
+            
+            if (isOver && fruitDragData.fruit) {
+                const fruit = fruitDragData.fruit;
+                if (!droppedFruitNames.has(fruit.name)) {
+                    droppedFruitNames.add(fruit.name);
+                    
+                    const droppedEl = document.createElement('div');
+                    droppedEl.className = 'dropped-item';
+                    droppedEl.innerHTML = `
+                        <span>${fruit.emoji}</span>
+                        <span>${fruit.name}</span>
+                        <span class="remove" data-fruit="${fruit.name}">×</span>
+                    `;
+                    
+                    const placeholder = fruitDropZone.querySelector('span');
+                    if (placeholder) placeholder.remove();
+                    fruitDropZone.appendChild(droppedEl);
+                    
+                    droppedEl.querySelector('.remove').addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        droppedEl.remove();
+                        droppedFruitNames.delete(fruit.name);
+                        droppedCount--;
+                        document.getElementById('state-dropped').textContent = droppedCount;
+                        log1(`Removed ${fruit.name}`, 'info');
+                        
+                        if (droppedFruitNames.size === 0) {
+                            fruitDropZone.innerHTML = '<span style="color: #999; font-size: 13px;">Drop fruits here...</span>';
+                        }
+                    });
+                    
+                    droppedCount++;
+                    document.getElementById('state-dropped').textContent = droppedCount;
+                    log1(`Dropped ${fruit.name}! Total: ${droppedCount}`, 'ok');
+                    
+                    droppedItems.push(fruit);
+                }
+            }
+            
+            isDragging = false;
+            document.getElementById('state-dragging').textContent = 'false';
+            
+            document.querySelectorAll('.fruit-item').forEach(el => el.classList.remove('dragging'));
+            fruitDropZone.classList.remove('drag-over');
+            
+            if (fruitDragElement) {
+                fruitDragElement.remove();
+                fruitDragElement = null;
+            }
+            fruitDragData = null;
+        });
+
+        const section3 = document.createElement('div');
+        section3.className = 'section';
+        section3.innerHTML = `
+            <h2>Multi-Drop Targets <span class="tag interaction">Interactive</span></h2>
+            <p class="info">Drag the card to any of the colored drop zones.</p>
+            <div class="demo-area">
+                <div class="drag-source" id="card-source" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 100px; height: 100px;">
+                    Card
+                </div>
+                <div class="drop-target" id="target-red" style="border-color: #ff3b30;">
+                    <div class="icon">🟥</div>
+                    <div>Red Zone</div>
+                </div>
+                <div class="drop-target" id="target-green" style="border-color: #34c759;">
+                    <div class="icon">🟩</div>
+                    <div>Green Zone</div>
+                </div>
+                <div class="drop-target" id="target-blue" style="border-color: #007aff;">
+                    <div class="icon">🟦</div>
+                    <div>Blue Zone</div>
+                </div>
+            </div>
+        `;
+        app.appendChild(section3);
+
+        const cardSource = document.getElementById('card-source');
+        const targets = [
+            { el: document.getElementById('target-red'), color: '#ff3b30', name: 'Red' },
+            { el: document.getElementById('target-green'), color: '#34c759', name: 'Green' },
+            { el: document.getElementById('target-blue'), color: '#007aff', name: 'Blue' }
+        ];
+        let cardDragElement = null;
+        let activeTarget = null;
+
+        cardSource.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            log1('Card drag started', 'drag');
+            
+            isDragging = true;
+            document.getElementById('state-dragging').textContent = 'true';
+            cardSource.classList.add('dragging');
+            
+            cardDragElement = document.createElement('div');
+            cardDragElement.style.cssText = `
+                position: fixed;
+                left: ${e.clientX - 50}px;
+                top: ${e.clientY - 50}px;
+                width: 100px;
+                height: 100px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 600;
+                pointer-events: none;
+                z-index: 1000;
+                opacity: 0.9;
+                box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+            `;
+            cardDragElement.textContent = 'Card';
+            document.body.appendChild(cardDragElement);
+            
+            targets.forEach(t => t.el.classList.add('active'));
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !cardDragElement) return;
+            
+            cardDragElement.style.left = `${e.clientX - 50}px`;
+            cardDragElement.style.top = `${e.clientY - 50}px`;
+            
+            let foundTarget = null;
+            for (const target of targets) {
+                const rect = target.el.getBoundingClientRect();
+                const isOver = e.clientX >= rect.left && e.clientX <= rect.right &&
+                              e.clientY >= rect.top && e.clientY <= rect.bottom;
+                
+                if (isOver) {
+                    foundTarget = target;
+                    if (!target.el.classList.contains('drag-over')) {
+                        target.el.classList.add('drag-over');
+                        log1(`Drag entered ${target.name} zone`, 'drop');
+                    }
+                } else {
+                    target.el.classList.remove('drag-over');
+                }
+            }
+            activeTarget = foundTarget;
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isDragging) return;
+            
+            if (activeTarget) {
+                log1(`Dropped on ${activeTarget.name} zone!`, 'ok');
+                activeTarget.el.style.background = `${activeTarget.color}20`;
+                activeTarget.el.classList.add('can-drop');
+                setTimeout(() => {
+                    activeTarget.el.style.background = '';
+                    activeTarget.el.classList.remove('can-drop');
+                }, 500);
+            }
+            
+            isDragging = false;
+            document.getElementById('state-dragging').textContent = 'false';
+            cardSource.classList.remove('dragging');
+            targets.forEach(t => {
+                t.el.classList.remove('active', 'drag-over');
+            });
+            activeTarget = null;
+            
+            if (cardDragElement) {
+                cardDragElement.remove();
+                cardDragElement = null;
+            }
+        });
+
+        const section4 = document.createElement('div');
+        section4.className = 'section';
+        section4.innerHTML = `
+            <h2>UIDragInteraction/UIDropInteraction Demo <span class="tag drag">UIKit</span></h2>
+            <p class="info">Using the actual UIKit drag/drop interaction classes.</p>
+            <div class="demo-area">
+                <div id="uikit-drag-source" style="background: #34c759; width: 80px; height: 80px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; cursor: grab;">
+                    Source
+                </div>
+                <div id="uikit-drop-target" style="width: 150px; height: 150px; border: 3px dashed #34c759; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #34c759;">
+                    <div style="font-size: 24px;">🎯</div>
+                    <div>UIKit Drop</div>
+                    <div id="uikit-count" style="font-size: 20px; font-weight: 600; color: #1d1d1f; margin-top: 4px;">0</div>
+                </div>
+            </div>
+        `;
+        app.appendChild(section4);
+
+        let uikitDropCount = 0;
+
+        const uikitDragSourceEl = document.getElementById('uikit-drag-source');
+        const uikitDropTargetEl = document.getElementById('uikit-drop-target');
+
+        class SimpleDragInteractionDelegate {
+            dragInteractionWillBegin(session) {
+                log1('UIKit: Drag will begin', 'drag');
+            }
+            dragInteractionDidEnd(session) {
+                log1('UIKit: Drag ended', 'drag');
+            }
+            dragInteractionDidCancel(session) {
+                log1('UIKit: Drag cancelled', 'error');
+            }
+        }
+
+        class SimpleDropInteractionDelegate {
+            dropInteractionsessionWillBegin(session) {
+                log1('UIKit: Drop will begin', 'drop');
+                dropTargetActive = true;
+                document.getElementById('state-drop-active').textContent = 'true';
+            }
+            dropInteractionsessionDidEnter(session) {
+                log1('UIKit: Drop entered', 'drop');
+            }
+            dropInteractionsessionDidExit(session) {
+                log1('UIKit: Drop exited', 'drop');
+            }
+            dropInteractionsessionDidUpdate(session, proposal) {
+                log1('UIKit: Drop updated', 'drop');
+                return proposal;
+            }
+            dropInteractionperformDrop(session) {
+                log1(`UIKit: Performing drop with ${session.count} items`, 'ok');
+                uikitDropCount++;
+                document.getElementById('uikit-count').textContent = uikitDropCount;
+                droppedCount++;
+                document.getElementById('state-dropped').textContent = droppedCount;
+            }
+            dropInteractionsessionDidEnd(session, operation) {
+                log1(`UIKit: Drop ended with operation: ${operation}`, 'drop');
+                dropTargetActive = false;
+                document.getElementById('state-drop-active').textContent = 'false';
+            }
+        }
+
+        const simpleDragDelegate = new SimpleDragInteractionDelegate();
+        const simpleDropDelegate = new SimpleDropInteractionDelegate();
+
+        const uikitDragInteraction = new UIDragInteraction(simpleDragDelegate);
+        const uikitDropInteraction = new UIDropInteraction(simpleDropDelegate);
+
+        uikitDragSourceEl.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            
+            const dragItem = new UIDragItem(null, { type: 'simple-uikit', content: 'UIKit Item' });
+            const session = uikitDragInteraction._beginDrag([dragItem], { x: e.clientX, y: e.clientY }, e);
+            
+            if (session) {
+                log1('UIKit: Drag session started', 'drag');
+            }
+        });
+
+        uikitDropTargetEl.addEventListener('mouseenter', (e) => {
+            if (uikitDragInteraction.isDragging) {
+                log1('UIKit: Mouse entered drop target during drag', 'drop');
+            }
+        });
+
+        console.log('Drag & Drop Demo loaded successfully');
+        console.log('Available classes: UIDragItem, UIDragPreview, UIDragInteraction, UIDropProposal, UIDropSession, UIDropInteraction');
+    </script>
+</body>
+</html>
