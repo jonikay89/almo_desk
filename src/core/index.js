@@ -70,7 +70,7 @@ export { default as UIControl } from './UIControl.js';
 export { default as UIImage } from './UIImage.js';
 export { default as UIImageView } from './UIImageView.js';
 export { default as UIButton } from './UIButton.js';
-export { default as UIScrollView } from './UIScrollView.js';
+export { default as UIScrollView, UIScrollViewDelegate } from './UIScrollView.js';
 export { default as UIStackView } from './UIStackView.js';
 export { default as UITextField } from './UITextField.js';
 export { default as UITextView } from './UITextView.js';
