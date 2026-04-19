@@ -6,6 +6,8 @@ const UIView = (await import('../src/core/UIView.js')).default;
 const UIViewController = (await import('../src/core/UIViewController.js')).default;
 const UIWindow = (await import('../src/core/UIWindow.js')).default;
 const { CALayer } = await import('../src/core/CALayer.js');
+const { Observable, Binding, ObservableObject } = await import('../src/core/Observable.js');
+const { ObservableArray } = await import('../src/core/ObservableArray.js');
 
 describe('UIResponder', () => {
     let responder;
@@ -611,5 +613,333 @@ describe('UIResponder touch handling', () => {
         responder._handleGestureRecognizerTouchBegan({ identifier: 0 }, null);
         
         assert.strictEqual(tapCalled, true);
+    });
+});
+
+describe('Observable', () => {
+    it('should create observable with initial value', () => {
+        const obs = new Observable(42);
+        assert.strictEqual(obs.value, 42);
+    });
+
+    it('should notify subscribers on value change', () => {
+        const obs = new Observable(0);
+        let received = [];
+        obs.subscribe((newVal, oldVal) => {
+            received.push({ new: newVal, old: oldVal });
+        });
+        obs.value = 1;
+        obs.value = 2;
+        assert.strictEqual(received.length, 2);
+        assert.deepStrictEqual(received[0], { new: 1, old: 0 });
+        assert.deepStrictEqual(received[1], { new: 2, old: 1 });
+    });
+
+    it('should not notify if value unchanged', () => {
+        const obs = new Observable(5);
+        let called = false;
+        obs.subscribe(() => { called = true; });
+        obs.value = 5;
+        assert.strictEqual(called, false);
+    });
+
+    it('should support immediate notification', () => {
+        const obs = new Observable(10);
+        let received;
+        obs.subscribe((v) => { received = v; }, { immediately: true });
+        assert.strictEqual(received, 10);
+    });
+
+    it('should return function to unsubscribe', () => {
+        const obs = new Observable(0);
+        let count = 0;
+        const unsubscribe = obs.subscribe(() => { count++; });
+        obs.value = 1;
+        unsubscribe();
+        obs.value = 2;
+        assert.strictEqual(count, 1);
+    });
+
+    it('should track change history', () => {
+        const obs = new Observable(1);
+        obs.value = 2;
+        obs.value = 3;
+        const history = obs.changeHistory;
+        assert.strictEqual(history.length, 2);
+        assert.strictEqual(history[0].oldValue, 1);
+        assert.strictEqual(history[0].newValue, 2);
+    });
+
+    it('should map to new observable', () => {
+        const obs = new Observable(5);
+        const mapped = obs.map((v) => v * 2);
+        assert.strictEqual(mapped.value, 10);
+        obs.value = 10;
+        assert.strictEqual(mapped.value, 20);
+    });
+
+    it('should filter values', () => {
+        const obs = new Observable(5);
+        const filtered = obs.filter((v) => v > 3);
+        assert.strictEqual(filtered.value, 5);
+        obs.value = 2;
+        obs.value = 7;
+        assert.strictEqual(filtered.value, 7);
+    });
+});
+
+describe('Binding', () => {
+    it('should create one-way binding', () => {
+        const source = new Observable(10);
+        const target = new Observable(0);
+        const binding = source.bindTo(target, { twoWay: false });
+        binding.activate();
+        assert.strictEqual(target.value, 10);
+        source.value = 20;
+        assert.strictEqual(target.value, 20);
+    });
+
+    it('should create two-way binding', () => {
+        const source = new Observable('A');
+        const target = new Observable('B');
+        const binding = source.bindTo(target, { twoWay: true });
+        binding.activate();
+        assert.strictEqual(source.value, 'A');
+        assert.strictEqual(target.value, 'A');
+        source.value = 'C';
+        assert.strictEqual(target.value, 'C');
+        target.value = 'D';
+        assert.strictEqual(source.value, 'D');
+    });
+
+    it('should support value transforms', () => {
+        const source = new Observable(100);
+        const target = new Observable(0);
+        const binding = source.bindTo(target, {
+            twoWay: false,
+            transformTo: (v) => v / 2,
+            transformFrom: (v) => v * 2
+        });
+        binding.activate();
+        assert.strictEqual(target.value, 50);
+        source.value = 200;
+        assert.strictEqual(target.value, 100);
+    });
+
+    it('should deactivate binding', () => {
+        const source = new Observable(1);
+        const target = new Observable(0);
+        const binding = source.bindTo(target, { twoWay: true });
+        binding.activate();
+        source.value = 5;
+        assert.strictEqual(target.value, 5);
+        binding.deactivate();
+        source.value = 10;
+        assert.strictEqual(target.value, 5);
+    });
+
+    it('should dispose binding', () => {
+        const source = new Observable(1);
+        const target = new Observable(0);
+        const binding = source.bindTo(target, { twoWay: true });
+        binding.activate();
+        assert.strictEqual(target.value, 1);
+        binding.dispose();
+        assert.strictEqual(binding.isActive, false);
+        assert.strictEqual(source.value, 1);
+        assert.strictEqual(target.value, 1);
+    });
+});
+
+describe('ObservableObject', () => {
+    it('should create observable properties', () => {
+        class Person extends ObservableObject {
+            constructor() {
+                super();
+                this._name = 'John';
+            }
+            get name() { return this._name; }
+            set name(v) { this._name = v; this.$set('name', v); }
+        }
+        const p = new Person();
+        assert.strictEqual(p.name, 'John');
+        p.name = 'Jane';
+        assert.strictEqual(p.name, 'Jane');
+        assert.strictEqual(p.$get('name'), 'Jane');
+    });
+
+    it('should observe property changes via $set', () => {
+        class Person extends ObservableObject {
+            constructor() {
+                super();
+                this._age = 25;
+            }
+            get age() { return this._age; }
+            set age(v) { this._age = v; this.$set('age', v); }
+        }
+        const p = new Person();
+        let received;
+        p.$observe('age', (v) => { received = v; });
+        p.age = 30;
+        assert.strictEqual(received, 30);
+    });
+
+    it('should bind observables between objects', () => {
+        class A extends ObservableObject {
+            constructor() {
+                super();
+                this._value = 1;
+            }
+            get value() { return this._value; }
+            set value(v) { this._value = v; this.$set('value', v); }
+        }
+        class B extends ObservableObject {
+            constructor() {
+                super();
+                this._value = 0;
+            }
+            get value() { return this._value; }
+            set value(v) { this._value = v; this.$set('value', v); }
+        }
+        const a = new A();
+        const b = new B();
+        let bReceived;
+        b.$observe('value', (v) => { bReceived = v; });
+        a.$bind('value', b, 'value', { twoWay: true });
+        a.value = 100;
+        assert.strictEqual(bReceived, 100);
+        b.value = 200;
+        assert.strictEqual(a.$get('value'), 200);
+    });
+
+    it('should unbind all', () => {
+        class Test extends ObservableObject {
+            constructor() {
+                super();
+                this._prop = 1;
+            }
+            get prop() { return this._prop; }
+            set prop(v) { this._prop = v; this.$set('prop', v); }
+        }
+        const t = new Test();
+        t.$bind('prop', { _observables: { prop: new Observable(0) }, _bindings: [] }, 'prop');
+        t.$unbindAll();
+        assert.strictEqual(t._bindings.length, 0);
+    });
+});
+
+describe('ObservableArray', () => {
+    it('should create array with initial items', () => {
+        const arr = new ObservableArray([1, 2, 3]);
+        assert.strictEqual(arr.length, 3);
+        assert.deepStrictEqual(arr.items, [1, 2, 3]);
+    });
+
+    it('should push items', () => {
+        const arr = new ObservableArray([1]);
+        arr.push(2, 3);
+        assert.strictEqual(arr.length, 3);
+        assert.deepStrictEqual(arr.items, [1, 2, 3]);
+    });
+
+    it('should pop items', () => {
+        const arr = new ObservableArray([1, 2, 3]);
+        const popped = arr.pop();
+        assert.strictEqual(popped, 3);
+        assert.strictEqual(arr.length, 2);
+    });
+
+    it('should notify on changes', () => {
+        const arr = new ObservableArray(['a']);
+        let lastChange;
+        arr.subscribe((items, change) => { lastChange = change; });
+        arr.push('b');
+        assert.strictEqual(lastChange.type, 'push');
+        assert.strictEqual(lastChange.index, 1);
+    });
+
+    it('should insert at index', () => {
+        const arr = new ObservableArray([1, 3]);
+        arr.insert(2, 1);
+        assert.deepStrictEqual(arr.items, [1, 2, 3]);
+    });
+
+    it('should remove at index', () => {
+        const arr = new ObservableArray([1, 2, 3]);
+        arr.removeAt(1);
+        assert.deepStrictEqual(arr.items, [1, 3]);
+    });
+
+    it('should replace at index', () => {
+        const arr = new ObservableArray([1, 2, 3]);
+        arr.replace(1, 99);
+        assert.deepStrictEqual(arr.items, [1, 99, 3]);
+    });
+
+    it('should clear all items', () => {
+        const arr = new ObservableArray([1, 2, 3]);
+        arr.clear();
+        assert.strictEqual(arr.length, 0);
+    });
+
+    it('should move items', () => {
+        const arr = new ObservableArray([0, 1, 2, 3]);
+        arr.move(0, 3);
+        assert.deepStrictEqual(arr.items, [1, 2, 3, 0]);
+    });
+
+    it('should support iteration', () => {
+        const arr = new ObservableArray([1, 2, 3]);
+        let sum = 0;
+        for (const item of arr) {
+            sum += item;
+        }
+        assert.strictEqual(sum, 6);
+    });
+});
+
+describe('UIView Binding Support', () => {
+    it('should support $observe on custom property via $set', () => {
+        const view = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        let received;
+        view._customProp = 'initial';
+        view.$observe('_customProp', (v) => { received = v; });
+        view.$set('_customProp', 'changed');
+        assert.strictEqual(received, 'changed');
+    });
+
+    it('should support $bind on custom properties (observes changes)', () => {
+        const view1 = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        const view2 = new UIView({ x: 0, y: 0, width: 100, height: 100 });
+        let view2Received;
+        view1._myValue = 0;
+        view2._myValue = 0;
+        view1.$bind('_myValue', view2, '_myValue', { twoWay: true });
+        view2.$observe('_myValue', (v) => { view2Received = v; });
+        view1.$set('_myValue', 100);
+        assert.strictEqual(view2Received, 100);
+    });
+});
+
+describe('UIViewController Binding Support', () => {
+    it('should support $observe on custom property via $set', () => {
+        const vc = new UIViewController();
+        let received;
+        vc._myTitle = '';
+        vc.$observe('_myTitle', (v) => { received = v; });
+        vc.$set('_myTitle', 'New Title');
+        assert.strictEqual(received, 'New Title');
+    });
+
+    it('should support $bind on custom properties (observes changes)', () => {
+        const vc1 = new UIViewController();
+        const vc2 = new UIViewController();
+        let vc2Received;
+        vc1._label = '';
+        vc2._label = '';
+        vc1.$bind('_label', vc2, '_label', { twoWay: true });
+        vc2.$observe('_label', (v) => { vc2Received = v; });
+        vc1.$set('_label', 'Hello');
+        assert.strictEqual(vc2Received, 'Hello');
     });
 });

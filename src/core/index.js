@@ -91,6 +91,8 @@ export { default as UITabBar, UITabBarItem } from './UITabBar.js';
 export { default as UISearchBar } from './UISearchBar.js';
 export { default as UIAlertController } from './UIAlertController.js';
 export { default as UIPickerView } from './UIPickerView.js';
+export { Observable, Binding, observable, computed, ObservableObject } from './Observable.js';
+export { ObservableArray } from './ObservableArray.js';
 export {
     CustomStringConvertible,
     RawRepresentable,

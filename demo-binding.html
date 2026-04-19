@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIKit Data Binding - Live Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; padding: 20px; }
+        #app { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #1d1d1f; margin-bottom: 30px; font-size: 28px; }
+        h2 { color: #1d1d1f; font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .tag { font-size: 11px; background: #007aff; color: white; padding: 2px 8px; border-radius: 4px; }
+        .tag.binding { background: #5856d6; }
+        .tag.observable { background: #ff9500; }
+        .section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .demo-area { background: #f5f5f7; border-radius: 8px; padding: 20px; min-height: 60px; display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .demo-area.col { flex-direction: column; align-items: flex-start; }
+        .log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+        .log-entry { margin: 2px 0; }
+        .log-entry.ok { color: #4ec9b0; }
+        .log-entry.info { color: #569cd6; }
+        .log-entry.warn { color: #ce9178; }
+        .log-entry.binding { color: #c586c0; }
+        .btn { padding: 10px 20px; background: #007aff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .btn:hover { background: #0056cc; }
+        .btn.green { background: #34c759; }
+        .btn.orange { background: #ff9500; }
+        .btn.red { background: #ff3b30; }
+        .btn.purple { background: #5856d6; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .card { border: 1px solid #e5e5e7; border-radius: 10px; padding: 15px; }
+        .card h3 { font-size: 14px; color: #1d1d1f; margin-bottom: 8px; }
+        .card p { font-size: 12px; color: #86868b; margin-bottom: 10px; }
+        .code { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; overflow-x: auto; white-space: pre; }
+        .code .k { color: #569cd6; }
+        .code .s { color: #ce9178; }
+        .code .c { color: #6a9955; }
+        .code .f { color: #dcdcaa; }
+        input, textarea { border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; font-size: 14px; outline: none; }
+        input:focus, textarea:focus { border-color: #007aff; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        input[type="number"] { width: 80px; }
+        .bound-box { width: 80px; height: 80px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600; transition: background-color 0.3s, transform 0.3s; }
+        .progress-bar { width: 200px; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: #007aff; transition: width 0.3s; }
+        .demo-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .demo-col { display: flex; flex-direction: column; gap: 10px; }
+        .output-display { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 13px; min-height: 40px; }
+        .output-display .label { font-size: 11px; color: #856404; margin-bottom: 4px; }
+        .color-grid { display: grid; grid-template-columns: repeat(5, 40px); gap: 8px; }
+        .color-swatch { width: 40px; height: 40px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s; }
+        .color-swatch:hover { transform: scale(1.1); }
+        .color-swatch.selected { border-color: #007aff; }
+        .list-demo { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .list-item { background: #f0f0f0; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+        .list-item:hover { background: #e0e0e0; }
+        .list-item .title { font-weight: 500; }
+        .list-item .subtitle { font-size: 12px; color: #666; }
+        .bind-indicator { width: 10px; height: 10px; border-radius: 50%; background: #34c759; margin-left: 10px; }
+        .bind-indicator.inactive { background: #ccc; }
+        .state-display { display: flex; gap: 20px; align-items: center; }
+        .state-item { display: flex; align-items: center; gap: 8px; }
+        .state-label { font-size: 12px; color: #666; }
+        .state-value { font-family: monospace; font-size: 14px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import {
+            UIView, UIViewController, UIWindow, UIResponder,
+            UIColor, UILabel, UIButton, UITextField, UISlider, UISwitch,
+            Observable, Binding, ObservableObject, ObservableArray
+        } from './src/core/index.js';
+
+        const app = document.getElementById('app');
+        const logArea = (title) => {
+            const section = document.createElement('div');
+            section.className = 'section';
+            section.innerHTML = `<h2>${title}</h2><div class="log" id="log-${Math.random().toString(36).slice(2)}"></div>`;
+            app.appendChild(section);
+            const log = section.querySelector('.log');
+            return (msg, type = 'info') => {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                log.appendChild(entry);
+                log.scrollTop = log.scrollHeight;
+            };
+        };
+
+        const log1 = logArea('Observable Demo');
+        const log2 = logArea('Two-Way Binding Demo');
+        const log3 = logArea('Array Binding Demo');
+        const log4 = logArea('Transform Binding Demo');
+
+        log1('Creating observable with initial value: 42');
+        const count = new Observable(42);
+
+        log1('Subscribing to changes...');
+        const dispose = count.subscribe((newValue, oldValue) => {
+            log1(`Value changed: ${oldValue} → ${newValue}`, 'ok');
+        }, { immediately: true });
+
+        log1('Setting value to 100');
+        count.value = 100;
+
+        log1('Setting value to 100 again (no change expected)');
+        count.value = 100;
+
+        log1('Setting value to 50');
+        count.value = 50;
+
+        log1('Unsubscribing...');
+        dispose();
+
+        log1('Setting value to 200 (should not trigger log)');
+        count.value = 200;
+
+        log1(`Change history: ${JSON.stringify(count.changeHistory.map(h => ({from: h.oldValue, to: h.newValue})))}`, 'binding');
+
+        log2('Creating two observables');
+        const source = new Observable('Hello');
+        const target = new Observable('World');
+
+        log2('Creating two-way binding');
+        const binding = source.bindTo(target, { twoWay: true });
+        binding.activate();
+
+        log2(`Initial: source="${source.value}", target="${target.value}"`, 'ok');
+        log2('Changing source to "Bonjour"');
+        source.value = 'Bonjour';
+        log2(`After: source="${source.value}", target="${target.value}"`, 'ok');
+
+        log2('Changing target to "Mond" (via target)');
+        target.value = 'Mond';
+        log2(`After: source="${source.value}", target="${target.value}"`, 'ok');
+
+        binding.deactivate();
+        log2('Binding deactivated. Changing source to "Hola"');
+        source.value = 'Hola';
+        log2(`After: source="${source.value}", target="${target.value}"`, 'ok');
+
+        log3('Creating observable array');
+        const items = new ObservableArray(['Apple', 'Banana', 'Cherry']);
+
+        log3('Subscribing to array changes');
+        items.subscribe((arr, change) => {
+            log3(`Array changed: ${change.type} at index ${change.index}`, 'binding');
+            log3(`Current array: [${arr.join(', ')}]`, 'ok');
+        }, { immediately: true });
+
+        log3('Pushing "Date"');
+        items.push('Date');
+
+        log3('Inserting "Elderberry" at index 1');
+        items.insert('Elderberry', 1);
+
+        log3('Removing "Banana"');
+        items.remove('Banana');
+
+        log3('Replacing index 0 with "Apricot"');
+        items.replace(0, 'Apricot');
+
+        log4('Creating source observable: 100');
+        const percentage = new Observable(100);
+
+        log4('Creating target progress bar width: 0');
+        const progressWidth = new Observable(0);
+
+        log4('Creating binding with transform (percentage → pixels)');
+        const progressBinding = percentage.bindTo(progressWidth, {
+            twoWay: false,
+            transformTo: (p) => p * 2,
+            transformFrom: (w) => w / 2
+        });
+        progressBinding.activate();
+
+        log4(`Initial: percentage=${percentage.value}, width=${progressWidth.value}px`, 'ok');
+
+        percentage.value = 75;
+        log4(`After 75%: percentage=${percentage.value}, width=${progressWidth.value}px`, 'ok');
+
+        percentage.value = 50;
+        log4(`After 50%: percentage=${percentage.value}, width=${progressWidth.value}px`, 'ok');
+
+        const section5 = document.createElement('div');
+        section5.className = 'section';
+        section5.innerHTML = `
+            <h2>Interactive Binding Demo <span class="tag binding">Interactive</span></h2>
+            <p class="info">This demo shows real-time two-way binding between UI controls.</p>
+            <div class="demo-area col">
+                <div class="demo-row">
+                    <div class="state-display">
+                        <div class="state-item">
+                            <span class="state-label">TextField:</span>
+                            <span class="state-value" id="tf-value">Hello</span>
+                            <div class="bind-indicator" id="tf-indicator"></div>
+                        </div>
+                        <div class="state-item">
+                            <span class="state-label">Label:</span>
+                            <span class="state-value" id="label-value">Hello</span>
+                            <div class="bind-indicator" id="label-indicator"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="demo-row">
+                    <input type="text" id="text-input" value="Hello" placeholder="Type something...">
+                    <div class="bound-box" id="color-box" style="background: hsl(210, 100%, 50%);">
+                        BOX
+                    </div>
+                </div>
+                <div class="demo-row">
+                    <span style="font-size: 12px; color: #666;">Hue: 210</span>
+                    <input type="range" id="hue-slider" min="0" max="360" value="210" style="flex: 1;">
+                </div>
+                <div class="demo-row">
+                    <div class="state-item">
+                        <span class="state-label">Slider Value:</span>
+                        <span class="state-value" id="slider-value">210</span>
+                    </div>
+                    <div class="state-item">
+                        <span class="state-label">Box Scale:</span>
+                        <span class="state-value" id="scale-value">1.0</span>
+                    </div>
+                    <input type="range" id="scale-slider" min="50" max="150" value="100" style="width: 150px;">
+                </div>
+            </div>
+        `;
+        app.appendChild(section5);
+
+        const tfValue = new Observable('Hello');
+        const sliderValue = new Observable(210);
+        const scaleValue = new Observable(1.0);
+
+        const tfInput = document.getElementById('text-input');
+        const tfValueDisplay = document.getElementById('tf-value');
+        const labelValueDisplay = document.getElementById('label-value');
+        const colorBox = document.getElementById('color-box');
+        const hueSlider = document.getElementById('hue-slider');
+        const sliderValueDisplay = document.getElementById('slider-value');
+        const scaleSlider = document.getElementById('scale-slider');
+        const scaleValueDisplay = document.getElementById('scale-value');
+
+        tfInput.addEventListener('input', (e) => {
+            tfValue.value = e.target.value;
+        });
+
+        hueSlider.addEventListener('input', (e) => {
+            sliderValue.value = parseInt(e.target.value);
+        });
+
+        scaleSlider.addEventListener('input', (e) => {
+            scaleValue.value = parseInt(e.target.value) / 100;
+        });
+
+        tfValue.subscribe((v) => {
+            tfValueDisplay.textContent = v;
+            labelValueDisplay.textContent = v;
+        });
+
+        sliderValue.subscribe((v) => {
+            sliderValueDisplay.textContent = v;
+            hueSlider.nextElementSibling.textContent = `Hue: ${v}`;
+            colorBox.style.background = `hsl(${v}, 100%, 50%)`;
+        });
+
+        scaleValue.subscribe((v) => {
+            scaleValueDisplay.textContent = v.toFixed(1);
+            scaleSlider.nextElementSibling.textContent = `Box Scale: ${v.toFixed(1)}`;
+            colorBox.style.transform = `scale(${v})`;
+        });
+
+        const section6 = document.createElement('div');
+        section6.className = 'section';
+        section6.innerHTML = `
+            <h2>ObservableObject Demo <span class="tag observable">ObservableObject</span></h2>
+            <p class="info">A class that manages observable properties with automatic change tracking.</p>
+            <div class="demo-area col">
+                <div class="demo-row">
+                    <div class="output-display" id="obj-display">
+                        <div class="label">ObservableObject State</div>
+                        <div id="obj-state">Loading...</div>
+                    </div>
+                </div>
+                <div class="demo-row">
+                    <button class="btn" id="btn-name">Change Name</button>
+                    <button class="btn green" id="btn-age">Increment Age</button>
+                    <button class="btn orange" id="btn-email">Update Email</button>
+                    <button class="btn purple" id="btn-reset">Reset All</button>
+                </div>
+            </div>
+        `;
+        app.appendChild(section6);
+
+        class Person extends ObservableObject {
+            constructor(name, age, email) {
+                super();
+                this._name = name;
+                this._age = age;
+                this._email = email;
+            }
+            get name() { return this._name; }
+            set name(v) { this._name = v; this.$set('name', v); }
+            get age() { return this._age; }
+            set age(v) { this._age = v; this.$set('age', v); }
+            get email() { return this._email; }
+            set email(v) { this._email = v; this.$set('email', v); }
+        }
+
+        const person = new Person('John', 30, 'john@example.com');
+        const objState = document.getElementById('obj-state');
+        const updateDisplay = () => {
+            objState.textContent = JSON.stringify({
+                name: person.name,
+                age: person.age,
+                email: person.email
+            }, null, 2);
+        };
+
+        person.$observe('name', (v) => log1(`Name changed: ${v}`, 'binding'));
+        person.$observe('age', (v) => log1(`Age changed: ${v}`, 'binding'));
+        person.$observe('email', (v) => log1(`Email changed: ${v}`, 'binding'));
+
+        updateDisplay();
+
+        document.getElementById('btn-name').addEventListener('click', () => {
+            person.name = person.name === 'John' ? 'Jane' : 'John';
+            updateDisplay();
+        });
+
+        document.getElementById('btn-age').addEventListener('click', () => {
+            person.age = person.age + 1;
+            updateDisplay();
+        });
+
+        document.getElementById('btn-email').addEventListener('click', () => {
+            person.email = `user${Date.now()}@example.com`;
+            updateDisplay();
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            person.$unbindAll();
+            person.name = 'John';
+            person.age = 30;
+            person.email = 'john@example.com';
+            updateDisplay();
+        });
+
+        const section7 = document.createElement('div');
+        section7.className = 'section';
+        section7.innerHTML = `
+            <h2>ObservableArray Demo <span class="tag observable">Interactive</span></h2>
+            <p class="info">Watch an observable array respond to CRUD operations in real-time.</p>
+            <div class="demo-area col">
+                <div class="list-demo" id="fruit-list"></div>
+                <div class="demo-row" style="margin-top: 15px;">
+                    <input type="text" id="new-item" placeholder="New item name...">
+                    <button class="btn" id="btn-add">Add</button>
+                    <button class="btn green" id="btn-remove">Remove Last</button>
+                    <button class="btn orange" id="btn-clear">Clear All</button>
+                </div>
+            </div>
+        `;
+        app.appendChild(section7);
+
+        const fruits = new ObservableArray(['Apple', 'Banana', 'Cherry', 'Date']);
+        const fruitList = document.getElementById('fruit-list');
+
+        const renderFruits = () => {
+            fruitList.innerHTML = '';
+            fruits.forEach((fruit, index) => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div>
+                        <div class="title">${fruit}</div>
+                        <div class="subtitle">Index: ${index}</div>
+                    </div>
+                `;
+                fruitList.appendChild(item);
+            });
+        };
+
+        fruits.subscribe((arr, change) => {
+            log3(`[${change.type}] index=${change.index}, items=${change.items?.join(', ') || 'N/A'}`, 'binding');
+            renderFruits();
+        }, { immediately: true });
+
+        document.getElementById('btn-add').addEventListener('click', () => {
+            const input = document.getElementById('new-item');
+            if (input.value.trim()) {
+                fruits.push(input.value.trim());
+                input.value = '';
+            }
+        });
+
+        document.getElementById('btn-remove').addEventListener('click', () => {
+            fruits.pop();
+        });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            fruits.clear();
+        });
+
+        console.log('Data Binding Demo loaded successfully');
+        console.log('Available exports: Observable, Binding, ObservableObject, ObservableArray');
+    </script>
+</body>
+</html>

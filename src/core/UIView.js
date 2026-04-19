@@ -1,6 +1,7 @@
 import UIResponder from './UIResponder.js';
 import { CALayer } from './CALayer.js';
 import { ViewLayerBridge } from './bridge/index.js';
+import { Observable, Binding } from './Observable.js';
 
 class UIView extends UIResponder {
     static get layerClass() {
@@ -38,6 +39,8 @@ class UIView extends UIResponder {
         this._animationStack = [];
         this._isLayoutSubviewsScheduled = false;
         this._sublayers = [];
+        this._observables = {};
+        this._bindings = [];
     }
 
     static layer() {
@@ -121,6 +124,43 @@ class UIView extends UIResponder {
     set translatesAutoresizingMaskIntoConstraints(value) { this._translatesAutoresizingMaskIntoConstraints = value; }
 
     get element() { return this._element; }
+
+    $observe(propertyName, callback, options = {}) {
+        if (!this._observables[propertyName]) {
+            this._observables[propertyName] = new Observable(this[propertyName]);
+        }
+        return this._observables[propertyName].subscribe(callback, options);
+    }
+
+    $bind(propertyName, target, targetProperty, options = {}) {
+        if (!this._observables[propertyName]) {
+            this._observables[propertyName] = new Observable(this[propertyName]);
+        }
+        if (!target._observables) {
+            target._observables = {};
+        }
+        if (!target._observables[targetProperty]) {
+            target._observables[targetProperty] = new Observable(target[targetProperty]);
+        }
+        const binding = this._observables[propertyName].bindTo(target._observables[targetProperty], options);
+        this._bindings.push(binding);
+        binding.activate();
+        return binding;
+    }
+
+    $set(propertyName, value) {
+        this[propertyName] = value;
+        if (this._observables[propertyName]) {
+            this._observables[propertyName].value = value;
+        }
+    }
+
+    $unbindAll() {
+        for (const binding of this._bindings) {
+            binding.dispose();
+        }
+        this._bindings = [];
+    }
 
     _syncFrameToLayer() {
         if (this._layer) {
