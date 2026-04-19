@@ -31,12 +31,6 @@ class UIScrollView extends UIView {
         this._indicatorStyle = 'default';
         this._indicatorInsets = { top: 0, left: 0, bottom: 0, right: 0 };
         
-        this._bounces = true;
-        this._alwaysBounceHorizontal = false;
-        this._alwaysBounceVertical = false;
-        this._bounceWidth = 30;
-        this._bounceHeight = 30;
-        
         this._decelerationRate = 0.998;
         this._velocity = { x: 0, y: 0 };
         this._isDecelerating = false;
@@ -137,15 +131,6 @@ class UIScrollView extends UIView {
         this._updateIndicatorStyles();
     }
 
-    get bounces() { return this._bounces; }
-    set bounces(value) { this._bounces = value; }
-
-    get alwaysBounceHorizontal() { return this._alwaysBounceHorizontal; }
-    set alwaysBounceHorizontal(value) { this._alwaysBounceHorizontal = value; }
-
-    get alwaysBounceVertical() { return this._alwaysBounceVertical; }
-    set alwaysBounceVertical(value) { this._alwaysBounceVertical = value; }
-
     get decelerationRate() { return this._decelerationRate; }
     set decelerationRate(value) { this._decelerationRate = value; }
 
@@ -214,21 +199,10 @@ class UIScrollView extends UIView {
         const maxX = Math.max(0, this._contentSize.width - this._bounds.width);
         const maxY = Math.max(0, this._contentSize.height - this._bounds.height);
         
-        let x = offset.x;
-        let y = offset.y;
-        
-        if (!this._bounces) {
-            x = Math.max(0, Math.min(offset.x, maxX));
-            y = Math.max(0, Math.min(offset.y, maxY));
-        } else {
-            const bounceX = this._shouldBounceHorizontal() ? this._bounceWidth : 0;
-            const bounceY = this._shouldBounceVertical() ? this._bounceHeight : 0;
-            
-            x = Math.max(-bounceX, Math.min(offset.x, maxX + bounceX));
-            y = Math.max(-bounceY, Math.min(offset.y, maxY + bounceY));
-        }
-        
-        return { x, y };
+        return {
+            x: Math.max(0, Math.min(offset.x, maxX)),
+            y: Math.max(0, Math.min(offset.y, maxY))
+        };
     }
 
     _applyZoomScale() {
@@ -452,33 +426,8 @@ class UIScrollView extends UIView {
             y: this._touchInfo.startOffset.y - translation.y
         };
 
-        if (this._bounces) {
-            const maxBounceDistance = 100;
-            const resistance = 0.55;
-            
-            if (newOffset.x < 0) {
-                const overscroll = -newOffset.x;
-                const dampedOverscroll = Math.min(maxBounceDistance, overscroll) * resistance;
-                newOffset.x = -dampedOverscroll;
-            } else if (newOffset.x > maxX) {
-                const overscroll = newOffset.x - maxX;
-                const dampedOverscroll = Math.min(maxBounceDistance, overscroll) * resistance;
-                newOffset.x = maxX + dampedOverscroll;
-            }
-            
-            if (newOffset.y < 0) {
-                const overscroll = -newOffset.y;
-                const dampedOverscroll = Math.min(maxBounceDistance, overscroll) * resistance;
-                newOffset.y = -dampedOverscroll;
-            } else if (newOffset.y > maxY) {
-                const overscroll = newOffset.y - maxY;
-                const dampedOverscroll = Math.min(maxBounceDistance, overscroll) * resistance;
-                newOffset.y = maxY + dampedOverscroll;
-            }
-        } else {
-            newOffset.x = Math.max(0, Math.min(newOffset.x, maxX));
-            newOffset.y = Math.max(0, Math.min(newOffset.y, maxY));
-        }
+        newOffset.x = Math.max(0, Math.min(newOffset.x, maxX));
+        newOffset.y = Math.max(0, Math.min(newOffset.y, maxY));
 
         this.contentOffset = newOffset;
         this._velocity = { ...this._touchInfo.velocity };
@@ -540,20 +489,9 @@ class UIScrollView extends UIView {
             if (shouldDecelerate) {
                 this._velocity = { x: velocity.x * 0.1, y: velocity.y * 0.1 };
                 this._startDeceleration();
-            } else if (this._bounces) {
-                const clampedTarget = { 
-                    x: Math.max(0, Math.min(targetOffset.x, maxX)), 
-                    y: Math.max(0, Math.min(targetOffset.y, maxY)) 
-                };
-                const needsBounceBack = Math.abs(clampedTarget.x - targetOffset.x) > 0.5 || 
-                                       Math.abs(clampedTarget.y - targetOffset.y) > 0.5;
-                
-                if (needsBounceBack) {
-                    this._animateBounceBack(targetOffset, clampedTarget);
-                } else {
-                    this.contentOffset = clampedTarget;
-                }
             } else {
+                targetOffset.x = Math.max(0, Math.min(targetOffset.x, maxX));
+                targetOffset.y = Math.max(0, Math.min(targetOffset.y, maxY));
                 this.contentOffset = targetOffset;
             }
         }
@@ -632,7 +570,10 @@ class UIScrollView extends UIView {
     }
 
     _animateBounceBack(fromOffset, toOffset) {
-        const startOffset = { ...fromOffset };
+        const startX = fromOffset.x;
+        const startY = fromOffset.y;
+        const deltaX = toOffset.x - startX;
+        const deltaY = toOffset.y - startY;
         const startTime = Date.now();
         const duration = 300;
         
@@ -642,14 +583,15 @@ class UIScrollView extends UIView {
             const eased = 1 - Math.pow(1 - progress, 3);
             
             this.contentOffset = {
-                x: startOffset.x + (toOffset.x - startOffset.x) * eased,
-                y: startOffset.y + (toOffset.y - startOffset.y) * eased
+                x: startX + deltaX * eased,
+                y: startY + deltaY * eased
             };
             
             if (progress < 1) {
                 requestAnimationFrame(animate);
             }
         };
+        
         requestAnimationFrame(animate);
     }
 
@@ -673,36 +615,13 @@ class UIScrollView extends UIView {
             let newX = this._contentOffset.x - this._velocity.x;
             let newY = this._contentOffset.y - this._velocity.y;
 
-            if (this._bounces) {
-                if (newX < 0) {
-                    newX = newX * 0.8;
-                } else if (newX > maxX) {
-                    newX = maxX + (newX - maxX) * 0.8;
-                }
-                
-                if (newY < 0) {
-                    newY = newY * 0.8;
-                } else if (newY > maxY) {
-                    newY = maxY + (newY - maxY) * 0.8;
-                }
-            } else {
-                newX = Math.max(0, Math.min(newX, maxX));
-                newY = Math.max(0, Math.min(newY, maxY));
-            }
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
 
             this.contentOffset = { x: newX, y: newY };
 
             if (Math.abs(this._velocity.x) < 0.1 && Math.abs(this._velocity.y) < 0.1) {
                 this._stopDeceleration();
-                if (this._bounces) {
-                    const clampedTarget = { x: Math.max(0, Math.min(newX, maxX)), y: Math.max(0, Math.min(newY, maxY)) };
-                    const needsBounceBack = Math.abs(clampedTarget.x - newX) > 0.5 || Math.abs(clampedTarget.y - newY) > 0.5;
-                    if (needsBounceBack) {
-                        this._animateBounceBack({ x: newX, y: newY }, clampedTarget);
-                    } else {
-                        this.contentOffset = clampedTarget;
-                    }
-                }
             } else {
                 this._decelerationTimer = requestAnimationFrame(step);
             }
