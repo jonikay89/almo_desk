@@ -1,5 +1,6 @@
 import { Optional, Result } from './Generics.js';
 import { WeakRef, ReferenceManager, WeakMap } from './WeakReference.js';
+import PropertyPolicy from './PropertyPolicy.js';
 
 class NSObject {
     constructor() {
@@ -194,6 +195,14 @@ class NSObject {
 
     static notificationName(name) {
         return name;
+    }
+
+    let(key, value) {
+        return PropertyPolicy.let(this, key, value);
+    }
+
+    variable(key, value, onChange) {
+        return PropertyPolicy.variable(this, key, value, onChange);
     }
 
     deinit() {
