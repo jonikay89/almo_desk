@@ -56,7 +56,7 @@ class Observable {
         this._subscribers.push(subscriber);
         if (immediately) {
             try {
-                callback(this._value, undefined);
+                callback(this._value, { type: 'initial', index: -1, oldValue: undefined, newValue: this._value });
             } catch (error) {
                 console.error('Observable immediate notification error:', error);
             }

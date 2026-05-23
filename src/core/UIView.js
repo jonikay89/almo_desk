@@ -1,7 +1,8 @@
 import UIResponder from './UIResponder.js';
-import { CALayer } from './CALayer.js';
+import { CALayer, CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup } from './CALayer.js';
 import { ViewLayerBridge } from './bridge/index.js';
 import { Observable, Binding } from './Observable.js';
+import { NSLayoutAnchor } from './NSLayoutConstraint.js';
 
 class UIView extends UIResponder {
     static get layerClass() {
@@ -45,6 +46,18 @@ class UIView extends UIResponder {
         this._dropInteractions = [];
         this._dragDelegate = null;
         this._dropDelegate = null;
+        this._layoutEngine = null;
+        this._safeAreaInsets = { top: 0, bottom: 0, left: 0, right: 0 };
+        this._contentLayoutGuide = null;
+        this._frameLayoutGuide = null;
+        this._layoutMargins = { top: 0, bottom: 0, left: 0, right: 0 };
+        this._directionalLayoutMargins = { top: 0, leading: 0, bottom: 0, trailing: 0 };
+        this._preservesSuperviewLayoutMargins = false;
+        this._insetsLayoutMarginsFromSafeArea = true;
+        this._contentHuggingPriority = { horizontal: 250, vertical: 250 };
+        this._contentCompressionResistancePriority = { horizontal: 750, vertical: 750 };
+        this._anchorCache = {};
+        this._needsUpdateConstraints = false;
     }
 
     static layer() {
@@ -137,6 +150,24 @@ class UIView extends UIResponder {
         return this._element;
     }
 
+    _applyFrameToElement() {
+        if (!this._element) return;
+        this._element.style.left = `${this._frame.x}px`;
+        this._element.style.top = `${this._frame.y}px`;
+        this._element.style.width = `${this._frame.width}px`;
+        this._element.style.height = `${this._frame.height}px`;
+    }
+
+    _applyVisualProperties() {
+        if (!this._element) return;
+        if (this._backgroundColor) {
+            this._element.style.backgroundColor = this._backgroundColor.toRGBAString ? this._backgroundColor.toRGBAString() : this._backgroundColor.css || 'transparent';
+        }
+        if (this._alpha !== 1) this._element.style.opacity = String(this._alpha);
+        if (this._isHidden) this._element.style.display = 'none';
+        if (this._cornerRadius) this._element.style.borderRadius = `${this._cornerRadius}px`;
+    }
+
     get element() { return this._element; }
 
     $observe(propertyName, callback, options = {}) {
@@ -192,22 +223,59 @@ class UIView extends UIResponder {
     setNeedsLayout() {
         if (this._isLayoutSubviewsScheduled) return;
         this._isLayoutSubviewsScheduled = true;
-        Promise.resolve().then(() => {
-            this._isLayoutSubviewsScheduled = false;
-            if (this._needsLayout) {
-                this.layoutSubviews();
-            }
-        });
+        this._needsLayout = true;
+        UIView._scheduleLayoutPass();
     }
 
     layoutSubviews() {
         this._needsLayout = false;
+        this.updateConstraints();
+        if (this._layoutEngine && this._layoutEngine.isStale()) {
+            this._layoutEngine.solve();
+            this._applyEngineResults();
+        }
         if (this._viewBridge) {
             this._viewBridge.syncFrame();
         }
         for (const subview of this._subviews) {
             subview.setNeedsLayout();
         }
+    }
+
+    _applyEngineResults() {
+        if (!this._layoutEngine) return;
+        const vars = this._layoutEngine._variables;
+        for (const subview of this._subviews) {
+            if (subview._layoutGuid) {
+                const x = vars.get(`${subview._layoutGuid}.left`) ?? subview._frame.x;
+                const y = vars.get(`${subview._layoutGuid}.top`) ?? subview._frame.y;
+                const w = vars.get(`${subview._layoutGuid}.width`) ?? subview._frame.width;
+                const h = vars.get(`${subview._layoutGuid}.height`) ?? subview._frame.height;
+                subview.frame = { x, y, width: w, height: h };
+            }
+        }
+    }
+
+    static _scheduleLayoutPass() {
+        if (UIView._layoutPassScheduled) return;
+        UIView._layoutPassScheduled = true;
+        Promise.resolve().then(() => {
+            UIView._layoutPassScheduled = false;
+            UIView._runLayoutPass();
+        });
+    }
+
+    static _runLayoutPass() {
+        const roots = UIView._pendingRoots || [];
+        UIView._pendingRoots = [];
+        for (const root of roots) {
+            root._runDeferredLayout();
+        }
+    }
+
+    _runDeferredLayout() {
+        this.updateConstraints();
+        this.layoutSubviews();
     }
 
     setNeedsDisplay() {
@@ -521,7 +589,9 @@ class UIView extends UIResponder {
     }
 
     updateConstraints() {
-        return;
+        for (const subview of this._subviews) {
+            subview.updateConstraints();
+        }
     }
 
     needsUpdateConstraints() {
@@ -529,16 +599,101 @@ class UIView extends UIResponder {
     }
 
     setNeedsUpdateConstraints() {
-        return;
+        this._needsUpdateConstraints = true;
     }
+
+    get safeAreaInsets() { return { ...this._safeAreaInsets }; }
+
+    safeAreaLayoutGuide() {
+        if (!this._safeAreaLayoutGuide) {
+            this._safeAreaLayoutGuide = { _owningView: this, layoutFrame: this._bounds };
+        }
+        return this._safeAreaLayoutGuide;
+    }
+
+    layoutMarginsGuide() {
+        if (!this._layoutMarginsGuide) {
+            this._layoutMarginsGuide = { _owningView: this, layoutFrame: this._bounds };
+        }
+        return this._layoutMarginsGuide;
+    }
+
+    get layoutMargins() { return { ...this._layoutMargins }; }
+    set layoutMargins(value) { this._layoutMargins = { ...value }; }
+
+    get directionalLayoutMargins() { return { ...this._directionalLayoutMargins }; }
+    set directionalLayoutMargins(value) { this._directionalLayoutMargins = { ...value }; }
+
+    get preservesSuperviewLayoutMargins() { return this._preservesSuperviewLayoutMargins; }
+    set preservesSuperviewLayoutMargins(value) { this._preservesSuperviewLayoutMargins = value; }
+
+    get insetsLayoutMarginsFromSafeArea() { return this._insetsLayoutMarginsFromSafeArea; }
+    set insetsLayoutMarginsFromSafeArea(value) { this._insetsLayoutMarginsFromSafeArea = value; }
 
     invalidateIntrinsicContentSize() {
         this.setNeedsLayout();
     }
 
     intrinsicContentSize() {
+        if (this._element) {
+            const children = this._element.children;
+            if (children.length > 0) {
+                let maxW = 0, maxH = 0;
+                for (const c of children) {
+                    const r = c.getBoundingClientRect();
+                    maxW = Math.max(maxW, c.offsetLeft + r.width);
+                    maxH = Math.max(maxH, c.offsetTop + r.height);
+                }
+                return { width: maxW, height: maxH };
+            }
+        }
         return { width: this._bounds.width, height: this._bounds.height };
     }
+
+    get contentHuggingPriority() { return this._contentHuggingPriority; }
+    setContentHuggingPriority(priority, axis) {
+        if (axis === 'horizontal' || axis === 'h') this._contentHuggingPriority.horizontal = priority;
+        if (axis === 'vertical' || axis === 'v') this._contentHuggingPriority.vertical = priority;
+    }
+    contentHuggingPriorityForAxis(axis) {
+        return axis === 'horizontal' || axis === 'h' ? this._contentHuggingPriority.horizontal : this._contentHuggingPriority.vertical;
+    }
+
+    get contentCompressionResistancePriority() { return this._contentCompressionResistancePriority; }
+    setContentCompressionResistancePriority(priority, axis) {
+        if (axis === 'horizontal' || axis === 'h') this._contentCompressionResistancePriority.horizontal = priority;
+        if (axis === 'vertical' || axis === 'v') this._contentCompressionResistancePriority.vertical = priority;
+    }
+    contentCompressionResistancePriorityForAxis(axis) {
+        return axis === 'horizontal' || axis === 'h' ? this._contentCompressionResistancePriority.horizontal : this._contentCompressionResistancePriority.vertical;
+    }
+
+    layoutIfNeeded() {
+        if (this._needsLayout) {
+            this.layoutSubviews();
+        }
+    }
+
+    _getAnchor(attr) {
+        if (!this._anchorCache) this._anchorCache = {};
+        if (!this._anchorCache[attr]) {
+            this._anchorCache[attr] = new NSLayoutAnchor(this, attr);
+        }
+        return this._anchorCache[attr];
+    }
+
+    get leadingAnchor() { return this._getAnchor('leading'); }
+    get trailingAnchor() { return this._getAnchor('trailing'); }
+    get leftAnchor() { return this._getAnchor('left'); }
+    get rightAnchor() { return this._getAnchor('right'); }
+    get topAnchor() { return this._getAnchor('top'); }
+    get bottomAnchor() { return this._getAnchor('bottom'); }
+    get widthAnchor() { return this._getAnchor('width'); }
+    get heightAnchor() { return this._getAnchor('height'); }
+    get centerXAnchor() { return this._getAnchor('centerX'); }
+    get centerYAnchor() { return this._getAnchor('centerY'); }
+    get firstBaselineAnchor() { return this._getAnchor('firstBaseline'); }
+    get lastBaselineAnchor() { return this._getAnchor('lastBaseline'); }
 
     addAnimation(animation, key) {
         if (this._layer) {
@@ -735,5 +890,143 @@ class UIView extends UIResponder {
         }
     }
 }
+
+// Static animation API
+UIView._animationBlock = null;
+UIView._animationDuration = 0.25;
+UIView._animationCurve = 'easeInOut';
+UIView._animationDelay = 0;
+UIView._animationOptions = [];
+UIView._animationCompletion = null;
+
+UIView.animateWithDuration = function(duration, animations, completion = null) {
+    if (typeof duration === 'object') {
+        const opts = duration;
+        return UIView._animateWithOptions(opts.duration || 0.25, opts.delay || 0, opts.options || opts.curve || 'easeInOut', animations, opts.completions || completion);
+    }
+    return UIView._animateWithOptions(duration, 0, 'easeInOut', animations, completion);
+};
+
+UIView.animateWithDurationAnimations = function(duration, animations, completion) {
+    return UIView._animateWithOptions(duration, 0, 'easeInOut', animations, completion);
+};
+
+UIView.animateWithDurationDelayOptionsAnimationsCompletion = function(duration, delay, options, animations, completion) {
+    return UIView._animateWithOptions(duration, delay, options, animations, completion);
+};
+
+UIView._animateWithOptions = function(duration, delay, options, animations, completion) {
+    if (typeof document === 'undefined') {
+        if (animations) animations();
+        if (completion) completion(true);
+        return;
+    }
+
+    UIView._animationBlock = animations;
+    UIView._animationDuration = duration;
+    UIView._animationCurve = options;
+    UIView._animationCompletion = completion;
+
+    const transition = {
+        'easeInOut': 'cubic-bezier(0.42, 0, 0.58, 1)',
+        'easeIn': 'cubic-bezier(0.42, 0, 1, 1)',
+        'easeOut': 'cubic-bezier(0, 0, 0.58, 1)',
+        'linear': 'linear',
+        'curveEaseInOut': 'cubic-bezier(0.42, 0, 0.58, 1)',
+        'curveEaseIn': 'cubic-bezier(0.42, 0, 1, 1)',
+        'curveEaseOut': 'cubic-bezier(0, 0, 0.58, 1)',
+        'curveLinear': 'linear',
+    };
+    const cssTiming = transition[options] || transition['easeInOut'];
+
+    const animatedViews = [];
+    const originalStyles = new Map();
+
+    const collectViews = (view) => {
+        if (view._element) {
+            animatedViews.push(view);
+            originalStyles.set(view, {
+                left: view._element.style.left,
+                top: view._element.style.top,
+                width: view._element.style.width,
+                height: view._element.style.height,
+                opacity: view._element.style.opacity,
+                transform: view._element.style.transform,
+                backgroundColor: view._element.style.backgroundColor,
+            });
+        }
+    };
+
+    const allViews = [];
+    const collectAll = (v) => {
+        allViews.push(v);
+        for (const s of v._subviews) collectAll(s);
+    };
+    collectAll({ _subviews: [] });
+
+    if (animations) animations();
+
+    for (const view of animatedViews) {
+        const el = view._element;
+        if (!el || !el.parentElement) continue;
+
+        el.style.transition = `all ${duration}s ${cssTiming} ${delay}s`;
+    }
+
+    for (const view of animatedViews) {
+        if (view._element) {
+            view._applyFrameToElement();
+            view._applyVisualProperties();
+        }
+    }
+
+    UIView._animationBlock = null;
+
+    setTimeout(() => {
+        for (const view of animatedViews) {
+            if (view._element) {
+                view._element.style.transition = '';
+            }
+        }
+        if (completion) completion(true);
+    }, (duration + delay) * 1000 + 50);
+};
+
+UIView.animateKeyframesWithDurationDelayOptionsAnimationsCompletion = function(duration, delay, options, animations, completion) {
+    UIView._animateWithOptions(duration, delay, options || 'easeInOut', animations, completion);
+};
+
+UIView.transitionWithViewDurationOptionsAnimationsCompletion = function(view, duration, options, animations, completion) {
+    const transition = options === 'transitionCrossDissolve' ? 'opacity' :
+                       options === 'transitionFlipFromLeft' || options === 'transitionFlipFromRight' ? 'transform' :
+                       'all';
+
+    if (view?._element) {
+        view._element.style.transition = `${transition} ${duration}s ease-in-out`;
+    }
+    if (animations) animations();
+    if (view?._element) {
+        view._applyFrameToElement();
+    }
+    setTimeout(() => {
+        if (view?._element) view._element.style.transition = '';
+        if (completion) completion(true);
+    }, duration * 1000 + 50);
+};
+
+UIView._applyFrameToElement = function(view) {
+    if (!view._element) return;
+    const el = view._element;
+    const f = view._frame;
+    el.style.left = `${f.x}px`;
+    el.style.top = `${f.y}px`;
+    el.style.width = `${f.width}px`;
+    el.style.height = `${f.height}px`;
+};
+
+UIView.performWithoutAnimation = function(actions) {
+    UIView._animationBlock = null;
+    if (actions) actions();
+};
 
 export default UIView;

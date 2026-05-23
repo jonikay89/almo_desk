@@ -373,6 +373,7 @@ class UIScrollView extends UIView {
             this._scrollContainer.style.width = '100%';
             this._scrollContainer.style.height = '100%';
             this._scrollContainer.style.overflow = 'visible';
+            this._scrollContainer.style.zIndex = '1';
 
             this._contentElement = document.createElement('div');
             this._contentElement.style.position = 'absolute';
@@ -1003,11 +1004,19 @@ class UIScrollView extends UIView {
 
     scrollToBottom(animated = true) {
         const maxY = Math.max(0, this._contentSize.height * this._zoomScale - this._bounds.height);
-        this.scrollRectToVisible({ x: 0, y: maxY, width: 1, height: 1 }, animated);
+        const targetOffset = { x: 0, y: maxY };
+        if (animated) {
+            this._animateToOffset(targetOffset);
+        } else {
+            this._contentOffset = this._clampOffset(targetOffset);
+            this._applyTransform();
+            this._updateScrollIndicators();
+        }
     }
 
     flashScrollIndicators() {
         this._showScrollIndicators();
+        this._updateScrollIndicators();
         this._hideScrollIndicatorsAfterDelay();
     }
 

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Features Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f2f2f7; color: #1d1d1f; }
+        h1 { font-size: 28px; font-weight: 700; text-align: center; padding: 24px 20px 4px; }
+        .subtitle { font-size: 14px; color: #8e8e93; text-align: center; margin-bottom: 20px; }
+        .section { background: #fff; border-radius: 12px; margin: 0 16px 14px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .section-title { font-size: 13px; font-weight: 600; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .info { font-size: 13px; color: #8e8e93; margin-bottom: 10px; }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+        .btn { padding: 9px 16px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+        .btn:active { opacity: 0.7; }
+        .btn.blue { background: #007aff; color: #fff; }
+        .btn.green { background: #34c759; color: #fff; }
+        .btn.orange { background: #ff9500; color: #fff; }
+        .btn.red { background: #ff3b30; color: #fff; }
+        .btn.gray { background: #e5e5ea; color: #1d1d1f; }
+        .btn.purple { background: #5856d6; color: #fff; }
+        .btn.teal { background: #5ac8fa; color: #fff; }
+        .btn.sm { padding: 6px 12px; font-size: 12px; }
+        .status { background: #1c1c1e; border-radius: 10px; padding: 12px 16px; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; color: #30d158; margin-top: 10px; white-space: pre-wrap; line-height: 1.5; min-height: 30px; }
+        .canvas { position: relative; background: #f5f5f7; border-radius: 8px; border: 2px solid #ddd; overflow: hidden; }
+        .field { width: 100%; padding: 8px 10px; border: 1px solid #c7c7cc; border-radius: 6px; font-size: 14px; outline: none; font-family: inherit; }
+        .field:focus { border-color: #007aff; }
+        select.field { cursor: pointer; }
+        .label { font-size: 13px; color: #8e8e93; margin-bottom: 4px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+        .trait-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+        .trait-card { background: #f5f5f7; border-radius: 8px; padding: 10px; text-align: center; }
+        .trait-card .lbl { font-size: 10px; color: #8e8e93; text-transform: uppercase; }
+        .trait-card .val { font-size: 15px; font-weight: 600; margin-top: 2px; }
+        .trait-card.dark .val { color: #ff9500; }
+        .split { display: flex; border: 2px solid #ddd; border-radius: 8px; overflow: hidden; height: 280px; background: #fff; }
+        .split-pri { width: 200px; min-width: 120px; background: #f8f8f8; border-right: 1px solid #ddd; overflow-y: auto; flex-shrink: 0; }
+        .split-sec { flex: 1; padding: 16px; overflow-y: auto; }
+        .split-item { padding: 10px 14px; border-bottom: 0.5px solid #e5e5ea; cursor: pointer; font-size: 14px; }
+        .split-item:hover { background: #e5e5ea; }
+        .split-item.active { background: #007aff; color: #fff; }
+        .popover-trigger { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; background: #f5f5f7; border-radius: 8px; cursor: pointer; font-size: 13px; border: 1px solid #d1d1d6; }
+        .popover-trigger:hover { background: #e5e5ea; }
+        .sheet-preview { position: relative; width: 100%; height: 400px; background: #f0f0f0; border-radius: 12px; border: 2px solid #ddd; overflow: hidden; }
+        .sheet-grabber { width: 36px; height: 5px; background: #c7c7cc; border-radius: 3px; margin: 8px auto 0; }
+        .detent-btn { padding: 6px 12px; border: 1px solid #c7c7cc; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; }
+        .detent-btn.selected { background: #007aff; color: #fff; border-color: #007aff; }
+    </style>
+</head>
+<body>
+    <h1>Architecture Features</h1>
+    <div class="subtitle">Auto Layout · Anchors · Animations · Traits · Presentation · Alerts · Layer KVC</div>
+    <div id="app"></div>
+
+    <script type="module">
+        import {
+            UIView, UIColor, UILabel,
+            NSLayoutConstraint, NSLayoutAttribute, NSLayoutRelation, UILayoutPriority, NSLayoutAnchor,
+            UITraitCollection,
+            UIViewPropertyAnimator, UICubicTimingParameters, UISpringTimingParameters,
+            UIAlertController, UIAlertControllerStyle, UIAlertAction, UIAlertActionStyle,
+            UISplitViewController,
+            CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup,
+        } from './src/core/index.js';
+
+        const app = document.getElementById('app');
+        const section = (title) => { const d = document.createElement('div'); d.className = 'section'; d.innerHTML = `<div class="section-title">${title}</div>`; app.appendChild(d); return d; };
+        const status = (parent, id) => { const d = document.createElement('div'); d.className = 'status'; d.id = id; parent.appendChild(d); return d; };
+        const btn = (parent, text, cls, onClick) => { const b = document.createElement('button'); b.className = `btn ${cls}`; b.textContent = text; b.addEventListener('click', onClick); parent.appendChild(b); return b; };
+
+        // ═══════════════════════════════════════════════════════════
+        // 1. Auto Layout Constraints — Full Demo
+        // ═══════════════════════════════════════════════════════════
+        const s1 = section('1. Auto Layout Constraints');
+        s1.querySelector('.section-title').innerHTML += ' <span style="font-size:11px;background:#5856d6;color:white;padding:1px 6px;border-radius:3px;">NSLayoutConstraint</span>';
+        s1.innerHTML += `<p class="info">Constraint solver with priority, multiplier, ratio, greater/less-than, intrinsic size, hugging/resistance, anchors, layoutIfNeeded.</p>
+        <div class="grid2">
+            <div>
+                <div class="canvas" id="c1" style="height:220px;"></div>
+                <div style="margin-top:8px;">
+                    <div class="label">Priority</div>
+                    <select class="field" id="c1-priority"><option value="1000">Required (1000)</option><option value="750">High (750)</option><option value="500">Medium (500)</option><option value="250">Low (250)</option></select>
+                </div>
+                <div style="margin-top:6px;">
+                    <div class="label">Relation</div>
+                    <select class="field" id="c1-relation"><option value="equal">Equal (=)</option><option value="gte">Greater/Equal (≥)</option><option value="lte">Less/Equal (≤)</option></select>
+                </div>
+                <div style="margin-top:6px;">
+                    <div class="label">Multiplier (ratio)</div>
+                    <input type="range" id="c1-mult" min="0.5" max="2" step="0.1" value="1" style="width:100%;">
+                </div>
+                <div style="margin-top:6px;display:flex;gap:6px;">
+                    <button class="btn blue sm" id="c1-apply">Apply</button>
+                    <button class="btn gray sm" id="c1-reset">Reset</button>
+                    <button class="btn purple sm" id="c1-hug-h">Hug Horizontal</button>
+                    <button class="btn teal sm" id="c1-hug-v">Hug Vertical</button>
+                </div>
+            </div>
+            <div>
+                <div id="c1-status" class="status">Apply a constraint to see results.</div>
+                <div style="margin-top:8px;">
+                    <div class="label">Anchor API Equivalent</div>
+                    <div id="c1-anchor" class="status" style="color:#c586c0;font-size:11px;">view.topAnchor.constraintEqualToAnchor(superview.topAnchor, constant: 20)</div>
+                </div>
+            </div>
+        </div>`;
+
+        const c1 = document.getElementById('c1');
+        const c1box = document.createElement('div');
+        c1box.style.cssText = 'position:absolute;left:20px;top:20px;width:140px;height:80px;background:#007aff;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;transition:all 0.35s cubic-bezier(0.2,0.9,0.3,1);';
+        c1box.textContent = 'Constrained';
+        c1.appendChild(c1box);
+
+        document.getElementById('c1-apply').addEventListener('click', () => {
+            const priority = parseInt(document.getElementById('c1-priority').value);
+            const relation = document.getElementById('c1-relation').value;
+            const multiplier = parseFloat(document.getElementById('c1-mult').value);
+            const cw = c1.clientWidth;
+            const ch = c1.clientHeight;
+            const targetWidth = Math.max(40, Math.min(cw - 40, 140 * multiplier));
+            const targetHeight = Math.max(30, Math.min(ch - 40, 80 * multiplier));
+
+            if (relation === 'lte') {
+                c1box.style.width = `${Math.min(140, targetWidth)}px`;
+                c1box.style.height = `${Math.min(80, targetHeight)}px`;
+            } else if (relation === 'gte') {
+                c1box.style.width = `${Math.max(60, targetWidth)}px`;
+                c1box.style.height = `${Math.max(40, targetHeight)}px`;
+            } else {
+                c1box.style.width = `${targetWidth}px`;
+                c1box.style.height = `${targetHeight}px`;
+            }
+
+            document.getElementById('c1-status').textContent =
+                `NSLayoutConstraint(item: box, attribute: .width,\n  relatedBy: .${relation === 'gte' ? 'greaterThanOrEqual' : relation === 'lte' ? 'lessThanOrEqual' : 'equal'},\n  toItem: superview, attribute: .width,\n  multiplier: ${multiplier}, constant: 0)\n\npriority: ${priority} (${priority === 1000 ? 'required' : priority === 750 ? 'defaultHigh' : priority === 500 ? 'defaultMedium' : 'defaultLow'})`;
+            document.getElementById('c1-anchor').textContent =
+                `box.widthAnchor.constraint${relation === 'gte' ? 'GreaterThanOrEqualToAnchor' : relation === 'lte' ? 'LessThanOrEqualToAnchor' : 'EqualToAnchor'}(superview.widthAnchor, multiplier: ${multiplier})`;
+        });
+
+        document.getElementById('c1-reset').addEventListener('click', () => {
+            c1box.style.cssText = 'position:absolute;left:20px;top:20px;width:140px;height:80px;background:#007aff;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;transition:all 0.35s cubic-bezier(0.2,0.9,0.3,1);';
+            c1box.textContent = 'Constrained';
+        });
+
+        document.getElementById('c1-hug-h').addEventListener('click', () => {
+            const w = c1box.clientWidth <= 144 ? c1.clientWidth - 40 : 60;
+            c1box.style.width = `${w}px`;
+            document.getElementById('c1-status').textContent = `setContentHuggingPriority(.required, for: .horizontal)\n→ width: ${w}px (hugs content)`;
+        });
+
+        document.getElementById('c1-hug-v').addEventListener('click', () => {
+            const h = c1box.clientHeight <= 84 ? c1.clientHeight - 40 : 30;
+            c1box.style.height = `${h}px`;
+            document.getElementById('c1-status').textContent = `setContentHuggingPriority(.required, for: .vertical)\n→ height: ${h}px (hugs content)`;
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 2. Anchor Usage
+        // ═══════════════════════════════════════════════════════════
+        const s2 = section('2. Anchor-Based Layout');
+        s2.innerHTML += `<p class="info">iOS-style anchor API: view.topAnchor.constraintEqualToAnchor(superview.topAnchor, constant: 20)</p>
+        <div class="canvas" id="c2" style="height:200px;"></div>
+        <div class="row" style="margin-top:8px;">
+            <button class="btn blue sm" id="c2-pin">Pin to Edges (20px)</button>
+            <button class="btn green sm" id="c2-center">Center in Parent</button>
+            <button class="btn orange sm" id="c2-ratio">1:2 Aspect Ratio</button>
+            <button class="btn purple sm" id="c2-chain">Chain Layout</button>
+        </div>
+        <div id="c2-status" class="status" style="margin-top:8px;"></div>`;
+
+        const c2 = document.getElementById('c2');
+        const c2box = document.createElement('div');
+        c2box.style.cssText = 'position:absolute;left:20px;top:20px;width:100px;height:50px;background:#34c759;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600;transition:all 0.4s cubic-bezier(0.2,0.9,0.3,1);';
+        c2box.textContent = 'Anchored';
+        c2.appendChild(c2box);
+
+        document.getElementById('c2-pin').addEventListener('click', () => {
+            const cw = c2.clientWidth;
+            c2box.style.left = '20px'; c2box.style.top = '20px';
+            c2box.style.width = `${cw - 40}px`; c2box.style.height = '160px';
+            document.getElementById('c2-status').textContent =
+                `box.topAnchor.constraintEqualToAnchor(parent.topAnchor, constant: 20)\nbox.bottomAnchor.constraintEqualToAnchor(parent.bottomAnchor, constant: -20)\nbox.leadingAnchor.constraintEqualToAnchor(parent.leadingAnchor, constant: 20)\nbox.trailingAnchor.constraintEqualToAnchor(parent.trailingAnchor, constant: -20)`;
+        });
+        document.getElementById('c2-center').addEventListener('click', () => {
+            const cw = c2.clientWidth;
+            c2box.style.left = `${cw/2 - 60}px`; c2box.style.top = '60px';
+            c2box.style.width = '120px'; c2box.style.height = '80px';
+            document.getElementById('c2-status').textContent =
+                `box.centerXAnchor.constraintEqualToAnchor(parent.centerXAnchor)\nbox.centerYAnchor.constraintEqualToAnchor(parent.centerYAnchor)\nbox.widthAnchor.constraintEqualToConstant(120)\nbox.heightAnchor.constraintEqualToConstant(80)`;
+        });
+        document.getElementById('c2-ratio').addEventListener('click', () => {
+            const cw = c2.clientWidth;
+            c2box.style.left = `${cw/2 - 80}px`; c2box.style.top = '20px';
+            c2box.style.width = '160px'; c2box.style.height = '80px';
+            document.getElementById('c2-status').textContent =
+                `box.widthAnchor.constraintEqualToAnchor(box.heightAnchor, multiplier: 2.0)\nbox.heightAnchor.constraintEqualToConstant(80)`;
+        });
+        document.getElementById('c2-chain').addEventListener('click', () => {
+            c2.querySelectorAll('.chain-box').forEach(e => e.remove());
+            const colors = ['#ff3b30','#ff9500','#ffcc00','#34c759','#007aff'];
+            const cw = c2.clientWidth;
+            const bw = (cw - 40 - 40) / 5;
+            colors.forEach((c, i) => {
+                const b = document.createElement('div');
+                b.className = 'chain-box';
+                b.style.cssText = `position:absolute;left:${20 + i*(bw+10)}px;top:80px;width:${bw}px;height:60px;background:${c};border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:600;transition:all 0.4s cubic-bezier(0.2,0.9,0.3,1);`;
+                b.textContent = `#${i+1}`;
+                c2.appendChild(b);
+            });
+            c2box.style.left = '20px'; c2box.style.top = '20px';
+            c2box.style.width = `${cw-40}px`; c2box.style.height = '40px';
+            c2box.textContent = 'Header';
+            document.getElementById('c2-status').textContent =
+                `// Horizontal chain with equal spacing\nb1.trailingAnchor.constraintEqualToAnchor(b2.leadingAnchor, constant: -10)\nb2.trailingAnchor.constraintEqualToAnchor(b3.leadingAnchor, constant: -10)\n...etc\nAll widthAnchor.constraintEqualToAnchor(nil, constant: ${Math.round(bw)})`;
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 3. Constraint Animation
+        // ═══════════════════════════════════════════════════════════
+        const s3 = section('3. Constraint Animation');
+        s3.innerHTML += `<p class="info">Animate constraint constant changes, like Swift: UIView.animate { self.topConstraint.constant = 200 }</p>
+        <div class="canvas" id="c3" style="height:200px;">
+            <div id="c3-box" style="position:absolute;left:20px;top:20px;width:120px;height:50px;background:#ff9500;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;transition:all 0.5s cubic-bezier(0.2,0.9,0.3,1);">Animate</div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+            <button class="btn blue" id="c3-right">constant += 100</button>
+            <button class="btn green" id="c3-down">top += 60</button>
+            <button class="btn orange" id="c3-expand">width × 1.5</button>
+            <button class="btn purple" id="c3-reset">Reset</button>
+        </div>
+        <div id="c3-status" class="status" style="margin-top:8px;">constraint.constant = 20 → 120\nUIView.animate(withDuration: 0.5) { self.layoutIfNeeded() }</div>`;
+
+        const c3box = document.getElementById('c3-box');
+        let c3left = 20, c3top = 20, c3width = 120;
+        document.getElementById('c3-right').addEventListener('click', () => {
+            c3left += 100;
+            if (c3left > c3.parentElement.clientWidth - 140) c3left = 20;
+            c3box.style.left = `${c3left}px`;
+            document.getElementById('c3-status').textContent = `leadingConstraint.constant = ${c3left}\nUIView.animate(withDuration: 0.5) { self.view.layoutIfNeeded() }`;
+        });
+        document.getElementById('c3-down').addEventListener('click', () => {
+            c3top += 60;
+            if (c3top > 140) c3top = 20;
+            c3box.style.top = `${c3top}px`;
+            document.getElementById('c3-status').textContent = `topConstraint.constant = ${c3top}\nUIView.animate(withDuration: 0.5) { self.view.layoutIfNeeded() }`;
+        });
+        document.getElementById('c3-expand').addEventListener('click', () => {
+            c3width = c3width === 120 ? 180 : 120;
+            c3box.style.width = `${c3width}px`;
+            document.getElementById('c3-status').textContent = `widthConstraint.constant = ${c3width}\nUIView.animate(withDuration: 0.5) { self.view.layoutIfNeeded() }`;
+        });
+        document.getElementById('c3-reset').addEventListener('click', () => {
+            c3left = 20; c3top = 20; c3width = 120;
+            c3box.style.left = '20px'; c3box.style.top = '20px'; c3box.style.width = '120px';
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 4. Trait Collection (Interactive)
+        // ═══════════════════════════════════════════════════════════
+        const s4 = section('4. UITraitCollection');
+        s4.innerHTML += `<p class="info">Toggle traits to see how the UI adapts. Dark/compact traits change the visual appearance.</p>
+        <div class="row">
+            <button class="btn purple" id="trait-dark">🌙 Dark</button>
+            <button class="btn gray" id="trait-light">☀️ Light</button>
+            <button class="btn blue" id="trait-compact">📱 Compact</button>
+            <button class="btn green" id="trait-regular">🖥️ Regular</button>
+        </div>
+        <div id="trait-ui" style="border-radius:12px;padding:16px;transition:all 0.4s;background:#fff;color:#1d1d1f;">
+            <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Email</div>
+            <div id="trait-emails" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+        <div class="trait-grid" id="trait-grid" style="margin-top:10px;"></div>`;
+
+        let isDark = false;
+        let isCompact = false;
+        const traitUI = document.getElementById('trait-ui');
+
+        function updateTraitUI() {
+            const tc = new UITraitCollection({
+                userInterfaceStyle: isDark ? 'dark' : 'light',
+                horizontalSizeClass: isCompact ? 'compact' : 'regular',
+            });
+
+            if (isDark) {
+                traitUI.style.background = '#1c1c1e';
+                traitUI.style.color = '#fff';
+                traitUI.querySelector('div').style.color = '#fff';
+                traitUI.style.borderColor = '#38383a';
+            } else {
+                traitUI.style.background = '#fff';
+                traitUI.style.color = '#1d1d1f';
+                traitUI.querySelector('div').style.color = '#1d1d1f';
+            }
+
+            const emailsEl = document.getElementById('trait-emails');
+            emailsEl.innerHTML = '';
+            const emails = [
+                { from: 'Alice', subject: 'Meeting tomorrow', time: '10:30 AM' },
+                { from: 'Bob', subject: 'Design review', time: '9:15 AM' },
+                { from: 'Team', subject: 'Sprint planning', time: 'Yesterday' },
+            ];
+            emails.forEach(e => {
+                const row = document.createElement('div');
+                row.style.cssText = `display:flex;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:4px;background:${isDark ? '#2c2c2e' : '#f5f5f7'};${isCompact ? 'flex-direction:column;gap:2px;' : ''}`;
+                row.innerHTML = `<div style="font-weight:600;font-size:14px;">${e.from}</div><div style="font-size:13px;${isDark?'color:#98989d':'color:#666'}">${e.subject}</div><div style="font-size:12px;${isDark?'color:#636366':'color:#999'}">${e.time}</div>`;
+                emailsEl.appendChild(row);
+            });
+
+            const grid = document.getElementById('trait-grid');
+            grid.innerHTML = '';
+            [
+                ['Style', tc.userInterfaceStyle],
+                ['H-Size', tc.horizontalSizeClass],
+                ['V-Size', tc.verticalSizeClass],
+                ['Scale', tc.displayScale || '1x'],
+            ].forEach(([l,v]) => {
+                const c = document.createElement('div');
+                c.className = `trait-card ${v === 'dark' ? 'dark' : ''}`;
+                c.innerHTML = `<div class="lbl">${l}</div><div class="val">${v}</div>`;
+                grid.appendChild(c);
+            });
+        }
+
+        document.getElementById('trait-dark').addEventListener('click', () => { isDark = true; updateTraitUI(); });
+        document.getElementById('trait-light').addEventListener('click', () => { isDark = false; updateTraitUI(); });
+        document.getElementById('trait-compact').addEventListener('click', () => { isCompact = !isCompact; updateTraitUI(); });
+        document.getElementById('trait-regular').addEventListener('click', () => { isCompact = false; updateTraitUI(); });
+        updateTraitUI();
+
+        // ═══════════════════════════════════════════════════════════
+        // 5+6. Popover with Arrow
+        // ═══════════════════════════════════════════════════════════
+        const s5 = section('5. Popover with Arrow');
+        s5.innerHTML += `<p class="info">Click buttons to show popover with computed arrow direction. Dismiss by clicking outside.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:16px 0;">
+            <div id="pop-tl" class="popover-trigger">📌 Top-Left</div>
+            <div id="pop-tr" class="popover-trigger">📌 Top-Right</div>
+            <div id="pop-center" class="popover-trigger">📌 Center</div>
+            <div id="pop-bottom" class="popover-trigger">📌 Bottom</div>
+        </div>
+        <div id="pop-info" class="status">Click a trigger to see arrow calculation.</div>`;
+
+        let activePopover = null;
+        function dismissPopover() {
+            if (!activePopover) return;
+            activePopover.el.style.transform = 'scale(0.9)'; activePopover.el.style.opacity = '0';
+            const ref = activePopover;
+            setTimeout(() => { ref.el.remove(); }, 200);
+            activePopover = null;
+        }
+
+        function showPopover(trigger) {
+            dismissPopover();
+            const rect = trigger.getBoundingClientRect();
+            const pw = 220, ph = 140;
+            const gap = 10;
+            const arrowSize = 10;
+
+            let left = rect.left + rect.width / 2 - pw / 2;
+            let top = rect.bottom + gap;
+            let arrowDir = 'up';
+            let arrowLeft = pw / 2 - arrowSize;
+
+            if (top + ph + arrowSize > window.innerHeight - 10) {
+                top = rect.top - ph - gap;
+                arrowDir = 'down';
+            }
+            left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+            arrowLeft = Math.max(arrowSize, Math.min(pw - arrowSize * 3, (rect.left + rect.width / 2) - left - arrowSize));
+
+            const pop = document.createElement('div');
+            pop.style.cssText = `position:fixed;left:${left}px;top:${top}px;width:${pw}px;background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.18);z-index:10001;transform:scale(0.9);opacity:0;transition:transform 0.2s cubic-bezier(0.2,0.9,0.3,1),opacity 0.15s;`;
+
+            const arrow = document.createElement('div');
+            const arrowOffset = arrowDir === 'up' ? `top:${-arrowSize}px;border-bottom-color:rgba(255,255,255,0.97)` : `bottom:${-arrowSize}px;border-top-color:rgba(255,255,255,0.97)`;
+            arrow.style.cssText = `position:absolute;left:${arrowLeft}px;${arrowOffset};width:0;height:0;border:${arrowSize}px solid transparent;`;
+            pop.appendChild(arrow);
+
+            const content = document.createElement('div');
+            content.style.cssText = 'padding:16px;';
+            content.innerHTML = `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">Popover</div><div style="font-size:12px;color:#666;">Arrow: ${arrowDir} (UIPopoverArrowDirection.${arrowDir === 'up' ? 'up' : 'down'})</div>`;
+            pop.appendChild(content);
+
+            document.body.appendChild(pop);
+            requestAnimationFrame(() => { pop.style.transform = 'scale(1)'; pop.style.opacity = '1'; });
+            activePopover = { el: pop };
+
+            setTimeout(() => {
+                const handler = (e) => {
+                    if (!pop.contains(e.target)) { dismissPopover(); document.removeEventListener('click', handler); }
+                };
+                document.addEventListener('click', handler);
+            }, 50);
+
+            document.getElementById('pop-info').textContent =
+                `sourceRect: { x:${Math.round(rect.left)}, y:${Math.round(rect.top)}, w:${Math.round(rect.width)}, h:${Math.round(rect.height)} }\narrowDirection: .${arrowDir === 'up' ? 'up' : 'down'}\npopoverFrame: { x:${Math.round(left)}, y:${Math.round(top)}, w:${pw}, h:${ph} }\npermittedArrowDirections: .any`;
+        }
+
+        ['pop-tl','pop-tr','pop-center','pop-bottom'].forEach(id => {
+            document.getElementById(id).addEventListener('click', (e) => { e.stopPropagation(); showPopover(e.currentTarget); });
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 7. Sheet Presentation with Detents & Grabber
+        // ═══════════════════════════════════════════════════════════
+        const s7 = section('7. Sheet with Detents & Grabber');
+        s7.innerHTML += `<p class="info">UISheetPresentationController with medium/large detents and grabber toggle.</p>
+        <div class="row" style="margin-bottom:8px;">
+            <button class="btn blue" id="sheet-show">Show Sheet</button>
+            <div class="detent-btn selected" data-detent="medium">Medium</div>
+            <div class="detent-btn" data-detent="large">Large</div>
+            <div class="detent-btn selected" data-grabber="yes">Grabber</div>
+            <div class="detent-btn" data-grabber="no">No Grabber</div>
+        </div>
+        <div id="sheet-status" class="status">Click "Show Sheet" to present.</div>`;
+
+        let sheetDetent = 'medium';
+        let sheetGrabber = true;
+        let sheetEl = null;
+
+        document.querySelectorAll('[data-detent]').forEach(b => b.addEventListener('click', () => {
+            document.querySelectorAll('[data-detent]').forEach(x => x.classList.remove('selected'));
+            b.classList.add('selected');
+            sheetDetent = b.dataset.detent;
+        }));
+        document.querySelectorAll('[data-grabber]').forEach(b => b.addEventListener('click', () => {
+            document.querySelectorAll('[data-grabber]').forEach(x => x.classList.remove('selected'));
+            b.classList.add('selected');
+            sheetGrabber = b.dataset.grabber === 'yes';
+        }));
+
+        document.getElementById('sheet-show').addEventListener('click', () => {
+            if (sheetEl) return;
+            sheetEl = document.createElement('div');
+            sheetEl.style.cssText = 'position:fixed;left:0;right:0;bottom:0;top:0;z-index:10000;transition:opacity 0.3s;opacity:0;';
+
+            const dimmer = document.createElement('div');
+            dimmer.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.3);';
+
+            const maxW = Math.min(500, window.innerWidth - 40);
+            const sheet = document.createElement('div');
+            const sheetH = sheetDetent === 'large' ? window.innerHeight * 0.9 : window.innerHeight * 0.5;
+            sheet.style.cssText = `position:absolute;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:${maxW}px;height:${sheetH}px;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -4px 30px rgba(0,0,0,0.15);transition:transform 0.4s cubic-bezier(0.2,0.9,0.3,1);overflow:hidden;`;
+
+            if (sheetGrabber) {
+                const grabber = document.createElement('div');
+                grabber.style.cssText = 'width:36px;height:5px;background:#c7c7cc;border-radius:3px;margin:8px auto 0;';
+                sheet.appendChild(grabber);
+            }
+
+            const content = document.createElement('div');
+            content.style.cssText = 'padding:20px;overflow-y:auto;height:calc(100% - 30px);';
+            content.innerHTML = `
+                <div style="font-size:20px;font-weight:700;margin-bottom:12px;">${sheetDetent === 'large' ? 'Large' : 'Medium'} Detent</div>
+                <div style="font-size:14px;color:#666;line-height:1.5;margin-bottom:16px;">This sheet uses UISheetPresentationController with a <b>.${sheetDetent}</b> detent. The grabber is ${sheetGrabber ? 'visible' : 'hidden'}.</div>
+                <div style="font-size:13px;color:#999;margin-bottom:8px;">Detents available:</div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <div style="flex:1;padding:12px;border-radius:8px;text-align:center;background:${sheetDetent==='medium'?'#007aff':'#f0f0f0'};color:${sheetDetent==='medium'?'#fff':'#333'};font-weight:600;">.medium</div>
+                    <div style="flex:1;padding:12px;border-radius:8px;text-align:center;background:${sheetDetent==='large'?'#007aff':'#f0f0f0'};color:${sheetDetent==='large'?'#fff':'#333'};font-weight:600;">.large</div>
+                </div>
+                <button class="btn red" style="width:100%;" id="sheet-dismiss">Dismiss</button>
+            `;
+            sheet.appendChild(content);
+            sheetEl.appendChild(dimmer);
+            sheetEl.appendChild(sheet);
+            document.body.appendChild(sheetEl);
+
+            requestAnimationFrame(() => {
+                sheetEl.style.opacity = '1';
+                sheet.style.transform = 'translateX(-50%) translateY(0)';
+            });
+
+            const dismiss = () => {
+                sheet.style.transform = 'translateX(-50%) translateY(100%)';
+                sheetEl.style.opacity = '0';
+                setTimeout(() => { sheetEl.remove(); sheetEl = null; }, 400);
+            };
+
+            dimmer.addEventListener('click', dismiss);
+            document.getElementById('sheet-dismiss').addEventListener('click', dismiss);
+
+            document.getElementById('sheet-status').textContent =
+                `detents: [.${sheetDetent}()]\ngrabber: prefersGrabberVisible = ${sheetGrabber}\ncornerRadius: 16\nsource: UIPresentationController`;
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 8. UIView Animation
+        // ═══════════════════════════════════════════════════════════
+        const s8 = section('8. UIView.animate');
+        s8.innerHTML += `<p class="info">UIView.animate(withDuration:) — move, fade, scale, color animations.</p>
+        <div class="canvas" id="c8" style="height:140px;">
+            <div id="c8-box" style="position:absolute;left:20px;top:40px;width:60px;height:60px;border-radius:12px;background:#5856d6;transition:all 0.4s cubic-bezier(0.2,0.9,0.3,1);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:600;">View</div>
+        </div>
+        <div class="row">
+            <button class="btn blue sm" id="a8-move">Move Right</button>
+            <button class="btn green sm" id="a8-fade">Fade Out</button>
+            <button class="btn orange sm" id="a8-scale">Scale Up</button>
+            <button class="btn red sm" id="a8-color">Color</button>
+            <button class="btn gray sm" id="a8-reset">Reset</button>
+        </div>
+        <div id="a8-status" class="status" style="margin-top:8px;"></div>`;
+
+        const c8box = document.getElementById('c8-box');
+        let a8state = { left: 20, opacity: 1, scale: 1, color: '#5856d6' };
+        const c8colors = ['#5856d6','#ff3b30','#34c759','#ff9500','#007aff'];
+        let c8ci = 0;
+
+        function a8log(code) { document.getElementById('a8-status').textContent = code; }
+
+        document.getElementById('a8-move').addEventListener('click', () => {
+            a8state.left = a8state.left === 20 ? c8.parentElement.clientWidth - 80 : 20;
+            c8box.style.left = `${a8state.left}px`;
+            a8log(`UIView.animate(withDuration: 0.4, animations: {\n  view.frame.origin.x = ${a8state.left}\n})`);
+        });
+        document.getElementById('a8-fade').addEventListener('click', () => {
+            a8state.opacity = a8state.opacity === 1 ? 0.2 : 1;
+            c8box.style.opacity = a8state.opacity;
+            a8log(`UIView.animate(withDuration: 0.4) {\n  view.alpha = ${a8state.opacity}\n}`);
+        });
+        document.getElementById('a8-scale').addEventListener('click', () => {
+            a8state.scale = a8state.scale === 1 ? 1.5 : 1;
+            c8box.style.transform = `scale(${a8state.scale})`;
+            a8log(`UIView.animate(withDuration: 0.4) {\n  view.transform = CGAffineTransform(scaleX: ${a8state.scale}, y: ${a8state.scale})\n}`);
+        });
+        document.getElementById('a8-color').addEventListener('click', () => {
+            c8ci = (c8ci + 1) % c8colors.length;
+            a8state.color = c8colors[c8ci];
+            c8box.style.background = a8state.color;
+            a8log(`UIView.animate(withDuration: 0.4) {\n  view.backgroundColor = UIColor(color)\n}`);
+        });
+        document.getElementById('a8-reset').addEventListener('click', () => {
+            a8state = { left: 20, opacity: 1, scale: 1, color: '#5856d6' };
+            c8box.style.left = '20px'; c8box.style.opacity = '1'; c8box.style.transform = 'scale(1)'; c8box.style.background = '#5856d6';
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 9+12. Layer Key-Value Animation
+        // ═══════════════════════════════════════════════════════════
+        const s9 = section('9. Layer Animation (CABasicAnimation)');
+        s9.innerHTML += `<p class="info">CABasicAnimation on position, opacity, bounds, cornerRadius — like Swift: let anim = CABasicAnimation(keyPath: "position")</p>
+        <div class="canvas" id="c9" style="height:160px;">
+            <div id="c9-box" style="position:absolute;left:20px;top:50px;width:60px;height:60px;border-radius:0px;background:#ff9500;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:600;"></div>
+        </div>
+        <div class="row">
+            <button class="btn blue sm" id="l9-pos">Position</button>
+            <button class="btn green sm" id="l9-opacity">Opacity</button>
+            <button class="btn orange sm" id="l9-corner">CornerRadius</button>
+            <button class="btn purple sm" id="l9-bounds">Bounds Grow</button>
+            <button class="btn red sm" id="l9-color">Background</button>
+            <button class="btn gray sm" id="l9-reset">Reset</button>
+        </div>
+        <div id="l9-status" class="status" style="margin-top:8px;"></div>`;
+
+        const c9box = document.getElementById('c9-box');
+        function l9log(code) { document.getElementById('l9-status').textContent = code; }
+
+        document.getElementById('l9-pos').addEventListener('click', () => {
+            const cw = c9.parentElement.clientWidth;
+            c9box.style.transition = 'left 0.6s cubic-bezier(0.2,0.9,0.3,1)';
+            c9box.style.left = c9box.style.left === '20px' ? `${cw - 80}px` : '20px';
+            l9log(`let anim = CABasicAnimation(keyPath: "position")\nanim.fromValue = CGPoint(x: 20, y: 50)\nanim.toValue = CGPoint(x: ${c9box.style.left === '20px' ? cw - 80 : 20}, y: 50)\nanim.duration = 0.6\nlayer.add(anim, forKey: "pos")`);
+        });
+        document.getElementById('l9-opacity').addEventListener('click', () => {
+            c9box.style.transition = 'opacity 0.5s';
+            c9box.style.opacity = c9box.style.opacity === '0' ? '1' : '0';
+            l9log(`let anim = CABasicAnimation(keyPath: "opacity")\nanim.fromValue = 1\nanim.toValue = 0\nanim.duration = 0.5\nlayer.add(anim, forKey: "fade")`);
+        });
+        document.getElementById('l9-corner').addEventListener('click', () => {
+            c9box.style.transition = 'border-radius 0.4s';
+            c9box.style.borderRadius = c9box.style.borderRadius === '0px' ? '30px' : '0px';
+            l9log(`let anim = CABasicAnimation(keyPath: "cornerRadius")\nanim.fromValue = 0\nanim.toValue = 30\nanim.duration = 0.4\nlayer.add(anim, forKey: "corner")`);
+        });
+        document.getElementById('l9-bounds').addEventListener('click', () => {
+            c9box.style.transition = 'width 0.5s cubic-bezier(0.2,0.9,0.3,1), height 0.5s cubic-bezier(0.2,0.9,0.3,1)';
+            const grow = c9box.style.width === '60px';
+            c9box.style.width = grow ? '100px' : '60px';
+            c9box.style.height = grow ? '100px' : '60px';
+            l9log(`let anim = CABasicAnimation(keyPath: "bounds.size")\nanim.toValue = CGSize(width: ${grow ? 100 : 60}, height: ${grow ? 100 : 60})\nanim.duration = 0.5\nlayer.add(anim, forKey: "bounds")`);
+        });
+        document.getElementById('l9-color').addEventListener('click', () => {
+            c9box.style.transition = 'background 0.4s';
+            c9box.style.background = c9box.style.background === 'rgb(255, 149, 0)' ? '#ff3b30' : '#ff9500';
+            l9log(`let anim = CABasicAnimation(keyPath: "backgroundColor")\nanim.toValue = UIColor.red.cgColor\nanim.duration = 0.4\nlayer.add(anim, forKey: "bg")`);
+        });
+        document.getElementById('l9-reset').addEventListener('click', () => {
+            c9box.style.cssText = 'position:absolute;left:20px;top:50px;width:60px;height:60px;border-radius:0px;background:#ff9500;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:600;';
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 10. Keyframe Animation
+        // ═══════════════════════════════════════════════════════════
+        const s10 = section('10. Keyframe Animation');
+        s10.innerHTML += `<p class="info">CAKeyframeAnimation with multiple waypoints — bounces, paths, sequenced values.</p>
+        <div class="canvas" id="c10" style="height:160px;">
+            <div id="c10-box" style="position:absolute;left:20px;top:50px;width:40px;height:40px;border-radius:50%;background:#ff2d55;transition:none;"></div>
+        </div>
+        <div class="row">
+            <button class="btn blue" id="kf-bounce">Bounce</button>
+            <button class="btn green" id="kf-path">Path</button>
+            <button class="btn orange" id="kf-wave">Wave</button>
+            <button class="btn gray" id="kf-reset">Reset</button>
+        </div>
+        <div id="kf-status" class="status" style="margin-top:8px;"></div>`;
+
+        const c10box = document.getElementById('c10-box');
+        let kfAnim = null;
+
+        function kfStop() { if (kfAnim) { cancelAnimationFrame(kfAnim); kfAnim = null; } }
+        function kfAnimate(keyframes, duration) {
+            kfStop();
+            const start = performance.now();
+            const dur = duration * 1000;
+            const cw = c10.parentElement.clientWidth;
+
+            function tick(now) {
+                const t = Math.min((now - start) / dur, 1);
+                const idx = Math.min(Math.floor(t * (keyframes.length - 1)), keyframes.length - 2);
+                const localT = (t * (keyframes.length - 1)) - idx;
+                const from = keyframes[idx];
+                const to = keyframes[idx + 1];
+                c10box.style.left = `${from.l + (to.l - from.l) * localT}px`;
+                c10box.style.top = `${from.t + (to.t - from.t) * localT}px`;
+                if (from.s) c10box.style.transform = `scale(${from.s + (to.s - from.s) * localT})`;
+                if (from.o !== undefined) c10box.style.opacity = from.o + (to.o - from.o) * localT;
+                if (t < 1) kfAnim = requestAnimationFrame(tick);
+                else kfAnim = null;
+            }
+            kfAnim = requestAnimationFrame(tick);
+        }
+
+        document.getElementById('kf-bounce').addEventListener('click', () => {
+            const cw = c10.parentElement.clientWidth;
+            kfAnimate([
+                { l: 20, t: 50 }, { l: cw/2-20, t: 10, s: 1.2 },
+                { l: cw-60, t: 50 }, { l: cw/2-20, t: 90, s: 0.8 },
+                { l: 20, t: 50 }
+            ], 1.5);
+            document.getElementById('kf-status').textContent =
+                `CAKeyframeAnimation(keyPath: "position")\nvalues = [p0, p1, p2, p3, p0]\nkeyTimes = [0, 0.25, 0.5, 0.75, 1.0]\nduration = 1.5`;
+        });
+        document.getElementById('kf-path').addEventListener('click', () => {
+            const cw = c10.parentElement.clientWidth;
+            const cx = cw/2-20, cy = 80, rx = cw/2-60, ry = 50;
+            const pts = [];
+            for (let i = 0; i <= 16; i++) {
+                const a = (i/16) * Math.PI * 2;
+                pts.push({ l: cx + rx * Math.cos(a), t: cy + ry * Math.sin(a) });
+            }
+            kfAnimate(pts, 2);
+            document.getElementById('kf-status').textContent =
+                `CAKeyframeAnimation(keyPath: "position")\npath = CGPath(ellipseIn: CGRect(...))\nduration = 2.0\nrepeatCount = .infinity`;
+        });
+        document.getElementById('kf-wave').addEventListener('click', () => {
+            const cw = c10.parentElement.clientWidth;
+            const pts = [];
+            for (let i = 0; i <= 12; i++) {
+                pts.push({ l: 20 + (cw - 80) * (i/12), t: 80 + Math.sin(i * Math.PI / 2) * 40, o: 1 - Math.abs(i - 6) * 0.1 });
+            }
+            kfAnimate(pts, 1.8);
+            document.getElementById('kf-status').textContent =
+                `CAKeyframeAnimation(keyPath: "position")\nvalues = [p0, p1, p2, ..., p12]\ncalculationMode = .cubic\nduration = 1.8`;
+        });
+        document.getElementById('kf-reset').addEventListener('click', () => {
+            kfStop();
+            c10box.style.cssText = 'position:absolute;left:20px;top:50px;width:40px;height:40px;border-radius:50%;background:#ff2d55;transition:none;';
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 11. Transition Animation
+        // ═══════════════════════════════════════════════════════════
+        const s11 = section('11. Transition Animation');
+        s11.innerHTML += `<p class="info">UIView.transition — cross-dissolve and flip transitions between views.</p>
+        <div class="canvas" id="c11" style="height:180px;position:relative;">
+            <div id="c11-a" style="position:absolute;inset:20px;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;">View A<span style="font-size:12px;font-weight:400;margin-top:4px;">Tap transition below</span></div>
+            <div id="c11-b" style="position:absolute;inset:20px;border-radius:12px;background:linear-gradient(135deg,#f093fb,#f5576c);display:none;flex-direction:column;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;">View B<span style="font-size:12px;font-weight:400;margin-top:4px;">Tap transition below</span></div>
+        </div>
+        <div class="row">
+            <button class="btn blue" id="t-cross">Cross Dissolve</button>
+            <button class="btn purple" id="t-flip">Flip</button>
+            <button class="btn gray" id="t-reset">Reset</button>
+        </div>
+        <div id="t-status" class="status" style="margin-top:8px;"></div>`;
+
+        let c11showA = true;
+        const c11a = document.getElementById('c11-a');
+        const c11b = document.getElementById('c11-b');
+
+        document.getElementById('t-cross').addEventListener('click', () => {
+            const outView = c11showA ? c11a : c11b;
+            const inView = c11showA ? c11b : c11a;
+            outView.style.transition = 'opacity 0.4s';
+            outView.style.opacity = '0';
+            setTimeout(() => {
+                outView.style.display = 'none';
+                inView.style.display = 'flex';
+                inView.style.opacity = '0';
+                requestAnimationFrame(() => { inView.style.opacity = '1'; });
+            }, 400);
+            c11showA = !c11showA;
+            document.getElementById('t-status').textContent =
+                `UIView.transition(from: viewA, to: viewB,\n  duration: 0.4,\n  options: .transitionCrossDissolve)`;
+        });
+        document.getElementById('t-flip').addEventListener('click', () => {
+            const container = document.getElementById('c11');
+            const outView = c11showA ? c11a : c11b;
+            const inView = c11showA ? c11b : c11a;
+            container.style.perspective = '600px';
+            outView.style.transition = 'transform 0.3s ease-in';
+            outView.style.transform = 'rotateY(90deg)';
+            setTimeout(() => {
+                outView.style.display = 'none';
+                inView.style.display = 'flex';
+                inView.style.transform = 'rotateY(-90deg)';
+                inView.style.transition = 'none';
+                requestAnimationFrame(() => {
+                    inView.style.transition = 'transform 0.3s ease-out';
+                    inView.style.transform = 'rotateY(0deg)';
+                });
+            }, 300);
+            c11showA = !c11showA;
+            document.getElementById('t-status').textContent =
+                `UIView.transition(from: viewA, to: viewB,\n  duration: 0.6,\n  options: .transitionFlipFromRight)`;
+        });
+        document.getElementById('t-reset').addEventListener('click', () => {
+            c11a.style.cssText = 'position:absolute;inset:20px;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;';
+            c11a.innerHTML = 'View A<span style="font-size:12px;font-weight:400;margin-top:4px;">Tap transition below</span>';
+            c11b.style.cssText = 'position:absolute;inset:20px;border-radius:12px;background:linear-gradient(135deg,#f093fb,#f5576c);display:none;flex-direction:column;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;';
+            c11b.innerHTML = 'View B<span style="font-size:12px;font-weight:400;margin-top:4px;">Tap transition below</span>';
+            c11showA = true;
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // 12. UIAlertController
+        // ═══════════════════════════════════════════════════════════
+        const s12 = section('12. UIAlertController');
+        s12.innerHTML += `<p class="info">Alert and action sheet with text fields and destructive styles.</p>
+        <div class="row">
+            <button class="btn blue" id="alert-basic">Basic Alert</button>
+            <button class="btn orange" id="alert-login">Login</button>
+            <button class="btn red" id="alert-delete">Destructive</button>
+            <button class="btn gray" id="alert-sheet">Action Sheet</button>
+        </div>`;
+
+        let alertHost = document.getElementById('alert-host');
+        if (!alertHost) { alertHost = document.createElement('div'); alertHost.id = 'alert-host'; document.body.appendChild(alertHost); }
+
+        function showAlert(type) {
+            const existing = alertHost.querySelector('.alert-overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.className = 'alert-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+            const dim = document.createElement('div');
+            dim.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.4);';
+            overlay.appendChild(dim);
+
+            if (type === 'sheet') {
+                overlay.style.alignItems = 'flex-end';
+                overlay.style.padding = '8px';
+                const sheet = document.createElement('div');
+                sheet.style.cssText = 'position:relative;width:100%;max-width:500px;margin:0 auto;';
+
+                const card = document.createElement('div');
+                card.style.cssText = 'background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:14px;overflow:hidden;margin-bottom:8px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.2,0.9,0.3,1);';
+                card.innerHTML = `
+                    <div style="padding:14px 16px 2px;font-size:13px;font-weight:600;color:#8e8e93;text-align:center;">Share</div>
+                    <div style="padding:2px 16px 10px;font-size:13px;color:#8e8e93;text-align:center;">Choose an option</div>
+                    <button style="width:100%;padding:18px;border:none;border-top:0.5px solid #c6c6c8;font-size:20px;color:#007aff;background:transparent;cursor:pointer;font-family:inherit;" onclick="this.closest('.alert-overlay').remove()">AirDrop</button>
+                    <button style="width:100%;padding:18px;border:none;border-top:0.5px solid #c6c6c8;font-size:20px;color:#007aff;background:transparent;cursor:pointer;font-family:inherit;" onclick="this.closest('.alert-overlay').remove()">Messages</button>
+                    <button style="width:100%;padding:18px;border:none;border-top:0.5px solid #c6c6c8;font-size:20px;color:#007aff;background:transparent;cursor:pointer;font-family:inherit;" onclick="this.closest('.alert-overlay').remove()">Mail</button>
+                `;
+                sheet.appendChild(card);
+                const cancel = document.createElement('button');
+                cancel.style.cssText = 'width:100%;padding:18px;border-radius:14px;font-size:20px;font-weight:600;color:#007aff;cursor:pointer;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border:none;margin-bottom:8px;font-family:inherit;';
+                cancel.textContent = 'Cancel';
+                cancel.addEventListener('click', () => overlay.remove());
+                sheet.appendChild(cancel);
+                overlay.appendChild(sheet);
+                overlay.appendChild(dim);
+                dim.style.zIndex = '-1';
+                requestAnimationFrame(() => { card.style.transform = 'translateY(0)'; });
+            } else {
+                const card = document.createElement('div');
+                card.style.cssText = 'position:relative;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:14px;min-width:270px;max-width:340px;padding:20px 16px 16px;box-shadow:0 8px 40px rgba(0,0,0,0.2);transform:scale(0.9);opacity:0;transition:transform 0.25s cubic-bezier(0.2,0.9,0.3,1),opacity 0.2s;';
+
+                const title = type === 'login' ? 'Login' : type === 'delete' ? 'Delete Item' : 'Welcome';
+                const msg = type === 'login' ? 'Enter your credentials.' : type === 'delete' ? 'This cannot be undone.' : 'This is a UIAlertController demo.';
+                let html = `<div style="font-size:17px;font-weight:600;text-align:center;color:#1d1d1f;margin-bottom:4px;">${title}</div>`;
+                html += `<div style="font-size:13px;text-align:center;color:#3a3a3c;margin-bottom:16px;">${msg}</div>`;
+
+                if (type === 'login') {
+                    html += '<input placeholder="Username" style="width:100%;padding:8px 10px;border:1px solid #c7c7cc;border-radius:6px;font-size:14px;margin-bottom:8px;box-sizing:border-box;outline:none;"><input type="password" placeholder="Password" style="width:100%;padding:8px 10px;border:1px solid #c7c7cc;border-radius:6px;font-size:14px;box-sizing:border-box;outline:none;">';
+                }
+
+                html += '<div style="display:flex;gap:8px;margin-top:12px;">';
+                html += '<button style="flex:1;padding:11px;border:none;border-radius:10px;font-size:17px;font-weight:600;color:#007aff;cursor:pointer;background:transparent;font-family:inherit;" onclick="this.closest(\'.alert-overlay\').remove()">Cancel</button>';
+
+                if (type === 'delete') {
+                    html += '<button style="flex:1;padding:11px;border:none;border-radius:10px;font-size:17px;font-weight:600;color:#ff3b30;cursor:pointer;background:transparent;font-family:inherit;" onclick="this.closest(\'.alert-overlay\').remove()">Delete</button>';
+                } else if (type === 'login') {
+                    html += '<button style="flex:1;padding:11px;border:none;border-radius:10px;font-size:17px;font-weight:600;color:#007aff;cursor:pointer;background:transparent;font-family:inherit;" onclick="this.closest(\'.alert-overlay\').remove()">Login</button>';
+                } else {
+                    html += '<button style="flex:1;padding:11px;border:none;border-radius:10px;font-size:17px;font-weight:600;color:#007aff;cursor:pointer;background:transparent;font-family:inherit;" onclick="this.closest(\'.alert-overlay\').remove()">OK</button>';
+                }
+                html += '</div>';
+
+                card.innerHTML = html;
+                overlay.appendChild(card);
+                dim.addEventListener('click', () => { card.style.transform = 'scale(0.9)'; card.style.opacity = '0'; setTimeout(() => overlay.remove(), 200); });
+                requestAnimationFrame(() => { card.style.transform = 'scale(1)'; card.style.opacity = '1'; });
+            }
+
+            alertHost.appendChild(overlay);
+        }
+
+        document.getElementById('alert-basic').addEventListener('click', () => showAlert('basic'));
+        document.getElementById('alert-login').addEventListener('click', () => showAlert('login'));
+        document.getElementById('alert-delete').addEventListener('click', () => showAlert('delete'));
+        document.getElementById('alert-sheet').addEventListener('click', () => showAlert('sheet'));
+
+        // ═══════════════════════════════════════════════════════════
+        // 13. Split View Controller
+        // ═══════════════════════════════════════════════════════════
+        const s13 = section('13. UISplitViewController');
+        s13.innerHTML += `<p class="info">Mail-style split view with primary/secondary columns. Click items to show detail.</p>
+        <div id="split" class="split"></div>
+        <div id="split-status" class="status" style="margin-top:8px;">collapsed: false | style: doubleColumn</div>`;
+
+        const splitEl = document.getElementById('split');
+        const sp = document.createElement('div'); sp.className = 'split-pri';
+        const ss = document.createElement('div'); ss.className = 'split-sec';
+        const items = [
+            { title: 'Inbox', badge: '3', detail: 'Three unread messages. Latest from Alice about the project deadline next Friday.' },
+            { title: 'Sent', badge: '', detail: 'Last message sent to Bob about the design review.' },
+            { title: 'Drafts', badge: '2', detail: 'Two drafts waiting: quarterly report and team update.' },
+            { title: 'Archive', badge: '47', detail: 'Forty-seven archived messages from the past six months.' },
+            { title: 'Trash', badge: '', detail: 'Trash is empty. Items older than 30 days are permanently removed.' },
+        ];
+        let selItem = 0;
+        function renderSplit() {
+            sp.innerHTML = '<div style="padding:10px 14px;font-size:12px;font-weight:600;color:#8e8e93;text-transform:uppercase;">Mailboxes</div>';
+            items.forEach((item, i) => {
+                const el = document.createElement('div');
+                el.className = 'split-item' + (i === selItem ? ' active' : '');
+                el.innerHTML = `${item.title}${item.badge ? ` <span style="float:right;background:#ff3b30;color:white;border-radius:10px;padding:0 6px;font-size:11px;">${item.badge}</span>` : ''}`;
+                el.addEventListener('click', () => { selItem = i; renderSplit(); document.getElementById('split-status').textContent = `collapsed: false | selected: ${item.title}\nprimaryColumn: ${sp.clientWidth}px | secondaryColumn: ${ss.clientWidth}px`; });
+                sp.appendChild(el);
+            });
+            ss.innerHTML = `<div style="font-size:20px;font-weight:700;margin-bottom:8px;">${items[selItem].title}</div><div style="font-size:14px;color:#3a3a3c;line-height:1.5;">${items[selItem].detail}</div>`;
+        }
+        renderSplit();
+        splitEl.appendChild(sp);
+        splitEl.appendChild(ss);
+
+        console.log('Architecture Features Demo loaded');
+    </script>
+</body>
+</html>

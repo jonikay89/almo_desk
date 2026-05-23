@@ -97,6 +97,12 @@ export { default as UITabBarController } from './UITabBarController.js';
 export { default as UISearchController, UISearchBar as UISearchBarNew } from './UISearchController.js';
 export { default as UISearchBar } from './UISearchBar.js';
 export { default as UIAlertController } from './UIAlertController.js';
+export {
+    UIAlertController as UIAlertControllerClass,
+    UIAlertControllerStyle,
+    UIAlertAction,
+    UIAlertActionStyle
+} from './UIAlertController.js';
 export { default as UIPickerView } from './UIPickerView.js';
 export { default as UIVisualEffectView, UIVisualEffect, UIBlurEffect, UIVibrancyEffect } from './UIVisualEffectView.js';
 export { default as UIContextMenuInteraction, UIMenuElement, UIAction, UIMenu } from './UIContextMenuInteraction.js';
@@ -185,3 +191,47 @@ export {
     CGPath
 } from './CALayer.js';
 export { TextStorage, AttributedString, ParagraphStyle } from './TextStorage.js';
+export {
+    NSISEngine,
+    UILayoutPriority,
+    NSLayoutAttribute,
+    NSLayoutRelation,
+    NSLayoutConstraint,
+    UILayoutGuide,
+    NSLayoutAnchor
+} from './NSLayoutConstraint.js';
+export {
+    UITraitCollection,
+    UITraitEnvironment,
+    UIUserInterfaceSizeClass,
+    UIUserInterfaceStyle,
+    UIUserInterfaceIdiom,
+    UIDeviceOrientation
+} from './UITraitCollection.js';
+export {
+    UIViewPropertyAnimator,
+    UITimingCurveProvider,
+    UICubicTimingParameters,
+    UISpringTimingParameters,
+    UIViewAnimating
+} from './UIViewPropertyAnimator.js';
+export {
+    UIPresentationController,
+    UIPageSheetPresentationController,
+    UISheetPresentationDetent,
+    UIModalPresentationStyle,
+    UIModalTransitionStyle,
+    UIViewControllerTransitioningDelegate,
+    UIViewControllerAnimatedTransitioning,
+    UIViewControllerContextTransitioning
+} from './UIPresentationController.js';
+export {
+    UIPopoverPresentationController,
+    UIPopoverArrowDirection
+} from './UIPopoverPresentationController.js';
+export {
+    UISplitViewController,
+    UISplitViewControllerColumn,
+    UISplitViewControllerDisplayMode,
+    UISplitViewControllerStyle
+} from './UISplitViewController.js';
