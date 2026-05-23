@@ -161,8 +161,8 @@
                             <div class="demo-row">
                                 <div class="demo-col">
                                     <span style="font-size:11px;color:#666;">UISwitch</span>
-                                    <div id="switch-demo" style="width:51px;height:31px;background:${this.state.switchOn?'#34c759':'#e8e8ed'};border-radius:16px;cursor:pointer;position:relative;">
-                                        <div style="position:absolute;width:27px;height:27px;background:#fff;border-radius:14px;top:2px;left:${this.state.switchOn?'24px':'4px'};transition:transform 0.2s;"></div>
+                                    <div id="switch-demo" style="width:50px;height:30px;border-radius:15px;cursor:pointer;position:relative;transition:background 0.2s;background:${this.state.switchOn?'#34c759':'#e0e0e0'};">
+                                        <div id="switch-thumb" style="position:absolute;width:26px;height:26px;background:white;border-radius:13px;top:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);left:${this.state.switchOn?'22px':'2px'};"></div>
                                     </div>
                                 </div>
                                 <div class="demo-col">
@@ -492,8 +492,9 @@
                 document.getElementById('switch-demo').onclick = () => {
                     this.state.switchOn = !this.state.switchOn;
                     const el = document.getElementById('switch-demo');
-                    el.style.background = this.state.switchOn ? '#34c759' : '#e8e8ed';
-                    el.querySelector('div').style.transform = this.state.switchOn ? 'translateX(20px)' : 'translateX(0)';
+                    const thumb = document.getElementById('switch-thumb');
+                    el.style.background = this.state.switchOn ? '#34c759' : '#e0e0e0';
+                    thumb.style.left = this.state.switchOn ? '22px' : '2px';
                     this.log(`UISwitch: ${this.state.switchOn ? 'ON' : 'OFF'}`);
                 };
 

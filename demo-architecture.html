@@ -136,15 +136,38 @@
 
         function c1render() {
             c1.querySelectorAll('.constraint-view').forEach(e => e.remove());
+            const parentEls = new Map();
+
+            // First pass: render parent views
             c1views.forEach((v, i) => {
+                if (v.parent !== undefined) return;
                 const el = document.createElement('div');
                 el.className = 'constraint-view';
-                el.style.cssText = `left:${v.x}px;top:${v.y}px;width:${v.w}px;height:${v.h}px;background:${v.color};${v.parent !== undefined ? 'border:2px solid rgba(255,255,255,0.5);' : ''}`;
-                el.textContent = v.parent !== undefined ? `Subview of ${v.parent}` : `V${i}`;
+                el.style.cssText = `left:${v.x}px;top:${v.y}px;width:${v.w}px;height:${v.h}px;background:${v.color};position:absolute;overflow:hidden;${v.selected ? 'outline:3px solid #ffcc00;' : ''}`;
                 el.dataset.idx = i;
-                el.onclick = () => { c1views.forEach(vv => vv.selected = false); v.selected = true; el.style.outline = '3px solid #ffcc00'; };
+                el.onclick = (e) => { e.stopPropagation(); c1views.forEach(vv => vv.selected = false); v.selected = true; c1render(); };
+                const label = document.createElement('span');
+                label.textContent = `V${i}`;
+                label.style.pointerEvents = 'none';
+                el.appendChild(label);
                 c1.appendChild(el);
+                parentEls.set(i, el);
             });
+
+            // Second pass: render subviews inside their parent elements
+            c1views.forEach((v, i) => {
+                if (v.parent === undefined) return;
+                const parentEl = parentEls.get(v.parent);
+                const p = c1views[v.parent];
+                if (!parentEl) return;
+
+                const el = document.createElement('div');
+                el.style.cssText = `position:absolute;left:${v.x - p.x}px;top:${v.y - p.y}px;width:${v.w}px;height:${v.h}px;background:${v.color};border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,0.6);transition:all 0.3s;${v.selected ? 'outline:2px solid #ffcc00;outline-offset:1px;' : ''}`;
+                el.textContent = `V${i}→V${v.parent}`;
+                el.onclick = (e) => { e.stopPropagation(); c1views.forEach(vv => vv.selected = false); v.selected = true; c1render(); };
+                parentEl.appendChild(el);
+            });
+
             const log = document.getElementById('c1-log');
             if (c1constraints.length === 0) { log.textContent = 'No constraints yet.'; return; }
             log.textContent = c1constraints.map((c, i) =>
@@ -162,16 +185,31 @@
         document.getElementById('c1-add-sub').addEventListener('click', () => {
             if (c1views.length === 0) { document.getElementById('c1-status').textContent = 'Add a view first!'; return; }
             const parentIdx = c1views.findIndex(v => v.selected);
-            const p = parentIdx >= 0 ? c1views[parentIdx] : c1views[0];
+            const pIdx = parentIdx >= 0 ? parentIdx : 0;
+            const p = c1views[pIdx];
             const i = c1views.length;
-            c1views.push({ x: p.x + 5, y: p.y + 5, w: 30, h: 20, color: c1colors[i % c1colors.length], parent: parentIdx >= 0 ? parentIdx : 0, selected: false, hugging: 250, resistance: 750 });
+            // Subview is positioned relative to parent's coordinate space
+            const subX = 5;
+            const subY = 5;
+            const subW = Math.min(30, p.w - 10);
+            const subH = Math.min(20, p.h - 10);
+            c1views.push({ x: p.x + subX, y: p.y + subY, w: subW, h: subH, color: c1colors[i % c1colors.length], parent: pIdx, selected: false, hugging: 250, resistance: 750 });
             c1render();
-            document.getElementById('c1-status').textContent = `Added subview V${i} inside ${parentIdx >= 0 ? 'V'+parentIdx : 'V0'}.`;
+            document.getElementById('c1-status').textContent = `Added subview V${i} inside V${pIdx}.\nparent.addSubview(V${i})\nV${i}.frame = CGRect(x: ${subX}, y: ${subY}, width: ${subW}, height: ${subH})`;
         });
 
         document.getElementById('c1-remove').addEventListener('click', () => {
             if (c1views.length === 0) return;
-            c1views.pop();
+            const removed = c1views.pop();
+            // Also remove constraints referencing removed view
+            for (let i = c1constraints.length - 1; i >= 0; i--) {
+                if (c1constraints[i].viewIdx === c1views.length) c1constraints.splice(i, 1);
+            }
+            // Remove orphaned subviews
+            const removedIdx = c1views.length;
+            for (let i = c1views.length - 1; i >= 0; i--) {
+                if (c1views[i].parent === removedIdx) c1views.splice(i, 1);
+            }
             c1render();
         });
 
@@ -197,7 +235,15 @@
             const relStr = relation === 'gte' ? '≥' : relation === 'lte' ? '≤' : '=';
             const idx = c1views.indexOf(selView);
 
-            let desc = `V${idx}.${type} ${relStr} superview.${type} × ${multiplier}`;
+            // For subviews, use parent dimensions as reference
+            const isSubview = selView.parent !== undefined;
+            const refW = isSubview ? c1views[selView.parent].w : cw;
+            const refH = isSubview ? c1views[selView.parent].h : ch;
+            const refX = isSubview ? c1views[selView.parent].x : 0;
+            const refY = isSubview ? c1views[selView.parent].y : 0;
+
+            const refName = isSubview ? `V${selView.parent}` : 'superview';
+            let desc = `V${idx}.${type} ${relStr} ${refName}.${type} × ${multiplier}`;
             if (constant) desc += ` + ${constant}`;
 
             // Check for conflicts
@@ -207,12 +253,12 @@
             c1constraints.push({ viewIdx: idx, type, relation, multiplier, constant, priority, active, desc, conflict: hasConflict });
 
             if (active) {
-                if (type === 'width') selView.w = Math.max(20, (cw * multiplier) + constant);
-                else if (type === 'height') selView.h = Math.max(20, (ch * multiplier) + constant);
-                else if (type === 'top') selView.y = Math.max(0, Math.min(ch - selView.h, constant));
-                else if (type === 'leading') selView.x = Math.max(0, Math.min(cw - selView.w, constant));
-                else if (type === 'center') { selView.x = (cw - selView.w) / 2; selView.y = (ch - selView.h) / 2; }
-                else if (type === 'equal') { selView.w = cw - 40; selView.h = ch - 40; selView.x = 20; selView.y = 20; }
+                if (type === 'width') selView.w = Math.max(10, (refW * multiplier) + constant);
+                else if (type === 'height') selView.h = Math.max(10, (refH * multiplier) + constant);
+                else if (type === 'top') selView.y = refY + Math.max(0, Math.min(refH - selView.h, constant));
+                else if (type === 'leading') selView.x = refX + Math.max(0, Math.min(refW - selView.w, constant));
+                else if (type === 'center') { selView.x = refX + (refW - selView.w) / 2; selView.y = refY + (refH - selView.h) / 2; }
+                else if (type === 'equal') { selView.w = refW - 4; selView.h = refH - 4; selView.x = refX + 2; selView.y = refY + 2; }
             }
 
             c1render();
@@ -626,16 +672,28 @@
         </div>
         <div id="sheet-status" class="status">Click "Show Sheet" to present.</div>`;
 
-        let sheetDetent = 'medium', sheetGrabber = true, sheetEl = null;
+        let sheetDetent = 'medium', sheetGrabber = true, sheetEl = null, currentSheet = null;
         document.querySelectorAll('[data-detent]').forEach(b => b.addEventListener('click', () => {
             document.querySelectorAll('[data-detent]').forEach(x => x.classList.remove('selected'));
             b.classList.add('selected');
             sheetDetent = b.dataset.detent;
+            // If sheet is showing, resize it live
+            if (currentSheet) {
+                const newH = sheetDetent === 'large' ? window.innerHeight * 0.9 : window.innerHeight * 0.5;
+                currentSheet.style.height = `${newH}px`;
+                document.getElementById('sheet-status').textContent =
+                    `detents: [.${sheetDetent}()]\ngrabber: prefersGrabberVisible = ${sheetGrabber}\nAnimated to .${sheetDetent} detent`;
+            }
         }));
         document.querySelectorAll('[data-grabber]').forEach(b => b.addEventListener('click', () => {
             document.querySelectorAll('[data-grabber]').forEach(x => x.classList.remove('selected'));
             b.classList.add('selected');
             sheetGrabber = b.dataset.grabber === 'yes';
+            // If sheet is showing, toggle grabber live
+            if (currentSheet) {
+                const grabberEl = currentSheet.querySelector('.sheet-grabber');
+                if (grabberEl) grabberEl.style.display = sheetGrabber ? '' : 'none';
+            }
         }));
 
         document.getElementById('sheet-show').addEventListener('click', () => {
@@ -649,23 +707,55 @@
             const maxW = Math.min(500, window.innerWidth - 40);
             const sheet = document.createElement('div');
             const sheetH = sheetDetent === 'large' ? window.innerHeight * 0.9 : window.innerHeight * 0.5;
-            sheet.style.cssText = `position:absolute;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:${maxW}px;height:${sheetH}px;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -4px 30px rgba(0,0,0,0.15);transition:transform 0.4s cubic-bezier(0.2,0.9,0.3,1);overflow:hidden;`;
+            sheet.style.cssText = `position:absolute;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:${maxW}px;height:${sheetH}px;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -4px 30px rgba(0,0,0,0.15);transition:transform 0.4s cubic-bezier(0.2,0.9,0.3,1),height 0.35s cubic-bezier(0.2,0.9,0.3,1);overflow:hidden;display:flex;flex-direction:column;`;
+            currentSheet = sheet;
 
-            if (sheetGrabber) {
-                const grabber = document.createElement('div');
-                grabber.style.cssText = 'width:36px;height:5px;background:#c7c7cc;border-radius:3px;margin:8px auto 0;';
-                sheet.appendChild(grabber);
-            }
+            // Grabber area
+            const grabberArea = document.createElement('div');
+            grabberArea.style.cssText = 'padding:8px 0 4px;cursor:grab;touch-action:none;flex-shrink:0;';
+            const grabber = document.createElement('div');
+            grabber.className = 'sheet-grabber';
+            grabber.style.cssText = `width:36px;height:5px;background:#c7c7cc;border-radius:3px;margin:0 auto;${sheetGrabber ? '' : 'display:none;'}`;
+            grabberArea.appendChild(grabber);
+
+            // Make grabber draggable to switch detent
+            let dragStartY = 0, dragStartH = 0;
+            grabberArea.addEventListener('mousedown', (e) => {
+                dragStartY = e.clientY;
+                dragStartH = sheet.offsetHeight;
+                sheet.style.transition = 'none';
+                const onMove = (e2) => {
+                    const dy = dragStartY - e2.clientY;
+                    const newH = Math.max(window.innerHeight * 0.25, Math.min(window.innerHeight * 0.95, dragStartH + dy));
+                    sheet.style.height = `${newH}px`;
+                };
+                const onUp = (e2) => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    sheet.style.transition = 'transform 0.4s cubic-bezier(0.2,0.9,0.3,1),height 0.35s cubic-bezier(0.2,0.9,0.3,1)';
+                    const dy = dragStartY - e2.clientY;
+                    const newDetent = dy > 50 ? 'large' : dy < -50 ? 'medium' : sheetDetent;
+                    const snapH = newDetent === 'large' ? window.innerHeight * 0.9 : window.innerHeight * 0.5;
+                    sheet.style.height = `${snapH}px`;
+                    sheetDetent = newDetent;
+                    document.querySelectorAll('[data-detent]').forEach(x => x.classList.remove('selected'));
+                    document.querySelector(`[data-detent="${newDetent}"]`)?.classList.add('selected');
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+
+            sheet.appendChild(grabberArea);
 
             const content = document.createElement('div');
-            content.style.cssText = 'padding:20px;overflow-y:auto;height:calc(100% - 30px);';
+            content.style.cssText = 'padding:20px;overflow-y:auto;flex:1;';
             content.innerHTML = `
-                <div style="font-size:20px;font-weight:700;margin-bottom:12px;">${sheetDetent === 'large' ? 'Large' : 'Medium'} Detent</div>
-                <div style="font-size:14px;color:#666;line-height:1.5;margin-bottom:16px;">This sheet uses <code>UISheetPresentationController</code> with a <code>.${sheetDetent}</code> detent. The grabber is ${sheetGrabber ? 'visible' : 'hidden'}.</div>
-                <div style="font-size:13px;color:#999;margin-bottom:8px;">Detents available:</div>
+                <div style="font-size:20px;font-weight:700;margin-bottom:12px;">Sheet Presentation</div>
+                <div style="font-size:14px;color:#666;line-height:1.5;margin-bottom:16px;">This uses <code>UISheetPresentationController</code>. Drag the grabber to switch between medium and large detents. Or use the buttons above.</div>
+                <div style="font-size:13px;color:#999;margin-bottom:8px;">Detents:</div>
                 <div style="display:flex;gap:8px;margin-bottom:16px;">
-                    <div style="flex:1;padding:12px;border-radius:8px;text-align:center;background:${sheetDetent==='medium'?'#007aff':'#f0f0f0'};color:${sheetDetent==='medium'?'#fff':'#333'};font-weight:600;">.medium</div>
-                    <div style="flex:1;padding:12px;border-radius:8px;text-align:center;background:${sheetDetent==='large'?'#007aff':'#f0f0f0'};color:${sheetDetent==='large'?'#fff':'#333'};font-weight:600;">.large</div>
+                    <div style="flex:1;padding:12px;border-radius:8px;text-align:center;background:#f0f0f0;color:#333;font-weight:600;">.medium</div>
+                    <div style="flex:1;padding:12px;border-radius:8px;text-align:center;background:#f0f0f0;color:#333;font-weight:600;">.large</div>
                 </div>
                 <button class="btn red" style="width:100%;" id="sheet-dismiss">Dismiss</button>
             `;
@@ -681,6 +771,7 @@
             });
 
             const dismiss = () => {
+                currentSheet = null;
                 sheet.style.transform = 'translateX(-50%) translateY(100%)';
                 dimmer.style.background = 'rgba(0,0,0,0)';
                 sheetEl.style.opacity = '0';
@@ -691,7 +782,7 @@
             document.getElementById('sheet-dismiss').addEventListener('click', dismiss);
 
             document.getElementById('sheet-status').textContent =
-                `detents: [.${sheetDetent}()]\ngrabber: prefersGrabberVisible = ${sheetGrabber}\ncornerRadius: 16\nsource: UIPresentationController`;
+                `detents: [.medium(), .large()]\ngrabber: prefersGrabberVisible = ${sheetGrabber}\ncornerRadius: 16\nDrag grabber to switch detents!`;
         });
 
         // ═══════════════════════════════════════════════════════════
@@ -1263,18 +1354,52 @@
             svStack.style.gap = `${svSpacing}px`;
             svStack.style.padding = `${svMargins}px`;
 
-            const alignMap = { top: 'flex-start', center: 'center', bottom: 'flex-end', stretch: 'stretch' };
+            const isVertical = svAxis === 'vertical';
+
+            // Alignment
+            const alignMap = {
+                top: isVertical ? 'flex-start' : 'flex-start',
+                center: 'center',
+                bottom: isVertical ? 'flex-end' : 'flex-end',
+                stretch: 'stretch'
+            };
             svStack.style.alignItems = alignMap[svAlignment] || 'flex-start';
 
-            const distMap = { fill: 'flex-start', fillEqually: 'stretch', equalSpacing: 'space-between', equalCentering: 'space-around' };
+            // Distribution
+            const distMap = {
+                fill: 'flex-start',
+                fillEqually: 'stretch',
+                fillProportionally: 'stretch',
+                equalSpacing: 'space-between',
+                equalCentering: 'space-around'
+            };
             svStack.style.justifyContent = distMap[svDistribution] || 'flex-start';
 
             svItems.forEach((item, i) => {
                 const el = document.createElement('div');
                 el.className = 'stack-item';
-                const h = item.h;
-                const w = svDistribution === 'fillEqually' ? 'auto' : `${item.w}px`;
-                el.style.cssText = `width:${svAxis === 'vertical' || svDistribution === 'fillEqually' ? 'auto' : w};min-width:${svDistribution === 'fillEqually' ? '0' : '20'}px;height:${h}px;background:${item.color};${svDistribution === 'fillEqually' ? 'flex:1;' : ''}flex-shrink:0;transition:all 0.3s cubic-bezier(0.2,0.9,0.3,1);${svAlignment === 'stretch' && svAxis === 'horizontal' ? 'align-self:stretch;' : ''}`;
+                const isFillEqually = svDistribution === 'fillEqually';
+                const isFillProp = svDistribution === 'fillProportionally';
+                const totalW = svItems.reduce((s, it) => s + it.w, 0);
+
+                let w, h;
+                if (isVertical) {
+                    w = 'auto';
+                    h = `${item.h}px`;
+                    if (svAlignment === 'stretch') w = '100%';
+                } else {
+                    if (isFillEqually) {
+                        w = '0';
+                    } else if (isFillProp) {
+                        w = `${item.w}px`;
+                    } else {
+                        w = `${item.w}px`;
+                    }
+                    h = `${item.h}px`;
+                    if (svAlignment === 'stretch') h = '100%';
+                }
+
+                el.style.cssText = `width:${w};min-width:${isVertical ? '0' : '20'}px;height:${h};min-height:${isVertical ? '20' : '0'}px;background:${item.color};${isFillEqually ? 'flex:1 1 0%;' : isFillProp ? `flex: ${item.w} 0 0;` : 'flex-shrink:0;'}transition:all 0.3s cubic-bezier(0.2,0.9,0.3,1);`;
                 el.textContent = item.label;
                 svStack.appendChild(el);
             });
