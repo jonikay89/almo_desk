@@ -16,418 +16,575 @@
             UIStackView,
             CurrentValueSubject, AnyCancellable, Binding,
             ObservableObject,
+            UIViewController,
             NSLayoutConstraint,
             lazyVar
         } from './src/core/index.js';
 
-        const vc = {};
-        lazyVar(vc, 'cancellables', () => new Set());
+        // ────────────────────────────────────────────────────────────
+        // MARK: - DemoViewController
+        // ────────────────────────────────────────────────────────────
 
-        lazyVar(vc, 'screen', () => {
-            const s = new UIStackView('vertical');
-            s.alignment = 'fill';
-            s.minHeight = '100vh';
-            s.backgroundColor = UIColor.colorWithHex('#f5f5f7');
-            document.body.appendChild(s.element);
-            return s;
-        });
+        class DemoViewController extends UIViewController {
 
-        lazyVar(vc, 'app', () => {
-            const s = new UIStackView('vertical');
-            s.spacing = 20;
-            s.padding = 20;
-            s.alignment = 'fill';
-            s.translatesAutoresizingMaskIntoConstraints = false;
-            vc.screen.addSubview(s);
+            // MARK: - Properties (lazy var)
 
-            NSLayoutConstraint.activateConstraints([
-                s.widthAnchor.constraintLessThanOrEqualToConstant(1200),
-                s.centerXAnchor.constraintEqualToAnchor(vc.screen.centerXAnchor),
-                s.topAnchor.constraintEqualToAnchor(vc.screen.topAnchor),
-                s.bottomAnchor.constraintEqualToAnchor(vc.screen.bottomAnchor),
-            ]);
-            return s;
-        });
+            get cancellables() { return lazyVar(this, 'cancellables', () => new Set()); }
 
-        const makeSection = () => {
-            const s = new UIStackView('vertical');
-            s.spacing = 10;
-            s.backgroundColor = UIColor.white();
-            s.layer.cornerRadius = 12;
-            s.padding = 20;
-            s.shadow = { offsetX: 0, offsetY: 2, radius: 8, color: 'rgba(0,0,0,0.08)' };
-            return s;
-        };
+            get app() {
+                return lazyVar(this, 'app', () => {
+                    const s = new UIStackView('vertical');
+                    s.spacing = 20;
+                    s.padding = 20;
+                    s.alignment = 'fill';
+                    s.translatesAutoresizingMaskIntoConstraints = false;
+                    this.view.addSubview(s);
+                    NSLayoutConstraint.activateConstraints([
+                        s.widthAnchor.constraintLessThanOrEqualToConstant(1200),
+                        s.centerXAnchor.constraintEqualToAnchor(this.view.centerXAnchor),
+                        s.topAnchor.constraintEqualToAnchor(this.view.topAnchor),
+                    ]);
+                    return s;
+                });
+            }
 
-        const makeDemoArea = (axis = 'vertical') => {
-            const s = new UIStackView(axis);
-            s.spacing = 15;
-            s.alignment = 'leading';
-            s.backgroundColor = UIColor.colorWithHex('#f5f5f7');
-            s.layer.cornerRadius = 8;
-            s.padding = 20;
-            s.minHeight = 60;
-            return s;
-        };
+            get contentStack() { return this.app; }
 
-        const headingLabel = (text) => {
-            const l = new UILabel(text);
-            l.font = UIFont.boldSystemFont(18);
-            l.textColor = UIColor.colorWithHex('#1d1d1f');
-            return l;
-        };
+            get count() { return lazyVar(this, 'count', () => new CurrentValueSubject(42)); }
+            get source() { return lazyVar(this, 'source', () => new CurrentValueSubject('Hello')); }
+            get target() { return lazyVar(this, 'target', () => new CurrentValueSubject('World')); }
+            get items() { return lazyVar(this, 'items', () => new CurrentValueSubject(['Apple', 'Banana', 'Cherry'])); }
+            get percentage() { return lazyVar(this, 'percentage', () => new CurrentValueSubject(100)); }
+            get progressWidth() { return lazyVar(this, 'progressWidth', () => new CurrentValueSubject(0)); }
+            get tfValue() { return lazyVar(this, 'tfValue', () => new CurrentValueSubject('Hello')); }
+            get sliderValue() { return lazyVar(this, 'sliderValue', () => new CurrentValueSubject(210)); }
+            get scaleValue() { return lazyVar(this, 'scaleValue', () => new CurrentValueSubject(1.0)); }
 
-        const tagLabel = (text, color) => {
-            const l = new UILabel(text);
-            l.font = UIFont.systemFont(11, '600');
-            l.textColor = UIColor.white();
-            l.backgroundColor = UIColor.colorWithHex(color);
-            l.layer.cornerRadius = 4;
-            l.padding = { top: 2, left: 8, bottom: 2, right: 8 };
-            return l;
-        };
+            get tfInput() {
+                return lazyVar(this, 'tfInput', () => {
+                    const tf = new UITextField('Type something...');
+                    tf.font = UIFont.systemFont(14);
+                    tf.text = 'Hello';
+                    return tf;
+                });
+            }
 
-        const stateLabel = (text) => {
-            const l = new UILabel(text);
-            l.font = UIFont.systemFont(12);
-            l.textColor = UIColor.colorWithHex('#666666');
-            return l;
-        };
+            get colorBoxView() {
+                return lazyVar(this, 'colorBoxView', () => {
+                    const v = new UIStackView('vertical');
+                    v.alignment = 'center';
+                    v.distribution = 'center';
+                    v.frame = { x: 0, y: 0, width: 80, height: 80 };
+                    v.layer.cornerRadius = 12;
+                    v.backgroundColor = UIColor.colorWithHSB(210 / 360, 1, 1);
+                    v.clipsToBounds = true;
+                    const lbl = new UILabel('BOX');
+                    lbl.font = UIFont.boldSystemFont(12);
+                    lbl.textColor = UIColor.white();
+                    lbl.textAlignment = 'center';
+                    v.addArrangedSubview(lbl);
+                    return v;
+                });
+            }
 
-        const valueLabel = (text) => {
-            const l = new UILabel(text);
-            l.font = UIFont.monospacedSystemFont(14, '600');
-            return l;
-        };
+            get hueSlider() {
+                return lazyVar(this, 'hueSlider', () => {
+                    const s = new UISlider();
+                    s.minimumValue = 0;
+                    s.maximumValue = 360;
+                    s.value = 210;
+                    s.setContentHuggingPriority(1, 'horizontal');
+                    return s;
+                });
+            }
 
-        const indicator = () => {
-            const v = new UIView({ x: 0, y: 0, width: 10, height: 10 });
-            v.layer.cornerRadius = 5;
-            v.backgroundColor = UIColor.colorWithHex('#34c759');
-            return v;
-        };
+            get scaleSlider() {
+                return lazyVar(this, 'scaleSlider', () => {
+                    const s = new UISlider();
+                    s.minimumValue = 50;
+                    s.maximumValue = 150;
+                    s.value = 100;
+                    return s;
+                });
+            }
 
-        const logColorMap = {
-            get ok() { const c = UIColor.colorWithHex('#4ec9b0'); Object.defineProperty(this, 'ok', { value: c }); return c; },
-            get info() { const c = UIColor.colorWithHex('#569cd6'); Object.defineProperty(this, 'info', { value: c }); return c; },
-            get warn() { const c = UIColor.colorWithHex('#ce9178'); Object.defineProperty(this, 'warn', { value: c }); return c; },
-            get binding() { const c = UIColor.colorWithHex('#c586c0'); Object.defineProperty(this, 'binding', { value: c }); return c; },
-        };
+            get person() { return lazyVar(this, 'person', () => new Person('John', 30, 'john@example.com')); }
 
-        const logArea = (title) => {
-            const section = new UIStackView('vertical');
-            section.spacing = 10;
-            section.backgroundColor = UIColor.white();
-            section.layer.cornerRadius = 12;
-            section.padding = 20;
-            section.shadow = { offsetX: 0, offsetY: 2, radius: 8, color: 'rgba(0,0,0,0.08)' };
-            const heading = headingLabel(title);
-            const logContainer = new UIView();
-            logContainer.backgroundColor = UIColor.colorWithHex('#1e1e1e');
-            logContainer.layer.cornerRadius = 8;
-            logContainer.padding = 15;
-            logContainer.maxHeight = '200px';
-            logContainer.overflow = 'auto';
-            section.addArrangedSubview(heading);
-            section.addArrangedSubview(logContainer);
-            vc.app.addArrangedSubview(section);
-            return (msg, type = 'info') => {
-                const entry = new UILabel(`[${new Date().toLocaleTimeString()}] ${msg}`);
-                entry.font = UIFont.monospacedSystemFont(12);
-                entry.textColor = logColorMap[type] || UIColor.colorWithHex('#d4d4d4');
-                entry.numberOfLines = 0;
-                logContainer.addSubview(entry);
-                logContainer.scrollToBottom();
-            };
-        };
+            get fruitList() {
+                return lazyVar(this, 'fruitList', () => {
+                    const f = new UIStackView('vertical');
+                    f.spacing = 8;
+                    f.alignment = 'fill';
+                    return f;
+                });
+            }
 
-        // ── Section 1: CurrentValueSubject ──
-        lazyVar(vc, 'log1', () => logArea('CurrentValueSubject Demo'));
-        lazyVar(vc, 'log2', () => logArea('Two-Way Binding Demo'));
-        lazyVar(vc, 'log3', () => logArea('Array Demo'));
-        lazyVar(vc, 'log4', () => logArea('Transform Binding Demo'));
+            get newItemInput() {
+                return lazyVar(this, 'newItemInput', () => {
+                    const tf = new UITextField('New item name...');
+                    tf.font = UIFont.systemFont(14);
+                    return tf;
+                });
+            }
 
-        lazyVar(vc, 'count', () => new CurrentValueSubject(42));
-        vc.log1('Creating CurrentValueSubject with initial value: 42');
-        vc.log1('Calling sink()...');
-        const countCancellable = vc.count.sink((newValue, oldValue) => {
-            vc.log1(`Value changed: ${oldValue} → ${newValue}`, 'ok');
-        }).storeIn(vc.cancellables);
+            get fruits() { return lazyVar(this, 'fruits', () => new CurrentValueSubject(['Apple', 'Banana', 'Cherry', 'Date'])); }
+            get dm() { return lazyVar(this, 'dm', () => new DataManager()); }
 
-        vc.count.send(100);
-        vc.log1('Sent 100');
-        vc.count.send(100);
-        vc.log1('Sent 100 again (no change expected)');
-        vc.count.send(50);
-        vc.log1('Sent 50');
+            // MARK: - Lifecycle
 
-        countCancellable.cancel();
-        vc.log1('Cancelled. Sending 200 (no log expected)');
-        vc.count.send(200);
-        vc.log1(`History: ${JSON.stringify(vc.count.changeHistory.map(h => ({from: h.oldValue, to: h.newValue})))}`, 'binding');
+            viewDidLoad() {
+                super.viewDidLoad();
+                this.view.backgroundColor = UIColor.colorWithHex('#f5f5f7');
+                this.setupSubjectDemos();
+                this.setupInteractiveDemo();
+                this.setupObservableDemo();
+                this.setupArrayDemo();
+                this.setupLazyVarDemo();
+            }
 
-        lazyVar(vc, 'source', () => new CurrentValueSubject('Hello'));
-        lazyVar(vc, 'target', () => new CurrentValueSubject('World'));
-        vc.log2('Two-way binding');
-        lazyVar(vc, 'twoWayBinding', () => vc.source.bindTo(vc.target, { twoWay: true }));
-        vc.twoWayBinding.activate();
-        vc.log2(`source="${vc.source.value}", target="${vc.target.value}"`, 'ok');
-        vc.source.send('Bonjour');
-        vc.log2(`source="${vc.source.value}", target="${vc.target.value}"`, 'ok');
-        vc.target.send('Mond');
-        vc.log2(`source="${vc.source.value}", target="${vc.target.value}"`, 'ok');
-        vc.twoWayBinding.deactivate();
-        vc.source.send('Hola');
-        vc.log2(`Deactivated. source="${vc.source.value}", target="${vc.target.value}"`, 'ok');
+            // MARK: - Factory Methods (private)
 
-        lazyVar(vc, 'items', () => new CurrentValueSubject(['Apple', 'Banana', 'Cherry']));
-        const itemsCancellable = vc.items.sink((arr) => {
-            vc.log3(`[${arr.join(', ')}]`, 'ok');
-        }).storeIn(vc.cancellables);
-        vc.items.send([...vc.items.value, 'Date']);
-        vc.items.send(vc.items.value.filter(i => i !== 'Banana'));
-        itemsCancellable.cancel();
+            makeSection() {
+                const s = new UIStackView('vertical');
+                s.spacing = 10;
+                s.backgroundColor = UIColor.white();
+                s.layer.cornerRadius = 12;
+                s.padding = 20;
+                s.shadow = { offsetX: 0, offsetY: 2, radius: 8, color: 'rgba(0,0,0,0.08)' };
+                return s;
+            }
 
-        lazyVar(vc, 'percentage', () => new CurrentValueSubject(100));
-        lazyVar(vc, 'progressWidth', () => new CurrentValueSubject(0));
-        lazyVar(vc, 'progressBinding', () => vc.percentage.bindTo(vc.progressWidth, {
-            twoWay: false, transformTo: (p) => p * 2, transformFrom: (w) => w / 2
-        }));
-        vc.progressBinding.activate();
-        vc.log4(`${vc.percentage.value}% → ${vc.progressWidth.value}px`, 'ok');
-        vc.percentage.send(75);
-        vc.log4(`${vc.percentage.value}% → ${vc.progressWidth.value}px`, 'ok');
+            makeDemoArea(axis = 'vertical') {
+                const s = new UIStackView(axis);
+                s.spacing = 15;
+                s.alignment = 'leading';
+                s.backgroundColor = UIColor.colorWithHex('#f5f5f7');
+                s.layer.cornerRadius = 8;
+                s.padding = 20;
+                s.minHeight = 60;
+                return s;
+            }
 
-        // ── Section 5: Interactive Binding Demo ──
-        lazyVar(vc, 'section5', () => {
-            const s = makeSection();
-            const h = new UIStackView('horizontal');
-            h.spacing = 10;
-            h.alignment = 'center';
-            h.addArrangedSubview(headingLabel('Interactive Binding Demo'));
-            h.addArrangedSubview(tagLabel('Interactive', '#5856d6'));
-            s.addArrangedSubview(h);
-            vc.app.addArrangedSubview(s);
-            return s;
-        });
+            makeLogArea(title) {
+                const section = this.makeSection();
+                const heading = this.headingLabel(title);
+                const logContainer = new UIView();
+                logContainer.backgroundColor = UIColor.colorWithHex('#1e1e1e');
+                logContainer.layer.cornerRadius = 8;
+                logContainer.padding = 15;
+                logContainer.maxHeight = '200px';
+                logContainer.overflow = 'auto';
+                section.addArrangedSubview(heading);
+                section.addArrangedSubview(logContainer);
+                this.contentStack.addArrangedSubview(section);
+                return (msg, type = 'info') => {
+                    const entry = new UILabel(`[${new Date().toLocaleTimeString()}] ${msg}`);
+                    entry.font = UIFont.monospacedSystemFont(12);
+                    entry.textColor = logColorMap[type] || UIColor.colorWithHex('#d4d4d4');
+                    entry.numberOfLines = 0;
+                    logContainer.addSubview(entry);
+                    logContainer.scrollToBottom();
+                };
+            }
 
-        lazyVar(vc, 'demoArea5', () => {
-            const d = makeDemoArea('vertical');
-            vc.section5.addArrangedSubview(d);
-            return d;
-        });
+            headingLabel(text) {
+                const l = new UILabel(text);
+                l.font = UIFont.boldSystemFont(18);
+                l.textColor = UIColor.colorWithHex('#1d1d1f');
+                return l;
+            }
 
-        lazyVar(vc, 'tfValue', () => new CurrentValueSubject('Hello'));
-        lazyVar(vc, 'sliderValue', () => new CurrentValueSubject(210));
-        lazyVar(vc, 'scaleValue', () => new CurrentValueSubject(1.0));
+            tagLabel(text, color) {
+                const l = new UILabel(text);
+                l.font = UIFont.systemFont(11, '600');
+                l.textColor = UIColor.white();
+                l.backgroundColor = UIColor.colorWithHex(color);
+                l.layer.cornerRadius = 4;
+                l.padding = { top: 2, left: 8, bottom: 2, right: 8 };
+                return l;
+            }
 
-        lazyVar(vc, 'row1', () => {
-            const r = new UIStackView('horizontal');
-            r.spacing = 20;
-            r.alignment = 'center';
-            const tfState = new UIStackView('horizontal');
-            tfState.spacing = 8;
-            tfState.alignment = 'center';
-            tfState.addArrangedSubview(stateLabel('TextField:'));
-            lazyVar(vc, 'tfValLabel', () => valueLabel('Hello'));
-            tfState.addArrangedSubview(vc.tfValLabel);
-            tfState.addArrangedSubview(indicator());
-            const lblState = new UIStackView('horizontal');
-            lblState.spacing = 8;
-            lblState.alignment = 'center';
-            lblState.addArrangedSubview(stateLabel('Label:'));
-            lazyVar(vc, 'lblValLabel', () => valueLabel('Hello'));
-            lblState.addArrangedSubview(vc.lblValLabel);
-            lblState.addArrangedSubview(indicator());
-            r.addArrangedSubview(tfState);
-            r.addArrangedSubview(lblState);
-            vc.demoArea5.addArrangedSubview(r);
-            return r;
-        });
+            stateLabel(text) {
+                const l = new UILabel(text);
+                l.font = UIFont.systemFont(12);
+                l.textColor = UIColor.colorWithHex('#666666');
+                return l;
+            }
 
-        lazyVar(vc, 'row2', () => {
-            const r = new UIStackView('horizontal');
-            r.spacing = 15;
-            r.alignment = 'center';
-            lazyVar(vc, 'tfInput', () => {
-                const tf = new UITextField('Type something...');
-                tf.font = UIFont.systemFont(14);
-                tf.text = 'Hello';
-                return tf;
-            });
-            lazyVar(vc, 'colorBoxView', () => {
-                const v = new UIStackView('vertical');
-                v.alignment = 'center';
-                v.distribution = 'center';
-                v.frame = { x: 0, y: 0, width: 80, height: 80 };
-                v.layer.cornerRadius = 12;
-                v.backgroundColor = UIColor.colorWithHSB(210 / 360, 1, 1);
-                v.clipsToBounds = true;
-                const lbl = new UILabel('BOX');
-                lbl.font = UIFont.boldSystemFont(12);
-                lbl.textColor = UIColor.white();
-                lbl.textAlignment = 'center';
-                v.addArrangedSubview(lbl);
+            valueLabel(text) {
+                const l = new UILabel(text);
+                l.font = UIFont.monospacedSystemFont(14, '600');
+                return l;
+            }
+
+            indicator() {
+                const v = new UIView({ x: 0, y: 0, width: 10, height: 10 });
+                v.layer.cornerRadius = 5;
+                v.backgroundColor = UIColor.colorWithHex('#34c759');
                 return v;
-            });
-            r.addArrangedSubview(vc.tfInput);
-            r.addArrangedSubview(vc.colorBoxView);
-            vc.demoArea5.addArrangedSubview(r);
-            return r;
-        });
+            }
 
-        lazyVar(vc, 'row3', () => {
-            const r = new UIStackView('horizontal');
-            r.spacing = 15;
-            r.alignment = 'center';
-            lazyVar(vc, 'hueDesc', () => stateLabel('Hue: 210'));
-            lazyVar(vc, 'hueSlider', () => {
-                const s = new UISlider();
-                s.minimumValue = 0;
-                s.maximumValue = 360;
-                s.value = 210;
-                s.setContentHuggingPriority(1, 'horizontal');
-                return s;
-            });
-            r.addArrangedSubview(vc.hueDesc);
-            r.addArrangedSubview(vc.hueSlider);
-            vc.demoArea5.addArrangedSubview(r);
-            return r;
-        });
+            makeSectionHeader(title, tagText, tagColor) {
+                const h = new UIStackView('horizontal');
+                h.spacing = 10;
+                h.alignment = 'center';
+                h.addArrangedSubview(this.headingLabel(title));
+                h.addArrangedSubview(this.tagLabel(tagText, tagColor));
+                return h;
+            }
 
-        lazyVar(vc, 'row4', () => {
-            const r = new UIStackView('horizontal');
-            r.spacing = 20;
-            r.alignment = 'center';
-            const slState = new UIStackView('horizontal');
-            slState.spacing = 8;
-            slState.alignment = 'center';
-            lazyVar(vc, 'slValLabel', () => valueLabel('210'));
-            slState.addArrangedSubview(stateLabel('Slider Value:'));
-            slState.addArrangedSubview(vc.slValLabel);
-            const scState = new UIStackView('horizontal');
-            scState.spacing = 8;
-            scState.alignment = 'center';
-            lazyVar(vc, 'scValLabel', () => valueLabel('1.0'));
-            scState.addArrangedSubview(stateLabel('Box Scale:'));
-            scState.addArrangedSubview(vc.scValLabel);
-            lazyVar(vc, 'scaleSlider', () => {
-                const s = new UISlider();
-                s.minimumValue = 50;
-                s.maximumValue = 150;
-                s.value = 100;
-                return s;
-            });
-            r.addArrangedSubview(slState);
-            r.addArrangedSubview(scState);
-            r.addArrangedSubview(vc.scaleSlider);
-            vc.demoArea5.addArrangedSubview(r);
-            return r;
-        });
+            // MARK: - Setup
 
-        vc.row1; vc.row2; vc.row3; vc.row4;
+            setupSubjectDemos() {
+                const log1 = this.makeLogArea('CurrentValueSubject Demo');
+                const log2 = this.makeLogArea('Two-Way Binding Demo');
+                const log3 = this.makeLogArea('Array Demo');
+                const log4 = this.makeLogArea('Transform Binding Demo');
 
-        vc.tfInput.addTarget(vc.tfValue, (sender) => { vc.tfValue.value = sender.text; });
-        vc.hueSlider.addTarget(vc.sliderValue, (sender) => { vc.sliderValue.value = Math.round(sender.value); });
-        vc.scaleSlider.addTarget(vc.scaleValue, (sender) => { vc.scaleValue.value = sender.value / 100; });
+                log1('Creating CurrentValueSubject with initial value: 42');
+                log1('Calling sink()...');
+                const countCancellable = this.count.sink((newValue, oldValue) => {
+                    log1(`Value changed: ${oldValue} → ${newValue}`, 'ok');
+                }).storeIn(this.cancellables);
 
-        vc.tfValue.sink((v) => { vc.tfValLabel.text = v; vc.lblValLabel.text = v; }).storeIn(vc.cancellables);
-        vc.sliderValue.sink((v) => {
-            vc.slValLabel.text = String(v);
-            vc.hueDesc.text = `Hue: ${v}`;
-            vc.colorBoxView.backgroundColor = UIColor.colorWithHSB(v / 360, 1, 1);
-        }).storeIn(vc.cancellables);
-        vc.scaleValue.sink((v) => {
-            vc.scValLabel.text = v.toFixed(1);
-            vc.colorBoxView.transform = `scale(${v})`;
-        }).storeIn(vc.cancellables);
+                this.count.send(100);
+                log1('Sent 100');
+                this.count.send(100);
+                log1('Sent 100 again (no change expected)');
+                this.count.send(50);
+                log1('Sent 50');
 
-        // ── Section 6: ObservableObject + KVO Demo ──
-        lazyVar(vc, 'section6', () => {
-            const s = makeSection();
-            const h = new UIStackView('horizontal');
-            h.spacing = 10;
-            h.alignment = 'center';
-            h.addArrangedSubview(headingLabel('ObservableObject + KVO Demo'));
-            h.addArrangedSubview(tagLabel('ObservableObject', '#ff9500'));
-            s.addArrangedSubview(h);
-            vc.app.addArrangedSubview(s);
-            return s;
-        });
+                countCancellable.cancel();
+                log1('Cancelled. Sending 200 (no log expected)');
+                this.count.send(200);
+                log1(`History: ${JSON.stringify(this.count.changeHistory.map(h => ({from: h.oldValue, to: h.newValue})))}`, 'binding');
 
-        lazyVar(vc, 'demoArea6', () => {
-            const d = makeDemoArea('vertical');
-            vc.section6.addArrangedSubview(d);
-            return d;
-        });
+                log2('Two-way binding');
+                const twoWayBinding = this.source.bindTo(this.target, { twoWay: true });
+                twoWayBinding.activate();
+                log2(`source="${this.source.value}", target="${this.target.value}"`, 'ok');
+                this.source.send('Bonjour');
+                log2(`source="${this.source.value}", target="${this.target.value}"`, 'ok');
+                this.target.send('Mond');
+                log2(`source="${this.source.value}", target="${this.target.value}"`, 'ok');
+                twoWayBinding.deactivate();
+                this.source.send('Hola');
+                log2(`Deactivated. source="${this.source.value}", target="${this.target.value}"`, 'ok');
 
-        lazyVar(vc, 'objDisplay', () => {
-            const d = new UIStackView('vertical');
-            d.spacing = 4;
-            d.backgroundColor = UIColor.colorWithHex('#fff3cd');
-            d.layer.cornerRadius = 6;
-            d.layer.borderWidth = 1;
-            d.layer.borderColor = UIColor.colorWithHex('#ffc107');
-            d.padding = 10;
-            d.minHeight = 40;
-            return d;
-        });
+                const itemsCancellable = this.items.sink((arr) => {
+                    log3(`[${arr.join(', ')}]`, 'ok');
+                }).storeIn(this.cancellables);
+                this.items.send([...this.items.value, 'Date']);
+                this.items.send(this.items.value.filter(i => i !== 'Banana'));
+                itemsCancellable.cancel();
 
-        lazyVar(vc, 'objLabel', () => {
-            const l = new UILabel('ObservableObject State');
-            l.font = UIFont.systemFont(11);
-            l.textColor = UIColor.colorWithHex('#856404');
-            l.numberOfLines = 0;
-            return l;
-        });
+                const progressBinding = this.percentage.bindTo(this.progressWidth, {
+                    twoWay: false, transformTo: (p) => p * 2, transformFrom: (w) => w / 2
+                });
+                progressBinding.activate();
+                log4(`${this.percentage.value}% → ${this.progressWidth.value}px`, 'ok');
+                this.percentage.send(75);
+                log4(`${this.percentage.value}% → ${this.progressWidth.value}px`, 'ok');
+            }
 
-        lazyVar(vc, 'objState', () => {
-            const l = new UILabel('Loading...');
-            l.font = UIFont.monospacedSystemFont(13);
-            l.numberOfLines = 0;
-            return l;
-        });
+            setupInteractiveDemo() {
+                const section = this.makeSection();
+                section.addArrangedSubview(this.makeSectionHeader('Interactive Binding Demo', 'Interactive', '#5856d6'));
+                this.contentStack.addArrangedSubview(section);
 
-        vc.objDisplay.addArrangedSubview(vc.objLabel);
-        vc.objDisplay.addArrangedSubview(vc.objState);
-        vc.demoArea6.addArrangedSubview(vc.objDisplay);
+                const demoArea = this.makeDemoArea('vertical');
+                section.addArrangedSubview(demoArea);
 
-        lazyVar(vc, 'btnRow', () => {
-            const r = new UIStackView('horizontal');
-            r.spacing = 15;
-            r.alignment = 'center';
-            return r;
-        });
+                const tfValLabel = this.valueLabel('Hello');
+                const lblValLabel = this.valueLabel('Hello');
+                const hueDesc = this.stateLabel('Hue: 210');
+                const slValLabel = this.valueLabel('210');
+                const scValLabel = this.valueLabel('1.0');
 
-        lazyVar(vc, 'btnName', () => {
-            const b = new UIButton('Change Name');
-            b.font = UIFont.systemFont(14, '600');
-            return b;
-        });
-        lazyVar(vc, 'btnAge', () => {
-            const b = new UIButton('Increment Age');
-            b.backgroundColor = UIColor.colorWithHex('#34c759');
-            b.font = UIFont.systemFont(14, '600');
-            return b;
-        });
-        lazyVar(vc, 'btnEmail', () => {
-            const b = new UIButton('Update Email');
-            b.backgroundColor = UIColor.colorWithHex('#ff9500');
-            b.font = UIFont.systemFont(14, '600');
-            return b;
-        });
-        lazyVar(vc, 'btnReset', () => {
-            const b = new UIButton('Reset All');
-            b.backgroundColor = UIColor.colorWithHex('#5856d6');
-            b.font = UIFont.systemFont(14, '600');
-            return b;
-        });
+                const row1 = new UIStackView('horizontal');
+                row1.spacing = 20;
+                row1.alignment = 'center';
+                const tfState = new UIStackView('horizontal');
+                tfState.spacing = 8;
+                tfState.alignment = 'center';
+                tfState.addArrangedSubview(this.stateLabel('TextField:'));
+                tfState.addArrangedSubview(tfValLabel);
+                tfState.addArrangedSubview(this.indicator());
+                const lblState = new UIStackView('horizontal');
+                lblState.spacing = 8;
+                lblState.alignment = 'center';
+                lblState.addArrangedSubview(this.stateLabel('Label:'));
+                lblState.addArrangedSubview(lblValLabel);
+                lblState.addArrangedSubview(this.indicator());
+                row1.addArrangedSubview(tfState);
+                row1.addArrangedSubview(lblState);
+                demoArea.addArrangedSubview(row1);
 
-        vc.btnRow.addArrangedSubview(vc.btnName);
-        vc.btnRow.addArrangedSubview(vc.btnAge);
-        vc.btnRow.addArrangedSubview(vc.btnEmail);
-        vc.btnRow.addArrangedSubview(vc.btnReset);
-        vc.demoArea6.addArrangedSubview(vc.btnRow);
+                const row2 = new UIStackView('horizontal');
+                row2.spacing = 15;
+                row2.alignment = 'center';
+                row2.addArrangedSubview(this.tfInput);
+                row2.addArrangedSubview(this.colorBoxView);
+                demoArea.addArrangedSubview(row2);
+
+                const row3 = new UIStackView('horizontal');
+                row3.spacing = 15;
+                row3.alignment = 'center';
+                row3.addArrangedSubview(hueDesc);
+                row3.addArrangedSubview(this.hueSlider);
+                demoArea.addArrangedSubview(row3);
+
+                const row4 = new UIStackView('horizontal');
+                row4.spacing = 20;
+                row4.alignment = 'center';
+                const slState = new UIStackView('horizontal');
+                slState.spacing = 8;
+                slState.alignment = 'center';
+                slState.addArrangedSubview(this.stateLabel('Slider Value:'));
+                slState.addArrangedSubview(slValLabel);
+                const scState = new UIStackView('horizontal');
+                scState.spacing = 8;
+                scState.alignment = 'center';
+                scState.addArrangedSubview(this.stateLabel('Box Scale:'));
+                scState.addArrangedSubview(scValLabel);
+                row4.addArrangedSubview(slState);
+                row4.addArrangedSubview(scState);
+                row4.addArrangedSubview(this.scaleSlider);
+                demoArea.addArrangedSubview(row4);
+
+                this.tfInput.addTarget(this.tfValue, (sender) => { this.tfValue.value = sender.text; });
+                this.hueSlider.addTarget(this.sliderValue, (sender) => { this.sliderValue.value = Math.round(sender.value); });
+                this.scaleSlider.addTarget(this.scaleValue, (sender) => { this.scaleValue.value = sender.value / 100; });
+
+                this.tfValue.sink((v) => { tfValLabel.text = v; lblValLabel.text = v; }).storeIn(this.cancellables);
+                this.sliderValue.sink((v) => {
+                    slValLabel.text = String(v);
+                    hueDesc.text = `Hue: ${v}`;
+                    this.colorBoxView.backgroundColor = UIColor.colorWithHSB(v / 360, 1, 1);
+                }).storeIn(this.cancellables);
+                this.scaleValue.sink((v) => {
+                    scValLabel.text = v.toFixed(1);
+                    this.colorBoxView.transform = `scale(${v})`;
+                }).storeIn(this.cancellables);
+            }
+
+            setupObservableDemo() {
+                const section = this.makeSection();
+                section.addArrangedSubview(this.makeSectionHeader('ObservableObject + KVO Demo', 'ObservableObject', '#ff9500'));
+                this.contentStack.addArrangedSubview(section);
+
+                const demoArea = this.makeDemoArea('vertical');
+                section.addArrangedSubview(demoArea);
+
+                const objDisplay = new UIStackView('vertical');
+                objDisplay.spacing = 4;
+                objDisplay.backgroundColor = UIColor.colorWithHex('#fff3cd');
+                objDisplay.layer.cornerRadius = 6;
+                objDisplay.layer.borderWidth = 1;
+                objDisplay.layer.borderColor = UIColor.colorWithHex('#ffc107');
+                objDisplay.padding = 10;
+                objDisplay.minHeight = 40;
+                const objLabel = new UILabel('ObservableObject State');
+                objLabel.font = UIFont.systemFont(11);
+                objLabel.textColor = UIColor.colorWithHex('#856404');
+                objLabel.numberOfLines = 0;
+                const objState = new UILabel('Loading...');
+                objState.font = UIFont.monospacedSystemFont(13);
+                objState.numberOfLines = 0;
+                objDisplay.addArrangedSubview(objLabel);
+                objDisplay.addArrangedSubview(objState);
+                demoArea.addArrangedSubview(objDisplay);
+
+                const btnRow = new UIStackView('horizontal');
+                btnRow.spacing = 15;
+                btnRow.alignment = 'center';
+                const btnName = new UIButton('Change Name');
+                btnName.font = UIFont.systemFont(14, '600');
+                const btnAge = new UIButton('Increment Age');
+                btnAge.backgroundColor = UIColor.colorWithHex('#34c759');
+                btnAge.font = UIFont.systemFont(14, '600');
+                const btnEmail = new UIButton('Update Email');
+                btnEmail.backgroundColor = UIColor.colorWithHex('#ff9500');
+                btnEmail.font = UIFont.systemFont(14, '600');
+                const btnReset = new UIButton('Reset All');
+                btnReset.backgroundColor = UIColor.colorWithHex('#5856d6');
+                btnReset.font = UIFont.systemFont(14, '600');
+                btnRow.addArrangedSubview(btnName);
+                btnRow.addArrangedSubview(btnAge);
+                btnRow.addArrangedSubview(btnEmail);
+                btnRow.addArrangedSubview(btnReset);
+                demoArea.addArrangedSubview(btnRow);
+
+                const updateDisplay = () => {
+                    objState.text = JSON.stringify({
+                        name: this.person.name,
+                        age: this.person.age,
+                        email: this.person.email,
+                        displayName: this.person.displayName,
+                        vCard: this.person.vCard,
+                    }, null, 2);
+                };
+
+                updateDisplay();
+
+                btnName.addTarget(() => { this.person.name = this.person.name === 'John' ? 'Jane' : 'John'; updateDisplay(); });
+                btnAge.addTarget(() => { this.person.age = this.person.age + 1; updateDisplay(); });
+                btnEmail.addTarget(() => { this.person.email = `user${Date.now()}@example.com`; updateDisplay(); });
+                btnReset.addTarget(() => { this.person.$unbindAll(); this.person.name = 'John'; this.person.age = 30; this.person.email = 'john@example.com'; updateDisplay(); });
+            }
+
+            setupArrayDemo() {
+                const section = this.makeSection();
+                section.addArrangedSubview(this.makeSectionHeader('Array Demo', 'Interactive', '#ff9500'));
+                this.contentStack.addArrangedSubview(section);
+
+                const demoArea = this.makeDemoArea('vertical');
+                section.addArrangedSubview(demoArea);
+
+                demoArea.addArrangedSubview(this.fruitList);
+
+                const fruitRow = new UIStackView('horizontal');
+                fruitRow.spacing = 15;
+                fruitRow.alignment = 'center';
+                fruitRow.margin = { top: 15 };
+                const btnAdd = new UIButton('Add');
+                btnAdd.font = UIFont.systemFont(14, '600');
+                const btnRemove = new UIButton('Remove Last');
+                btnRemove.backgroundColor = UIColor.colorWithHex('#34c759');
+                btnRemove.font = UIFont.systemFont(14, '600');
+                const btnClear = new UIButton('Clear All');
+                btnClear.backgroundColor = UIColor.colorWithHex('#ff9500');
+                btnClear.font = UIFont.systemFont(14, '600');
+                fruitRow.addArrangedSubview(this.newItemInput);
+                fruitRow.addArrangedSubview(btnAdd);
+                fruitRow.addArrangedSubview(btnRemove);
+                fruitRow.addArrangedSubview(btnClear);
+                demoArea.addArrangedSubview(fruitRow);
+
+                const renderFruits = (arr) => {
+                    this.fruitList.removeAllArrangedSubviews();
+                    arr.forEach((fruit, index) => {
+                        const item = new UIStackView('vertical');
+                        item.spacing = 2;
+                        item.backgroundColor = UIColor.colorWithHex('#f0f0f0');
+                        item.padding = { top: 12, left: 16, bottom: 12, right: 16 };
+                        item.layer.cornerRadius = 8;
+                        const title = new UILabel(fruit);
+                        title.font = UIFont.systemFont(14, '500');
+                        const sub = new UILabel(`Index: ${index}`);
+                        sub.font = UIFont.systemFont(12);
+                        sub.textColor = UIColor.colorWithHex('#666666');
+                        item.addArrangedSubview(title);
+                        item.addArrangedSubview(sub);
+                        this.fruitList.addArrangedSubview(item);
+                    });
+                };
+                this.fruits.sink((arr) => renderFruits(arr)).storeIn(this.cancellables);
+
+                btnAdd.addTarget(() => {
+                    const text = this.newItemInput.text.trim();
+                    if (text) { this.fruits.send([...this.fruits.value, text]); this.newItemInput.text = ''; }
+                });
+                btnRemove.addTarget(() => { const a = [...this.fruits.value]; a.pop(); this.fruits.send(a); });
+                btnClear.addTarget(() => { this.fruits.send([]); });
+            }
+
+            setupLazyVarDemo() {
+                const section = this.makeSection();
+                section.addArrangedSubview(this.makeSectionHeader('lazy var Demo', 'lazyVar', '#34c759'));
+                this.contentStack.addArrangedSubview(section);
+
+                const demoArea = this.makeDemoArea('vertical');
+                section.addArrangedSubview(demoArea);
+
+                const swiftCode = `// Swift
+class DataManager {
+    lazy var database: Database = {
+        print("Opening database...")
+        return Database.open()
+    }()
+    lazy var cache: [String: Any] = [:]
+    lazy var tokenizer: Tokenizer = Tokenizer()
+}
+
+// JavaScript — same pattern via lazyVar
+class DataManager {
+    get database() {
+        return lazyVar(this, 'database', () => {
+            console.log("Opening database...")
+            return Database.open()
+        })
+    }
+}`;
+
+                const codeLabel = new UILabel(swiftCode);
+                codeLabel.font = UIFont.monospacedSystemFont(11);
+                codeLabel.textColor = UIColor.colorWithHex('#6a9955');
+                codeLabel.numberOfLines = 0;
+                demoArea.addArrangedSubview(codeLabel);
+
+                const lazyStateLabel = new UILabel('No lazy vars initialized yet');
+                lazyStateLabel.font = UIFont.monospacedSystemFont(13);
+                lazyStateLabel.numberOfLines = 0;
+                demoArea.addArrangedSubview(lazyStateLabel);
+
+                const lazyCountLabel = new UILabel('Initializations: database=0  cache=0  tokenizer=0');
+                lazyCountLabel.font = UIFont.systemFont(12);
+                lazyCountLabel.textColor = UIColor.colorWithHex('#888');
+                lazyCountLabel.numberOfLines = 0;
+                demoArea.addArrangedSubview(lazyCountLabel);
+
+                const updateLazyUI = () => {
+                    const c = this.dm.initCount;
+                    lazyCountLabel.text = `Initializations: database=${c.database}  cache=${c.cache}  tokenizer=${c.tokenizer}`;
+                };
+
+                const lazyBtnRow = new UIStackView('horizontal');
+                lazyBtnRow.spacing = 15;
+                lazyBtnRow.alignment = 'center';
+                const btnDb = new UIButton('Access database');
+                btnDb.font = UIFont.systemFont(14, '600');
+                const btnCache = new UIButton('Access cache');
+                btnCache.backgroundColor = UIColor.colorWithHex('#34c759');
+                btnCache.font = UIFont.systemFont(14, '600');
+                const btnToken = new UIButton('Access tokenizer');
+                btnToken.backgroundColor = UIColor.colorWithHex('#ff9500');
+                btnToken.font = UIFont.systemFont(14, '600');
+                const btnQuery = new UIButton('Run Query');
+                btnQuery.backgroundColor = UIColor.colorWithHex('#5856d6');
+                btnQuery.font = UIFont.systemFont(14, '600');
+                lazyBtnRow.addArrangedSubview(btnDb);
+                lazyBtnRow.addArrangedSubview(btnCache);
+                lazyBtnRow.addArrangedSubview(btnToken);
+                lazyBtnRow.addArrangedSubview(btnQuery);
+                demoArea.addArrangedSubview(lazyBtnRow);
+
+                btnDb.addTarget(() => {
+                    const db = this.dm.database;
+                    lazyStateLabel.text = `database = ${JSON.stringify({ connected: db.connected, id: db.id })}\n${this.dm.initCount.database === 1 ? 'First access — computed and cached' : 'Cached — plain property read'}`;
+                    updateLazyUI();
+                });
+                btnCache.addTarget(() => {
+                    this.dm.cache['key_' + Date.now().toString(36)] = true;
+                    lazyStateLabel.text = `cache = ${JSON.stringify(this.dm.cache)}\n${this.dm.initCount.cache === 1 ? 'Initialized — now mutable' : 'Cached — same object mutated in place'}`;
+                    updateLazyUI();
+                });
+                btnToken.addTarget(() => {
+                    const t = this.dm.tokenizer;
+                    lazyStateLabel.text = `tokenizer = ${JSON.stringify({ ready: t.ready, tokens: t.tokens.size })}\n${this.dm.initCount.tokenizer === 1 ? 'First access — expensive object created once' : 'Cached — same instance returned'}`;
+                    updateLazyUI();
+                });
+                btnQuery.addTarget(() => {
+                    this.dm.database.queries.push(`SELECT * FROM users WHERE id = ${this.dm.database.queries.length}`);
+                    lazyStateLabel.text = `database.queries = ${JSON.stringify(this.dm.database.queries)}\nUsing cached database — ${this.dm.initCount.database} init (should stay 1)`;
+                    updateLazyUI();
+                });
+            }
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // MARK: - Person
+        // ────────────────────────────────────────────────────────────
 
         class Person extends ObservableObject {
             constructor(name, age, email) {
@@ -435,9 +592,6 @@
                 this._name = name;
                 this._age = age;
                 this._email = email;
-                lazyVar(this, '_vCard', () => {
-                    return `BEGIN:VCARD\nFN:${name}\nEMAIL:${email}\nEND:VCARD`;
-                });
             }
             get name() { return this._name; }
             set name(v) { this.willChangeValue('name'); this._name = v; this.$set('name', v); this.didChangeValue('name'); }
@@ -446,124 +600,60 @@
             get email() { return this._email; }
             set email(v) { this.willChangeValue('email'); this._email = v; this.$set('email', v); this.didChangeValue('email'); }
             get displayName() { return `${this._name} (age ${this._age})`; }
-            get vCard() { return this._vCard; }
+
+            get vCard() {
+                return lazyVar(this, 'vCard', () => `BEGIN:VCARD\nFN:${this._name}\nEMAIL:${this._email}\nEND:VCARD`);
+            }
         }
 
-        lazyVar(vc, 'person', () => new Person('John', 30, 'john@example.com'));
-        const updateDisplay = () => {
-            vc.objState.text = JSON.stringify({
-                name: vc.person.name,
-                age: vc.person.age,
-                email: vc.person.email,
-                displayName: vc.person.displayName,
-                vCard: vc.person.vCard,
-            }, null, 2);
+        // ────────────────────────────────────────────────────────────
+        // MARK: - DataManager
+        // ────────────────────────────────────────────────────────────
+
+        class DataManager {
+            constructor() {
+                this.initCount = { database: 0, cache: 0, tokenizer: 0 };
+            }
+
+            get database() {
+                return lazyVar(this, 'database', () => {
+                    this.initCount.database++;
+                    return { connected: true, id: Date.now(), queries: [] };
+                });
+            }
+
+            get cache() {
+                return lazyVar(this, 'cache', () => {
+                    this.initCount.cache++;
+                    return {};
+                });
+            }
+
+            get tokenizer() {
+                return lazyVar(this, 'tokenizer', () => {
+                    this.initCount.tokenizer++;
+                    return { tokens: new Map(), ready: true };
+                });
+            }
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // MARK: - Constants
+        // ────────────────────────────────────────────────────────────
+
+        const logColorMap = {
+            get ok() { return lazyVar(this, 'ok', () => UIColor.colorWithHex('#4ec9b0')); },
+            get info() { return lazyVar(this, 'info', () => UIColor.colorWithHex('#569cd6')); },
+            get warn() { return lazyVar(this, 'warn', () => UIColor.colorWithHex('#ce9178')); },
+            get binding() { return lazyVar(this, 'binding', () => UIColor.colorWithHex('#c586c0')); },
         };
-        vc.person.$observe('name', (v) => vc.log1(`Name: ${v}`, 'binding'));
-        vc.person.$observe('age', (v) => vc.log1(`Age: ${v}`, 'binding'));
-        vc.person.$observe('email', (v) => vc.log1(`Email: ${v}`, 'binding'));
-        vc.person.observe('name', (_, change) => {
-            if (change.kind === 'set') vc.log1(`KVO: name = ${change.newValue}`, 'warn');
-        }).storeIn(vc.cancellables);
-        updateDisplay();
 
-        vc.btnName.addTarget(() => { vc.person.name = vc.person.name === 'John' ? 'Jane' : 'John'; updateDisplay(); });
-        vc.btnAge.addTarget(() => { vc.person.age = vc.person.age + 1; updateDisplay(); });
-        vc.btnEmail.addTarget(() => { vc.person.email = `user${Date.now()}@example.com`; updateDisplay(); });
-        vc.btnReset.addTarget(() => { vc.person.$unbindAll(); vc.person.name = 'John'; vc.person.age = 30; vc.person.email = 'john@example.com'; updateDisplay(); });
+        // ────────────────────────────────────────────────────────────
+        // MARK: - SceneDelegate
+        // ────────────────────────────────────────────────────────────
 
-        // ── Section 7: Array Demo ──
-        lazyVar(vc, 'section7', () => {
-            const s = makeSection();
-            const h = new UIStackView('horizontal');
-            h.spacing = 10;
-            h.alignment = 'center';
-            h.addArrangedSubview(headingLabel('Array Demo'));
-            h.addArrangedSubview(tagLabel('Interactive', '#ff9500'));
-            s.addArrangedSubview(h);
-            vc.app.addArrangedSubview(s);
-            return s;
-        });
-
-        lazyVar(vc, 'demoArea7', () => {
-            const d = makeDemoArea('vertical');
-            vc.section7.addArrangedSubview(d);
-            return d;
-        });
-
-        lazyVar(vc, 'fruitList', () => {
-            const f = new UIStackView('vertical');
-            f.spacing = 8;
-            f.alignment = 'fill';
-            vc.demoArea7.addArrangedSubview(f);
-            return f;
-        });
-
-        lazyVar(vc, 'fruitRow', () => {
-            const r = new UIStackView('horizontal');
-            r.spacing = 15;
-            r.alignment = 'center';
-            r.margin = { top: 15 };
-            return r;
-        });
-
-        lazyVar(vc, 'newItemInput', () => {
-            const tf = new UITextField('New item name...');
-            tf.font = UIFont.systemFont(14);
-            return tf;
-        });
-        lazyVar(vc, 'btnAdd', () => {
-            const b = new UIButton('Add');
-            b.font = UIFont.systemFont(14, '600');
-            return b;
-        });
-        lazyVar(vc, 'btnRemove', () => {
-            const b = new UIButton('Remove Last');
-            b.backgroundColor = UIColor.colorWithHex('#34c759');
-            b.font = UIFont.systemFont(14, '600');
-            return b;
-        });
-        lazyVar(vc, 'btnClear', () => {
-            const b = new UIButton('Clear All');
-            b.backgroundColor = UIColor.colorWithHex('#ff9500');
-            b.font = UIFont.systemFont(14, '600');
-            return b;
-        });
-
-        vc.fruitRow.addArrangedSubview(vc.newItemInput);
-        vc.fruitRow.addArrangedSubview(vc.btnAdd);
-        vc.fruitRow.addArrangedSubview(vc.btnRemove);
-        vc.fruitRow.addArrangedSubview(vc.btnClear);
-        vc.demoArea7.addArrangedSubview(vc.fruitRow);
-
-        lazyVar(vc, 'fruits', () => new CurrentValueSubject(['Apple', 'Banana', 'Cherry', 'Date']));
-        const renderFruits = (arr) => {
-            vc.fruitList.removeAllArrangedSubviews();
-            arr.forEach((fruit, index) => {
-                const item = new UIStackView('vertical');
-                item.spacing = 2;
-                item.backgroundColor = UIColor.colorWithHex('#f0f0f0');
-                item.padding = { top: 12, left: 16, bottom: 12, right: 16 };
-                item.layer.cornerRadius = 8;
-                const title = new UILabel(fruit);
-                title.font = UIFont.systemFont(14, '500');
-                const sub = new UILabel(`Index: ${index}`);
-                sub.font = UIFont.systemFont(12);
-                sub.textColor = UIColor.colorWithHex('#666666');
-                item.addArrangedSubview(title);
-                item.addArrangedSubview(sub);
-                vc.fruitList.addArrangedSubview(item);
-            });
-        };
-        vc.fruits.sink((arr) => renderFruits(arr)).storeIn(vc.cancellables);
-
-        vc.btnAdd.addTarget(() => {
-            const text = vc.newItemInput.text.trim();
-            if (text) { vc.fruits.send([...vc.fruits.value, text]); vc.newItemInput.text = ''; }
-        });
-        vc.btnRemove.addTarget(() => { const a = [...vc.fruits.value]; a.pop(); vc.fruits.send(a); });
-        vc.btnClear.addTarget(() => { vc.fruits.send([]); });
-
+        const vc = new DemoViewController();
+        document.body.appendChild(vc.view.element);
 
     </script>
 </body>

@@ -32,7 +32,10 @@ class UIViewController extends UIResponder {
     get view() {
         if (!this._view && !this._isViewLoaded) {
             this.loadView();
-            this._isViewLoaded = true;
+            if (!this._isViewLoaded) {
+                this._isViewLoaded = true;
+                this.viewDidLoad();
+            }
         }
         return this._view;
     }
@@ -141,13 +144,12 @@ class UIViewController extends UIResponder {
     }
 
     loadView() {
-        this._view = new UIView();
-        this._view._nextResponder = this;
-        this.viewDidLoad();
+        const view = new UIView();
+        view.init();
+        this.view = view;
     }
 
     viewDidLoad() {
-        return;
     }
 
     viewWillAppear() {

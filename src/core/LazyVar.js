@@ -1,13 +1,7 @@
 function lazyVar(obj, name, initializer) {
-    Object.defineProperty(obj, name, {
-        get() {
-            const value = initializer.call(this);
-            Object.defineProperty(obj, name, { value, writable: true, enumerable: true, configurable: true });
-            return value;
-        },
-        enumerable: true,
-        configurable: true,
-    });
+    const value = initializer.call(obj);
+    Object.defineProperty(obj, name, { value, writable: true, enumerable: true, configurable: true });
+    return value;
 }
 
 export { lazyVar };

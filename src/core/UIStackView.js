@@ -43,6 +43,8 @@ class UIStackView extends UIView {
             view.element.style.position = '';
             view.element.style.left = '';
             view.element.style.top = '';
+            view.element.style.minHeight = '';
+            view.element.style.overflowY = '';
             view.element.style.flexShrink = '0';
             if (this._alignment === 'fill') {
                 if (this._axis === 'vertical') {

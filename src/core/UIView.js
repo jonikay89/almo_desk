@@ -1,9 +1,8 @@
-import UIResponder from './UIResponder.js';
-import { CALayer, CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup } from './CALayer.js';
-import { ViewLayerBridge } from './bridge/index.js';
-import { CurrentValueSubject, Binding } from './Observable.js';
-import { NSLayoutAnchor } from './NSLayoutConstraint.js';
+import { CALayer } from './CALayer.js';
 import { lazyVar } from './LazyVar.js';
+import { NSLayoutAnchor } from './NSLayoutConstraint.js';
+import { CurrentValueSubject } from './Observable.js';
+import UIResponder from './UIResponder.js';
 
 class UIView extends UIResponder {
     static get layerClass() {
@@ -197,6 +196,34 @@ class UIView extends UIResponder {
 
     _applyFrameToElement() {
         if (!this._element) return;
+        if (!this._superview) {
+            this._element.style.position = 'relative';
+            this._element.style.top = '0';
+            this._element.style.left = '0';
+            if (this._frame.width > 0) {
+                this._element.style.width = `${this._frame.width}px`;
+            } else {
+                this._element.style.width = '100%';
+            }
+            if (this._frame.height > 0) {
+                this._element.style.height = `${this._frame.height}px`;
+                this._element.style.minHeight = '';
+            } else {
+                this._element.style.minHeight = '100vh';
+            }
+            this._element.style.overflowY = 'auto';
+            this._element.style.overflowX = 'hidden';
+            this._setupResizeListener();
+            return;
+        }
+        if (this._frame.height === 0) {
+            this._element.style.position = 'relative';
+            this._element.style.left = `${this._frame.x}px`;
+            this._element.style.top = `${this._frame.y}px`;
+            if (this._frame.width > 0) this._element.style.width = `${this._frame.width}px`;
+            this._element.style.height = '';
+            return;
+        }
         this._element.style.position = 'absolute';
         this._element.style.left = `${this._frame.x}px`;
         this._element.style.top = `${this._frame.y}px`;
@@ -439,7 +466,7 @@ class UIView extends UIResponder {
                     width = w ?? subview._frame.width;
                 }
 
-                let y, height;
+                let y = subview._frame.y, height = subview._frame.height;
                 if (top !== undefined && bottom !== undefined) {
                     y = top;
                     height = bottom - top;
@@ -449,14 +476,20 @@ class UIView extends UIResponder {
                 } else if (bottom !== undefined) {
                     height = h ?? subview._frame.height;
                     y = bottom - height;
-                } else {
-                    y = top ?? subview._frame.y;
-                    height = h ?? subview._frame.height;
+                } else if (top !== undefined) {
+                    y = top;
                 }
 
                 if (width < 0) width = 0;
                 if (height < 0) height = 0;
-                subview.frame = { x, y, width, height };
+
+                if (width > 0 && height > 0) {
+                    subview.frame = { x, y, width, height };
+                } else if (width > 0) {
+                    subview.frame = { x, y, width, height: subview._frame.height };
+                } else if (height > 0) {
+                    subview.frame = { x, y, width: subview._frame.width, height };
+                }
             }
         }
     }
@@ -484,6 +517,29 @@ class UIView extends UIResponder {
     _runDeferredLayout() {
         this.updateConstraints();
         this.layoutSubviews();
+    }
+
+    _setupResizeListener() {
+        if (this._resizeListenerAttached) return;
+        this._resizeListenerAttached = true;
+        const handler = () => {
+            if (!this._element) return;
+            const w = this._element.clientWidth;
+            const h = this._element.clientHeight;
+            if (w > 0 || h > 0) {
+                this._frame = { x: 0, y: 0, width: w, height: h };
+                this._bounds = { x: 0, y: 0, width: w, height: h };
+                this._syncOwnFrameToEngine();
+                if (this._layoutEngine) {
+                    this._layoutEngine.solve();
+                    this._applyEngineResults();
+                }
+                this.layoutSubviews();
+            }
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('resize', handler);
+        }
     }
 
     setNeedsDisplay() {
