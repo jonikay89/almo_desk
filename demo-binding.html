@@ -94,7 +94,6 @@
 
         function indicator() {
             const v = new UIView({ x: 0, y: 0, width: 10, height: 10 });
-            v.init();
             v.layer.cornerRadius = 5;
             v.backgroundColor = UIColor.colorWithHex('#34c759');
             return v;
@@ -116,7 +115,6 @@
             section.shadow = { offsetX: 0, offsetY: 2, radius: 8, color: 'rgba(0,0,0,0.08)' };
             const heading = headingLabel(title);
             const logContainer = new UIView();
-            logContainer.init();
             logContainer.backgroundColor = UIColor.colorWithHex('#1e1e1e');
             logContainer.layer.cornerRadius = 8;
             logContainer.padding = 15;
