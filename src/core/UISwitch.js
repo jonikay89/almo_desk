@@ -14,6 +14,8 @@ class UISwitch extends UIView {
     get isOn() { return this._isOn; }
     set isOn(value) { this._isOn = value; this._updateDisplay(); }
 
+    setOn(value) { this.isOn = value; }
+
     get onTintColor() { return this._onTintColor; }
     set onTintColor(value) { this._onTintColor = value; this._updateDisplay(); }
 

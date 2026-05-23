@@ -22,6 +22,8 @@ class UIButton extends UIControl {
     get titleColor() { return this._titleColor; }
     set titleColor(value) { this._titleColor = value; this._updateDisplay(); }
 
+    setTitleColor(color) { this.titleColor = color; }
+
     _updateDisplay() {
         if (typeof document !== 'undefined' && this._element) {
             this._element.textContent = this._title;

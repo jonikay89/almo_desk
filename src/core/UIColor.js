@@ -6,6 +6,10 @@ class UIColor {
         this.a = a;
     }
 
+    static colorWithRedGreenBlueAlpha(r, g, b, a) {
+        return new UIColor(r, g, b, a);
+    }
+
     static white() {
         return new UIColor(1, 1, 1, 1);
     }

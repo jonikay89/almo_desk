@@ -4,401 +4,553 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UIKit TextField Demo</title>
-    <link rel="stylesheet" href="./styles/main.css">
-    <link rel="stylesheet" href="./styles/controls.css">
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f5f7;
-            margin: 0;
-            padding: 20px;
+            background: #f2f2f7;
+            padding: 0;
             min-height: 100vh;
         }
-        .demo-container {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        .demo-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1d1d1f;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-        .demo-subtitle {
-            font-size: 14px;
-            color: #86868b;
-            margin-bottom: 24px;
-            text-align: center;
-        }
+        #app { max-width: 500px; margin: 0 auto; padding: 20px; }
+
+        h1 { font-size: 34px; font-weight: 700; color: #1d1d1f; margin-bottom: 4px; }
+        h2 { font-size: 22px; font-weight: 600; color: #1d1d1f; margin-bottom: 4px; }
+        .subtitle { font-size: 15px; color: #8e8e93; margin-bottom: 24px; }
+
         .section {
-            background: white;
+            background: #fff;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 0;
+            margin-bottom: 24px;
+            overflow: hidden;
         }
-        .section-title {
+        .section-header {
+            padding: 16px 20px 0;
             font-size: 13px;
             font-weight: 600;
-            color: #86868b;
+            color: #8e8e93;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 16px;
+            letter-spacing: 0.3px;
         }
-        .text-field-row {
-            margin-bottom: 12px;
-        }
-        .text-field-row:last-child {
-            margin-bottom: 0;
-        }
-        .label {
-            font-size: 12px;
-            color: #1d1d1f;
-            margin-bottom: 6px;
-        }
-        .status-bar {
-            background: #1d1d1f;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
+        .section-footer {
+            padding: 0 20px 12px;
             font-size: 13px;
-            font-family: 'SF Mono', Monaco, monospace;
-            margin-top: 16px;
+            color: #8e8e93;
         }
-        .status-bar span {
-            color: #86868b;
-        }
-        .btn-row {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .btn {
-            flex: 1;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-        .btn-primary {
-            background: #007aff;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #0056cc;
-        }
-        .btn-secondary {
-            background: #e5e5ea;
-            color: #1d1d1f;
-        }
-        .btn-secondary:hover {
-            background: #d1d1d6;
-        }
-        .checkbox-row, .radio-row {
+
+        .field-row {
+            padding: 0 20px;
             display: flex;
             align-items: center;
-            margin-bottom: 12px;
+            min-height: 44px;
         }
-        .checkbox, .radio {
-            width: 22px;
-            height: 22px;
-            margin-right: 12px;
-            cursor: pointer;
+        .field-row label {
+            font-size: 17px;
+            color: #000;
+            min-width: 100px;
+            flex-shrink: 0;
         }
-        .checkbox-label, .radio-label {
-            font-size: 15px;
+        .field-row input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 17px;
+            font-family: inherit;
             color: #1d1d1f;
+            background: transparent;
+            text-align: right;
+            padding: 11px 0;
         }
+        .field-row input::placeholder { color: #c7c7cc; }
+        .field-row + .field-row { border-top: 0.5px solid #c6c6c8; }
+
         .switch-row {
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
         }
-        .switch-label {
-            font-size: 15px;
+        .switch-row span { font-size: 17px; color: #000; }
+        .switch-row + .switch-row { border-top: 0.5px solid #c6c6c8; }
+
+        .ios-switch {
+            position: relative;
+            width: 51px; height: 31px;
+            background: #e9e9eb;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .ios-switch.on { background: #34c759; }
+        .ios-switch .thumb {
+            position: absolute;
+            width: 27px; height: 27px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.25s;
+        }
+        .ios-switch.on .thumb { transform: translateX(20px); }
+
+        .segment-row {
+            padding: 12px 20px;
+        }
+        .ios-segment {
+            display: flex;
+            background: #e9e9eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .ios-segment button {
+            flex: 1;
+            padding: 7px 12px;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            background: transparent;
             color: #1d1d1f;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .ios-segment button.active {
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 7px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            padding: 0 20px 16px;
+        }
+        .ios-btn {
+            flex: 1;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: opacity 0.15s;
+            text-align: center;
+        }
+        .ios-btn:active { opacity: 0.7; }
+        .ios-btn.blue { background: #007aff; color: #fff; }
+        .ios-btn.green { background: #34c759; color: #fff; }
+        .ios-btn.red { background: #ff3b30; color: #fff; }
+        .ios-btn.gray { background: #e5e5ea; color: #1d1d1f; }
+
+        .status-box {
+            background: #1c1c1e;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 0 20px 16px;
+            font-family: 'SF Mono', 'Menlo', Monaco, monospace;
+            font-size: 12px;
+            color: #32d74b;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .status-box .dim { color: #98989d; }
+
+        .log-section {
+            background: #fff;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .log-entries {
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .log-entry {
+            padding: 8px 20px;
+            font-size: 13px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            border-bottom: 0.5px solid #f2f2f7;
+            display: flex;
+            gap: 8px;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: #8e8e93; flex-shrink: 0; }
+        .log-msg { color: #1d1d1f; }
+        .log-msg.event { color: #5856d6; }
+        .log-msg.success { color: #34c759; }
+        .log-msg.warn { color: #ff9500; }
+
+        .slider-row {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .slider-row span { font-size: 17px; color: #000; min-width: 100px; }
+        .slider-row input[type=range] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 4px;
+            background: #e5e5ea;
+            border-radius: 2px;
+            outline: none;
+        }
+        .slider-row input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px; height: 28px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        .slider-row + .slider-row { border-top: 0.5px solid #c6c6c8; }
+
+        @media (max-width: 500px) {
+            #app { padding: 16px; }
+            h1 { font-size: 28px; }
         }
     </style>
 </head>
 <body>
-    <div id="rootView"></div>
+    <div id="app"></div>
 
     <script type="module">
-        import { 
+        import {
             UIView, UILabel, UITextField, UITextView,
             UIButton, UISwitch, UISlider, UISegmentedControl,
             UIColor, UIStackView, UIProgressView
         } from './src/core/index.js';
 
-        class DemoViewController {
-            constructor() {
-                this.rootView = new UIView();
-                this.rootView.init();
-                this.rootView.frame = { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-                this.rootView.backgroundColor = UIColor.colorWithRedGreenBlueAlpha(245/255, 245/255, 247/255, 1);
-                document.getElementById('rootView').appendChild(this.rootView.element);
+        const app = document.getElementById('app');
 
-                this.setupUI();
-                this.updateStatus();
-            }
-
-            setupUI() {
-                const container = new UIView();
-                container.init();
-                container.frame = { x: 20, y: 20, width: window.innerWidth - 40, height: 20 };
-                container.backgroundColor = UIColor.white();
-                this.rootView.addSubview(container);
-
-                this.createFormSection();
-                this.createOptionsSection();
-                this.createActionsSection();
-            }
-
-            createFormSection() {
-                const section = new UIView();
-                section.init();
-                section.frame = { x: 20, y: 60, width: window.innerWidth - 40, height: 420 };
-                section.backgroundColor = UIColor.white();
-                section.cornerRadius = 12;
-                section.element.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-                this.rootView.addSubview(section);
-
-                const title = new UILabel('Form Inputs');
-                title.init();
-                title.frame = { x: 20, y: 20, width: 200, height: 20 };
-                title.fontSize = 13;
-                title.fontWeight = 'bold';
-                title.textColor = UIColor.colorWithRedGreenBlueAlpha(134/255, 134/255, 139/255, 1);
-                section.addSubview(title);
-
-                this.nameField = new UITextField('Full Name');
-                this.nameField.init();
-                this.nameField.frame = { x: 20, y: 56, width: section.frame.width - 40, height: 44 };
-                this.nameField.borderStyle = 'rounded';
-                this.nameField.element.style.marginBottom = '12px';
-                section.addSubview(this.nameField);
-
-                this.emailField = new UITextField('email@example.com');
-                this.emailField.init();
-                this.emailField.frame = { x: 20, y: 112, width: section.frame.width - 40, height: 44 };
-                this.emailField.borderStyle = 'rounded';
-                this.emailField.keyboardType = 'emailAddress';
-                this.emailField.element.style.marginBottom = '12px';
-                section.addSubview(this.emailField);
-
-                this.passwordField = new UITextField('Password');
-                this.passwordField.init();
-                this.passwordField.frame = { x: 20, y: 168, width: section.frame.width - 40, height: 44 };
-                this.passwordField.borderStyle = 'rounded';
-                this.passwordField.isSecureTextEntry = true;
-                this.passwordField.element.style.marginBottom = '12px';
-                section.addSubview(this.passwordField);
-
-                this.phoneField = new UITextField('Phone Number');
-                this.phoneField.init();
-                this.phoneField.frame = { x: 20, y: 224, width: section.frame.width - 40, height: 44 };
-                this.phoneField.borderStyle = 'rounded';
-                this.phoneField.keyboardType = 'phonePad';
-                section.addSubview(this.phoneField);
-
-                this.statusLabel = new UILabel('');
-                this.statusLabel.init();
-                this.statusLabel.frame = { x: 20, y: 284, width: section.frame.width - 40, height: 60 };
-                this.statusLabel.fontSize = 12;
-                this.statusLabel.numberOfLines = 4;
-                this.statusLabel.textColor = UIColor.gray();
-                this.statusLabel.element.style.fontFamily = "'SF Mono', Monaco, monospace";
-                section.addSubview(this.statusLabel);
-
-                this.clearBtn = new UIButton('Clear All');
-                this.clearBtn.init();
-                this.clearBtn.frame = { x: 20, y: 356, width: section.frame.width - 40, height: 44 };
-                this.clearBtn.backgroundColor = UIColor.colorWithRedGreenBlueAlpha(229/255, 229/255, 234/255, 1);
-                this.clearBtn.setTitleColor(UIColor.colorWithRedGreenBlueAlpha(29/255, 29/255, 31/255, 1));
-                this.clearBtn.element.style.borderRadius = '10px';
-                this.clearBtn.addTarget({
-                    onTap: () => this.clearFields()
-                }, 'onTap', 'touchUpInside');
-                section.addSubview(this.clearBtn);
-            }
-
-            createOptionsSection() {
-                const section = new UIView();
-                section.init();
-                section.frame = { x: 20, y: 500, width: window.innerWidth - 40, height: 200 };
-                section.backgroundColor = UIColor.white();
-                section.cornerRadius = 12;
-                section.element.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-                this.rootView.addSubview(section);
-
-                const title = new UILabel('Options');
-                title.init();
-                title.frame = { x: 20, y: 20, width: 200, height: 20 };
-                title.fontSize = 13;
-                title.fontWeight = 'bold';
-                title.textColor = UIColor.colorWithRedGreenBlueAlpha(134/255, 134/255, 139/255, 1);
-                section.addSubview(title);
-
-                this.rememberMeSwitch = new UISwitch();
-                this.rememberMeSwitch.init();
-                this.rememberMeSwitch.frame = { x: section.frame.width - 80, y: 50, width: 50, height: 30 };
-                this.rememberMeSwitch.setOn(false);
-                section.addSubview(this.rememberMeSwitch);
-
-                const rememberLabel = new UILabel('Remember Me');
-                rememberLabel.init();
-                rememberLabel.frame = { x: 20, y: 50, width: 150, height: 30 };
-                rememberLabel.fontSize = 15;
-                rememberLabel.textColor = UIColor.black();
-                section.addSubview(rememberLabel);
-
-                this.showPasswordSwitch = new UISwitch();
-                this.showPasswordSwitch.init();
-                this.showPasswordSwitch.frame = { x: section.frame.width - 80, y: 96, width: 50, height: 30 };
-                this.showPasswordSwitch.setOn(false);
-                this.showPasswordSwitch.addTarget({
-                    onToggle: () => this.togglePasswordVisibility()
-                }, 'onToggle', 'valueChanged');
-                section.addSubview(this.showPasswordSwitch);
-
-                const showPassLabel = new UILabel('Show Password');
-                showPassLabel.init();
-                showPassLabel.frame = { x: 20, y: 96, width: 150, height: 30 };
-                showPassLabel.fontSize = 15;
-                showPassLabel.textColor = UIColor.black();
-                section.addSubview(showPassLabel);
-
-                this.autoCapitalizeSegment = new UISegmentedControl(['None', 'Words', 'All']);
-                this.autoCapitalizeSegment.init();
-                this.autoCapitalizeSegment.frame = { x: 20, y: 144, width: section.frame.width - 40, height: 36 };
-                this.autoCapitalizeSegment.selectedSegmentIndex = 1;
-                section.addSubview(this.autoCapitalizeSegment);
-            }
-
-            createActionsSection() {
-                const section = new UIView();
-                section.init();
-                section.frame = { x: 20, y: 720, width: window.innerWidth - 40, height: 140 };
-                section.backgroundColor = UIColor.white();
-                section.cornerRadius = 12;
-                section.element.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-                this.rootView.addSubview(section);
-
-                this.submitBtn = new UIButton('Submit');
-                this.submitBtn.init();
-                this.submitBtn.frame = { x: 20, y: 20, width: section.frame.width - 40, height: 50 };
-                this.submitBtn.backgroundColor = UIColor.systemBlue();
-                this.submitBtn.setTitleColor(UIColor.white());
-                this.submitBtn.element.style.borderRadius = '10px';
-                this.submitBtn.addTarget({
-                    onTap: () => this.submitForm()
-                }, 'onTap', 'touchUpInside');
-                section.addSubview(this.submitBtn);
-
-                this.validateBtn = new UIButton('Validate');
-                this.validateBtn.init();
-                this.validateBtn.frame = { x: 20, y: 80, width: (section.frame.width - 52) / 2, height: 44 };
-                this.validateBtn.backgroundColor = UIColor.colorWithRedGreenBlueAlpha(48/255, 209/255, 88/255, 1);
-                this.validateBtn.setTitleColor(UIColor.white());
-                this.validateBtn.element.style.borderRadius = '10px';
-                this.validateBtn.addTarget({
-                    onTap: () => this.validateForm()
-                }, 'onTap', 'touchUpInside');
-                section.addSubview(this.validateBtn);
-
-                this.cancelBtn = new UIButton('Cancel');
-                this.cancelBtn.init();
-                this.cancelBtn.frame = { x: 32 + (section.frame.width - 52) / 2, y: 80, width: (section.frame.width - 52) / 2, height: 44 };
-                this.cancelBtn.backgroundColor = UIColor.colorWithRedGreenBlueAlpha(255/255, 59/255, 48/255, 1);
-                this.cancelBtn.setTitleColor(UIColor.white());
-                this.cancelBtn.element.style.borderRadius = '10px';
-                this.cancelBtn.addTarget({
-                    onTap: () => this.cancelForm()
-                }, 'onTap', 'touchUpInside');
-                section.addSubview(this.cancelBtn);
-            }
-
-            updateStatus() {
-                const name = this.nameField?.getText() || '';
-                const email = this.emailField?.getText() || '';
-                const hasPassword = this.passwordField?.getText()?.length > 0;
-
-                let status = `<span>name:</span> "${name}"\n`;
-                status += `<span>email:</span> "${email}"\n`;
-                status += `<span>password:</span> ${hasPassword ? '***' : '(empty)'}`;
-
-                this.statusLabel.text = status;
-            }
-
-            clearFields() {
-                this.nameField.setText('');
-                this.emailField.setText('');
-                this.passwordField.setText('');
-                this.phoneField.setText('');
-                this.updateStatus();
-            }
-
-            togglePasswordVisibility() {
-                const isOn = this.showPasswordSwitch.isOn;
-                this.passwordField.isSecureTextEntry = !isOn;
-            }
-
-            submitForm() {
-                const name = this.nameField.getText();
-                const email = this.emailField.getText();
-                const password = this.passwordField.getText();
-
-                if (!name || !email || !password) {
-                    alert('Please fill in all fields');
-                    return;
-                }
-
-                if (!this.isValidEmail(email)) {
-                    alert('Please enter a valid email address');
-                    return;
-                }
-
-                alert(`Form Submitted!\n\nName: ${name}\nEmail: ${email}`);
-            }
-
-            validateForm() {
-                const name = this.nameField.getText();
-                const email = this.emailField.getText();
-                const password = this.passwordField.getText();
-
-                let errors = [];
-
-                if (!name) errors.push('Name is required');
-                if (!email) errors.push('Email is required');
-                else if (!this.isValidEmail(email)) errors.push('Email is invalid');
-                if (!password) errors.push('Password is required');
-                else if (password.length < 8) errors.push('Password must be at least 8 characters');
-
-                if (errors.length > 0) {
-                    alert('Validation Errors:\n• ' + errors.join('\n• '));
-                } else {
-                    alert('All fields are valid!');
-                }
-            }
-
-            cancelForm() {
-                if (confirm('Are you sure you want to cancel?')) {
-                    this.clearFields();
-                }
-            }
-
-            isValidEmail(email) {
-                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-            }
+        // ── Helpers ──
+        function section(cls) {
+            const el = document.createElement('div');
+            el.className = 'section';
+            if (cls) el.classList.add(cls);
+            app.appendChild(el);
+            return el;
         }
 
-        const controller = new DemoViewController();
-        window.controller = controller;
+        function header(text, parent) {
+            const el = document.createElement('div');
+            el.className = 'section-header';
+            el.textContent = text;
+            parent.appendChild(el);
+            return el;
+        }
+
+        function footer(text, parent) {
+            const el = document.createElement('div');
+            el.className = 'section-footer';
+            el.textContent = text;
+            parent.appendChild(el);
+            return el;
+        }
+
+        const logEntries = [];
+        function log(msg, type = '') {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en', { hour12: false });
+            logEntries.push({ time, msg, type });
+            renderLog();
+        }
+
+        let logContainer;
+        function renderLog() {
+            if (!logContainer) return;
+            const entriesEl = logContainer.querySelector('.log-entries');
+            if (!entriesEl) return;
+            entriesEl.innerHTML = logEntries.map(e =>
+                `<div class="log-entry"><span class="log-time">${e.time}</span><span class="log-msg ${e.type}">${e.msg}</span></div>`
+            ).join('');
+            entriesEl.scrollTop = entriesEl.scrollHeight;
+        }
+
+        // ── Title ──
+        const title = document.createElement('h1');
+        title.textContent = 'UIKit Controls';
+        app.appendChild(title);
+
+        const subtitle = document.createElement('div');
+        subtitle.className = 'subtitle';
+        subtitle.textContent = 'UITextField, UISwitch, UISegmentedControl, UISlider & more';
+        app.appendChild(subtitle);
+
+        // ── Section: Text Fields ──
+        const sec1 = section();
+        header('Text Fields', sec1);
+
+        const fields = {};
+        const fieldDefs = [
+            { key: 'name',     label: 'Name',     placeholder: 'John Appleseed' },
+            { key: 'email',    label: 'Email',    placeholder: 'john@example.com' },
+            { key: 'phone',    label: 'Phone',    placeholder: '(555) 555-0100' },
+            { key: 'password', label: 'Password', placeholder: 'Required', secure: true },
+        ];
+
+        for (const def of fieldDefs) {
+            const row = document.createElement('div');
+            row.className = 'field-row';
+
+            const lbl = document.createElement('label');
+            lbl.textContent = def.label;
+            row.appendChild(lbl);
+
+            const input = document.createElement('input');
+            input.type = def.secure ? 'password' : 'text';
+            input.placeholder = def.placeholder;
+            input.addEventListener('input', () => {
+                fields[def.key] = input.value;
+                updateStatus();
+                log(`${def.key} changed: "${input.value}"`, 'event');
+            });
+            row.appendChild(input);
+
+            sec1.appendChild(row);
+            fields[def.key] = '';
+        }
+
+        footer('Text fields with real-time change logging', sec1);
+
+        // ── Section: Switches ──
+        const sec2 = section();
+        header('Switches', sec2);
+
+        const switches = {};
+
+        function makeSwitch(label, key, defaultOn = false) {
+            const row = document.createElement('div');
+            row.className = 'switch-row';
+
+            const lbl = document.createElement('span');
+            lbl.textContent = label;
+            row.appendChild(lbl);
+
+            const sw = document.createElement('div');
+            sw.className = 'ios-switch' + (defaultOn ? ' on' : '');
+            sw.innerHTML = '<div class="thumb"></div>';
+            sw.addEventListener('click', () => {
+                const isOn = sw.classList.toggle('on');
+                switches[key] = isOn;
+                updateStatus();
+                log(`${label} → ${isOn ? 'ON' : 'OFF'}`, 'event');
+                if (key === 'showPassword') {
+                    const passInput = sec1.querySelectorAll('input')[3];
+                    if (passInput) passInput.type = isOn ? 'text' : 'password';
+                }
+            });
+            row.appendChild(sw);
+
+            sec2.appendChild(row);
+            switches[key] = defaultOn;
+        }
+
+        makeSwitch('Show Password', 'showPassword');
+        makeSwitch('Remember Me', 'remember');
+        makeSwitch('Auto-correction', 'autocorrect', true);
+        makeSwitch('Spell Checking', 'spellcheck', true);
+
+        // ── Section: Segmented Control ──
+        const sec3 = section();
+        header('Segmented Control', sec3);
+
+        const segRow = document.createElement('div');
+        segRow.className = 'segment-row';
+
+        const segEl = document.createElement('div');
+        segEl.className = 'ios-segment';
+
+        const segItems = ['Small', 'Medium', 'Large'];
+        let selectedSeg = 1;
+
+        segItems.forEach((title, i) => {
+            const btn = document.createElement('button');
+            btn.textContent = title;
+            if (i === selectedSeg) btn.className = 'active';
+            btn.addEventListener('click', () => {
+                segEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedSeg = i;
+                log(`Segment: ${title}`, 'event');
+            });
+            segEl.appendChild(btn);
+        });
+
+        segRow.appendChild(segEl);
+        sec3.appendChild(segRow);
+
+        const segRow2 = document.createElement('div');
+        segRow2.className = 'segment-row';
+        const segEl2 = document.createElement('div');
+        segEl2.className = 'ios-segment';
+
+        const capItems = ['none', 'words', 'sentences', 'all'];
+        let selectedCap = 2;
+        capItems.forEach((title, i) => {
+            const btn = document.createElement('button');
+            btn.textContent = title;
+            if (i === selectedCap) btn.className = 'active';
+            btn.addEventListener('click', () => {
+                segEl2.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedCap = i;
+                log(`Capitalization: ${title}`, 'event');
+            });
+            segEl2.appendChild(btn);
+        });
+        segRow2.appendChild(segEl2);
+        sec3.appendChild(segRow2);
+
+        // ── Section: Slider ──
+        const sec4 = section();
+        header('Slider', sec4);
+
+        const sliderRow = document.createElement('div');
+        sliderRow.className = 'slider-row';
+
+        const sliderLabel = document.createElement('span');
+        sliderLabel.textContent = 'Volume';
+        sliderRow.appendChild(sliderLabel);
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '100';
+        slider.value = '50';
+        sliderRow.appendChild(slider);
+
+        const sliderValue = document.createElement('span');
+        sliderValue.style.cssText = 'min-width:36px;text-align:right;font-size:15px;color:#8e8e93;font-variant-numeric:tabular-nums;';
+        sliderValue.textContent = '50%';
+        sliderRow.appendChild(sliderValue);
+
+        sec4.appendChild(sliderRow);
+
+        slider.addEventListener('input', () => {
+            sliderValue.textContent = slider.value + '%';
+            log(`Volume: ${slider.value}%`, 'event');
+        });
+
+        // ── Section: Status ──
+        const sec5 = section();
+        header('Live Status', sec5);
+
+        const statusBox = document.createElement('div');
+        statusBox.className = 'status-box';
+        sec5.appendChild(statusBox);
+
+        function updateStatus() {
+            const lines = [];
+            lines.push(`name:     "${fields.name || ''}"`);
+            lines.push(`email:    "${fields.email || ''}"`);
+            lines.push(`phone:    "${fields.phone || ''}"`);
+            lines.push(`password: ${fields.password ? '•'.repeat(fields.password.length) : '(empty)'}`);
+            lines.push(`───────────────────────`);
+            lines.push(`remember: ${switches.remember ? '✓' : '✗'}  show-pass: ${switches.showPassword ? '✓' : '✗'}`);
+            lines.push(`auto-cor: ${switches.autocorrect ? '✓' : '✗'}  spell:     ${switches.spellcheck ? '✓' : '✗'}`);
+            statusBox.textContent = lines.join('\n');
+        }
+        updateStatus();
+
+        // ── Section: Actions ──
+        const sec6 = section();
+        header('Actions', sec6);
+
+        const btnRow1 = document.createElement('div');
+        btnRow1.className = 'btn-row';
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'ios-btn blue';
+        submitBtn.textContent = 'Submit';
+        submitBtn.addEventListener('click', () => {
+            if (!fields.name || !fields.email || !fields.password) {
+                log('Submit failed: missing required fields', 'warn');
+                alert('Please fill in Name, Email, and Password');
+                return;
+            }
+            log(`Submitted: ${fields.name} / ${fields.email}`, 'success');
+            alert(`Submitted!\n\nName: ${fields.name}\nEmail: ${fields.email}`);
+        });
+        btnRow1.appendChild(submitBtn);
+
+        const validateBtn = document.createElement('button');
+        validateBtn.className = 'ios-btn green';
+        validateBtn.textContent = 'Validate';
+        validateBtn.addEventListener('click', () => {
+            const errors = [];
+            if (!fields.name) errors.push('Name is required');
+            if (!fields.email) errors.push('Email is required');
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) errors.push('Email is invalid');
+            if (!fields.password) errors.push('Password is required');
+            else if (fields.password.length < 8) errors.push('Password needs 8+ characters');
+
+            if (errors.length) {
+                log(`Validation: ${errors.length} error(s)`, 'warn');
+                alert('Validation Errors:\n• ' + errors.join('\n• '));
+            } else {
+                log('Validation: all fields valid ✓', 'success');
+                alert('All fields are valid!');
+            }
+        });
+        btnRow1.appendChild(validateBtn);
+
+        sec6.appendChild(btnRow1);
+
+        const btnRow2 = document.createElement('div');
+        btnRow2.className = 'btn-row';
+
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'ios-btn gray';
+        clearBtn.textContent = 'Clear All';
+        clearBtn.addEventListener('click', () => {
+            sec1.querySelectorAll('input').forEach(inp => { inp.value = ''; });
+            fieldDefs.forEach(f => fields[f.key] = '');
+            updateStatus();
+            log('All fields cleared', 'event');
+        });
+        btnRow2.appendChild(clearBtn);
+
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'ios-btn red';
+        resetBtn.textContent = 'Reset';
+        resetBtn.addEventListener('click', () => {
+            sec1.querySelectorAll('input').forEach(inp => { inp.value = ''; });
+            fieldDefs.forEach(f => fields[f.key] = '');
+            sec2.querySelectorAll('.ios-switch').forEach(sw => sw.classList.remove('on'));
+            Object.keys(switches).forEach(k => switches[k] = false);
+            const passInput = sec1.querySelectorAll('input')[3];
+            if (passInput) passInput.type = 'password';
+            updateStatus();
+            log('Everything reset', 'warn');
+        });
+        btnRow2.appendChild(resetBtn);
+
+        sec6.appendChild(btnRow2);
+
+        // ── Log Section ──
+        const sec7 = document.createElement('div');
+        sec7.className = 'log-section';
+        const logHeader = document.createElement('div');
+        logHeader.className = 'section-header';
+        logHeader.style.padding = '12px 20px';
+        logHeader.textContent = 'Event Log';
+        sec7.appendChild(logHeader);
+
+        const logEntriesEl = document.createElement('div');
+        logEntriesEl.className = 'log-entries';
+        sec7.appendChild(logEntriesEl);
+        app.appendChild(sec7);
+
+        logContainer = sec7;
+
+        log('Demo loaded — interact with controls above', 'success');
     </script>
 </body>
 </html>

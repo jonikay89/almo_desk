@@ -19,6 +19,9 @@ class UITextField extends UIView {
     get text() { return this._text; }
     set text(value) { this._text = value; this._updateDisplay(); }
 
+    getText() { return this._text; }
+    setText(value) { this.text = value; }
+
     get placeholder() { return this._placeholder; }
     set placeholder(value) { this._placeholder = value; this._updateDisplay(); }
 

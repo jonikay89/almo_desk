@@ -127,6 +127,16 @@ class UIView extends UIResponder {
     get translatesAutoresizingMaskIntoConstraints() { return this._translatesAutoresizingMaskIntoConstraints; }
     set translatesAutoresizingMaskIntoConstraints(value) { this._translatesAutoresizingMaskIntoConstraints = value; }
 
+    init() {
+        if (typeof document !== 'undefined' && !this._element) {
+            this._element = document.createElement('div');
+            this._element.style.position = 'absolute';
+            this._element.style.left = '0px';
+            this._element.style.top = '0px';
+        }
+        return this._element;
+    }
+
     get element() { return this._element; }
 
     $observe(propertyName, callback, options = {}) {
