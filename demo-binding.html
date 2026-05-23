@@ -5,292 +5,355 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UIKit Data Binding - Live Demo</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; padding: 20px; }
-        #app { max-width: 1200px; margin: 0 auto; }
-        h1 { color: #1d1d1f; margin-bottom: 30px; font-size: 28px; }
-        h2 { color: #1d1d1f; font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .tag { font-size: 11px; background: #007aff; color: white; padding: 2px 8px; border-radius: 4px; }
-        .tag.binding { background: #5856d6; }
-        .tag.observable { background: #ff9500; }
-        .section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .demo-area { background: #f5f5f7; border-radius: 8px; padding: 20px; min-height: 60px; display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
-        .demo-area.col { flex-direction: column; align-items: flex-start; }
-        .log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
-        .log-entry { margin: 2px 0; }
-        .log-entry.ok { color: #4ec9b0; }
-        .log-entry.info { color: #569cd6; }
-        .log-entry.warn { color: #ce9178; }
-        .log-entry.binding { color: #c586c0; }
-        .btn { padding: 10px 20px; background: #007aff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
-        .btn:hover { background: #0056cc; }
-        .btn.green { background: #34c759; }
-        .btn.orange { background: #ff9500; }
-        .btn.red { background: #ff3b30; }
-        .btn.purple { background: #5856d6; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .card { border: 1px solid #e5e5e7; border-radius: 10px; padding: 15px; }
-        .card h3 { font-size: 14px; color: #1d1d1f; margin-bottom: 8px; }
-        .card p { font-size: 12px; color: #86868b; margin-bottom: 10px; }
-        .code { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; overflow-x: auto; white-space: pre; }
-        .code .k { color: #569cd6; }
-        .code .s { color: #ce9178; }
-        .code .c { color: #6a9955; }
-        .code .f { color: #dcdcaa; }
-        input, textarea { border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; font-size: 14px; outline: none; }
-        input:focus, textarea:focus { border-color: #007aff; }
-        input[type="range"] { width: 100%; cursor: pointer; }
-        input[type="number"] { width: 80px; }
-        .bound-box { width: 80px; height: 80px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600; transition: background-color 0.3s, transform 0.3s; }
-        .progress-bar { width: 200px; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: #007aff; transition: width 0.3s; }
-        .demo-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .demo-col { display: flex; flex-direction: column; gap: 10px; }
-        .output-display { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 13px; min-height: 40px; }
-        .output-display .label { font-size: 11px; color: #856404; margin-bottom: 4px; }
-        .color-grid { display: grid; grid-template-columns: repeat(5, 40px); gap: 8px; }
-        .color-swatch { width: 40px; height: 40px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s; }
-        .color-swatch:hover { transform: scale(1.1); }
-        .color-swatch.selected { border-color: #007aff; }
-        .list-demo { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-        .list-item { background: #f0f0f0; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
-        .list-item:hover { background: #e0e0e0; }
-        .list-item .title { font-weight: 500; }
-        .list-item .subtitle { font-size: 12px; color: #666; }
-        .bind-indicator { width: 10px; height: 10px; border-radius: 50%; background: #34c759; margin-left: 10px; }
-        .bind-indicator.inactive { background: #ccc; }
-        .state-display { display: flex; gap: 20px; align-items: center; }
-        .state-item { display: flex; align-items: center; gap: 8px; }
-        .state-label { font-size: 12px; color: #666; }
-        .state-value { font-family: monospace; font-size: 14px; font-weight: 600; }
+        body { margin: 0; }
     </style>
 </head>
 <body>
-    <div id="app"></div>
     <script type="module">
         import {
-            UIView, UIViewController, UIWindow, UIResponder,
-            UIColor, UILabel, UIButton, UITextField, UISlider, UISwitch,
-            Observable, Binding, ObservableObject, ObservableArray
+            UIView, UIColor, UIFont,
+            UILabel, UIButton, UITextField, UISlider,
+            UIStackView,
+            CurrentValueSubject, AnyCancellable, Binding,
+            ObservableObject,
+            NSLayoutConstraint
         } from './src/core/index.js';
 
-        const app = document.getElementById('app');
+        const screen = new UIStackView('vertical');
+        screen.alignment = 'fill';
+        screen.minHeight = '100vh';
+        screen.backgroundColor = UIColor.colorWithHex('#f5f5f7');
+        document.body.appendChild(screen.element);
+
+        const app = new UIStackView('vertical');
+        app.spacing = 20;
+        app.padding = 20;
+        app.alignment = 'fill';
+        app.translatesAutoresizingMaskIntoConstraints = false;
+        screen.addSubview(app);
+
+        NSLayoutConstraint.activateConstraints([
+            app.widthAnchor.constraintLessThanOrEqualToConstant(1200),
+            app.centerXAnchor.constraintEqualToAnchor(screen.centerXAnchor),
+            app.topAnchor.constraintEqualToAnchor(screen.topAnchor),
+            app.bottomAnchor.constraintEqualToAnchor(screen.bottomAnchor),
+        ]);
+
+        const cancellables = new Set();
+
+        function makeSection() {
+            const s = new UIStackView('vertical');
+            s.spacing = 10;
+            s.backgroundColor = UIColor.white();
+            s.layer.cornerRadius = 12;
+            s.padding = 20;
+            s.shadow = { offsetX: 0, offsetY: 2, radius: 8, color: 'rgba(0,0,0,0.08)' };
+            return s;
+        }
+
+        function makeDemoArea(axis = 'vertical') {
+            const s = new UIStackView(axis);
+            s.spacing = 15;
+            s.alignment = 'leading';
+            s.backgroundColor = UIColor.colorWithHex('#f5f5f7');
+            s.layer.cornerRadius = 8;
+            s.padding = 20;
+            s.minHeight = 60;
+            return s;
+        }
+
+        function headingLabel(text) {
+            const l = new UILabel(text);
+            l.font = UIFont.boldSystemFont(18);
+            l.textColor = UIColor.colorWithHex('#1d1d1f');
+            return l;
+        }
+
+        function tagLabel(text, color) {
+            const l = new UILabel(text);
+            l.font = UIFont.systemFont(11, '600');
+            l.textColor = UIColor.white();
+            l.backgroundColor = UIColor.colorWithHex(color);
+            l.layer.cornerRadius = 4;
+            l.padding = { top: 2, left: 8, bottom: 2, right: 8 };
+            return l;
+        }
+
+        function stateLabel(text) {
+            const l = new UILabel(text);
+            l.font = UIFont.systemFont(12);
+            l.textColor = UIColor.colorWithHex('#666666');
+            return l;
+        }
+
+        function valueLabel(text) {
+            const l = new UILabel(text);
+            l.font = UIFont.monospacedSystemFont(14, '600');
+            return l;
+        }
+
+        function indicator() {
+            const v = new UIView({ x: 0, y: 0, width: 10, height: 10 });
+            v.init();
+            v.layer.cornerRadius = 5;
+            v.backgroundColor = UIColor.colorWithHex('#34c759');
+            return v;
+        }
+
+        const logColorMap = {
+            ok: UIColor.colorWithHex('#4ec9b0'),
+            info: UIColor.colorWithHex('#569cd6'),
+            warn: UIColor.colorWithHex('#ce9178'),
+            binding: UIColor.colorWithHex('#c586c0')
+        };
+
         const logArea = (title) => {
-            const section = document.createElement('div');
-            section.className = 'section';
-            section.innerHTML = `<h2>${title}</h2><div class="log" id="log-${Math.random().toString(36).slice(2)}"></div>`;
-            app.appendChild(section);
-            const log = section.querySelector('.log');
+            const section = new UIStackView('vertical');
+            section.spacing = 10;
+            section.backgroundColor = UIColor.white();
+            section.layer.cornerRadius = 12;
+            section.padding = 20;
+            section.shadow = { offsetX: 0, offsetY: 2, radius: 8, color: 'rgba(0,0,0,0.08)' };
+            const heading = headingLabel(title);
+            const logContainer = new UIView();
+            logContainer.init();
+            logContainer.backgroundColor = UIColor.colorWithHex('#1e1e1e');
+            logContainer.layer.cornerRadius = 8;
+            logContainer.padding = 15;
+            logContainer.maxHeight = '200px';
+            logContainer.overflow = 'auto';
+            section.addArrangedSubview(heading);
+            section.addArrangedSubview(logContainer);
+            app.addArrangedSubview(section);
             return (msg, type = 'info') => {
-                const entry = document.createElement('div');
-                entry.className = `log-entry ${type}`;
-                entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-                log.appendChild(entry);
-                log.scrollTop = log.scrollHeight;
+                const entry = new UILabel(`[${new Date().toLocaleTimeString()}] ${msg}`);
+                entry.font = UIFont.monospacedSystemFont(12);
+                entry.textColor = logColorMap[type] || UIColor.colorWithHex('#d4d4d4');
+                entry.numberOfLines = 0;
+                logContainer.addSubview(entry);
+                logContainer.scrollToBottom();
             };
         };
 
-        const log1 = logArea('Observable Demo');
+        const log1 = logArea('CurrentValueSubject Demo');
         const log2 = logArea('Two-Way Binding Demo');
-        const log3 = logArea('Array Binding Demo');
+        const log3 = logArea('Array Demo');
         const log4 = logArea('Transform Binding Demo');
 
-        log1('Creating observable with initial value: 42');
-        const count = new Observable(42);
-
-        log1('Subscribing to changes...');
-        const dispose = count.subscribe((newValue, oldValue) => {
+        const count = new CurrentValueSubject(42);
+        log1('Creating CurrentValueSubject with initial value: 42');
+        log1('Calling sink()...');
+        const countCancellable = count.sink((newValue, oldValue) => {
             log1(`Value changed: ${oldValue} → ${newValue}`, 'ok');
-        }, { immediately: true });
+        }).storeIn(cancellables);
 
-        log1('Setting value to 100');
-        count.value = 100;
+        count.send(100);
+        log1('Sent 100');
+        count.send(100);
+        log1('Sent 100 again (no change expected)');
+        count.send(50);
+        log1('Sent 50');
 
-        log1('Setting value to 100 again (no change expected)');
-        count.value = 100;
+        countCancellable.cancel();
+        log1('Cancelled. Sending 200 (no log expected)');
+        count.send(200);
+        log1(`History: ${JSON.stringify(count.changeHistory.map(h => ({from: h.oldValue, to: h.newValue})))}`, 'binding');
 
-        log1('Setting value to 50');
-        count.value = 50;
-
-        log1('Unsubscribing...');
-        dispose();
-
-        log1('Setting value to 200 (should not trigger log)');
-        count.value = 200;
-
-        log1(`Change history: ${JSON.stringify(count.changeHistory.map(h => ({from: h.oldValue, to: h.newValue})))}`, 'binding');
-
-        log2('Creating two observables');
-        const source = new Observable('Hello');
-        const target = new Observable('World');
-
-        log2('Creating two-way binding');
+        const source = new CurrentValueSubject('Hello');
+        const target = new CurrentValueSubject('World');
+        log2('Two-way binding');
         const binding = source.bindTo(target, { twoWay: true });
         binding.activate();
-
-        log2(`Initial: source="${source.value}", target="${target.value}"`, 'ok');
-        log2('Changing source to "Bonjour"');
-        source.value = 'Bonjour';
-        log2(`After: source="${source.value}", target="${target.value}"`, 'ok');
-
-        log2('Changing target to "Mond" (via target)');
-        target.value = 'Mond';
-        log2(`After: source="${source.value}", target="${target.value}"`, 'ok');
-
+        log2(`source="${source.value}", target="${target.value}"`, 'ok');
+        source.send('Bonjour');
+        log2(`source="${source.value}", target="${target.value}"`, 'ok');
+        target.send('Mond');
+        log2(`source="${source.value}", target="${target.value}"`, 'ok');
         binding.deactivate();
-        log2('Binding deactivated. Changing source to "Hola"');
-        source.value = 'Hola';
-        log2(`After: source="${source.value}", target="${target.value}"`, 'ok');
+        source.send('Hola');
+        log2(`Deactivated. source="${source.value}", target="${target.value}"`, 'ok');
 
-        log3('Creating observable array');
-        const items = new ObservableArray(['Apple', 'Banana', 'Cherry']);
+        const items = new CurrentValueSubject(['Apple', 'Banana', 'Cherry']);
+        const itemsCancellable = items.sink((arr) => {
+            log3(`[${arr.join(', ')}]`, 'ok');
+        }).storeIn(cancellables);
+        items.send([...items.value, 'Date']);
+        items.send(items.value.filter(i => i !== 'Banana'));
+        itemsCancellable.cancel();
 
-        log3('Subscribing to array changes');
-        items.subscribe((arr, change) => {
-            log3(`Array changed: ${change.type} at index ${change.index}`, 'binding');
-            log3(`Current array: [${arr.join(', ')}]`, 'ok');
-        }, { immediately: true });
-
-        log3('Pushing "Date"');
-        items.push('Date');
-
-        log3('Inserting "Elderberry" at index 1');
-        items.insert('Elderberry', 1);
-
-        log3('Removing "Banana"');
-        items.remove('Banana');
-
-        log3('Replacing index 0 with "Apricot"');
-        items.replace(0, 'Apricot');
-
-        log4('Creating source observable: 100');
-        const percentage = new Observable(100);
-
-        log4('Creating target progress bar width: 0');
-        const progressWidth = new Observable(0);
-
-        log4('Creating binding with transform (percentage → pixels)');
+        const percentage = new CurrentValueSubject(100);
+        const progressWidth = new CurrentValueSubject(0);
         const progressBinding = percentage.bindTo(progressWidth, {
-            twoWay: false,
-            transformTo: (p) => p * 2,
-            transformFrom: (w) => w / 2
+            twoWay: false, transformTo: (p) => p * 2, transformFrom: (w) => w / 2
         });
         progressBinding.activate();
+        log4(`${percentage.value}% → ${progressWidth.value}px`, 'ok');
+        percentage.send(75);
+        log4(`${percentage.value}% → ${progressWidth.value}px`, 'ok');
 
-        log4(`Initial: percentage=${percentage.value}, width=${progressWidth.value}px`, 'ok');
+        // ── Section 5: Interactive Binding Demo ──
+        const section5 = makeSection();
+        const h5 = new UIStackView('horizontal');
+        h5.spacing = 10;
+        h5.alignment = 'center';
+        h5.addArrangedSubview(headingLabel('Interactive Binding Demo'));
+        h5.addArrangedSubview(tagLabel('Interactive', '#5856d6'));
+        section5.addArrangedSubview(h5);
+        app.addArrangedSubview(section5);
 
-        percentage.value = 75;
-        log4(`After 75%: percentage=${percentage.value}, width=${progressWidth.value}px`, 'ok');
+        const demoArea5 = makeDemoArea('vertical');
+        section5.addArrangedSubview(demoArea5);
 
-        percentage.value = 50;
-        log4(`After 50%: percentage=${percentage.value}, width=${progressWidth.value}px`, 'ok');
+        const tfValue = new CurrentValueSubject('Hello');
+        const sliderValue = new CurrentValueSubject(210);
+        const scaleValue = new CurrentValueSubject(1.0);
 
-        const section5 = document.createElement('div');
-        section5.className = 'section';
-        section5.innerHTML = `
-            <h2>Interactive Binding Demo <span class="tag binding">Interactive</span></h2>
-            <p class="info">This demo shows real-time two-way binding between UI controls.</p>
-            <div class="demo-area col">
-                <div class="demo-row">
-                    <div class="state-display">
-                        <div class="state-item">
-                            <span class="state-label">TextField:</span>
-                            <span class="state-value" id="tf-value">Hello</span>
-                            <div class="bind-indicator" id="tf-indicator"></div>
-                        </div>
-                        <div class="state-item">
-                            <span class="state-label">Label:</span>
-                            <span class="state-value" id="label-value">Hello</span>
-                            <div class="bind-indicator" id="label-indicator"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="demo-row">
-                    <input type="text" id="text-input" value="Hello" placeholder="Type something...">
-                    <div class="bound-box" id="color-box" style="background: hsl(210, 100%, 50%);">
-                        BOX
-                    </div>
-                </div>
-                <div class="demo-row">
-                    <span style="font-size: 12px; color: #666;">Hue: 210</span>
-                    <input type="range" id="hue-slider" min="0" max="360" value="210" style="flex: 1;">
-                </div>
-                <div class="demo-row">
-                    <div class="state-item">
-                        <span class="state-label">Slider Value:</span>
-                        <span class="state-value" id="slider-value">210</span>
-                    </div>
-                    <div class="state-item">
-                        <span class="state-label">Box Scale:</span>
-                        <span class="state-value" id="scale-value">1.0</span>
-                    </div>
-                    <input type="range" id="scale-slider" min="50" max="150" value="100" style="width: 150px;">
-                </div>
-            </div>
-        `;
-        app.appendChild(section5);
+        const row1 = new UIStackView('horizontal');
+        row1.spacing = 20;
+        row1.alignment = 'center';
+        const tfState = new UIStackView('horizontal');
+        tfState.spacing = 8;
+        tfState.alignment = 'center';
+        const tfValLabel = valueLabel('Hello');
+        tfState.addArrangedSubview(stateLabel('TextField:'));
+        tfState.addArrangedSubview(tfValLabel);
+        tfState.addArrangedSubview(indicator());
+        const lblState = new UIStackView('horizontal');
+        lblState.spacing = 8;
+        lblState.alignment = 'center';
+        const lblValLabel = valueLabel('Hello');
+        lblState.addArrangedSubview(stateLabel('Label:'));
+        lblState.addArrangedSubview(lblValLabel);
+        lblState.addArrangedSubview(indicator());
+        row1.addArrangedSubview(tfState);
+        row1.addArrangedSubview(lblState);
+        demoArea5.addArrangedSubview(row1);
 
-        const tfValue = new Observable('Hello');
-        const sliderValue = new Observable(210);
-        const scaleValue = new Observable(1.0);
+        const row2 = new UIStackView('horizontal');
+        row2.spacing = 15;
+        row2.alignment = 'center';
+        const tfInput = new UITextField('Type something...');
+        tfInput.font = UIFont.systemFont(14);
+        tfInput.text = 'Hello';
+        const colorBoxView = new UIStackView('vertical');
+        colorBoxView.alignment = 'center';
+        colorBoxView.distribution = 'center';
+        colorBoxView.frame = { x: 0, y: 0, width: 80, height: 80 };
+        colorBoxView.layer.cornerRadius = 12;
+        colorBoxView.backgroundColor = UIColor.colorWithHSB(210 / 360, 1, 1);
+        colorBoxView.clipsToBounds = true;
+        const colorBoxLabel = new UILabel('BOX');
+        colorBoxLabel.font = UIFont.boldSystemFont(12);
+        colorBoxLabel.textColor = UIColor.white();
+        colorBoxLabel.textAlignment = 'center';
+        colorBoxView.addArrangedSubview(colorBoxLabel);
+        row2.addArrangedSubview(tfInput);
+        row2.addArrangedSubview(colorBoxView);
+        demoArea5.addArrangedSubview(row2);
 
-        const tfInput = document.getElementById('text-input');
-        const tfValueDisplay = document.getElementById('tf-value');
-        const labelValueDisplay = document.getElementById('label-value');
-        const colorBox = document.getElementById('color-box');
-        const hueSlider = document.getElementById('hue-slider');
-        const sliderValueDisplay = document.getElementById('slider-value');
-        const scaleSlider = document.getElementById('scale-slider');
-        const scaleValueDisplay = document.getElementById('scale-value');
+        const row3 = new UIStackView('horizontal');
+        row3.spacing = 15;
+        row3.alignment = 'center';
+        const hueDesc = stateLabel('Hue: 210');
+        const hueSlider = new UISlider();
+        hueSlider.minimumValue = 0;
+        hueSlider.maximumValue = 360;
+        hueSlider.value = 210;
+        hueSlider.setContentHuggingPriority(1, 'horizontal');
+        row3.addArrangedSubview(hueDesc);
+        row3.addArrangedSubview(hueSlider);
+        demoArea5.addArrangedSubview(row3);
 
-        tfInput.addEventListener('input', (e) => {
-            tfValue.value = e.target.value;
-        });
+        const row4 = new UIStackView('horizontal');
+        row4.spacing = 20;
+        row4.alignment = 'center';
+        const slState = new UIStackView('horizontal');
+        slState.spacing = 8;
+        slState.alignment = 'center';
+        const slValLabel = valueLabel('210');
+        slState.addArrangedSubview(stateLabel('Slider Value:'));
+        slState.addArrangedSubview(slValLabel);
+        const scState = new UIStackView('horizontal');
+        scState.spacing = 8;
+        scState.alignment = 'center';
+        const scValLabel = valueLabel('1.0');
+        scState.addArrangedSubview(stateLabel('Box Scale:'));
+        scState.addArrangedSubview(scValLabel);
+        const scaleSlider = new UISlider();
+        scaleSlider.minimumValue = 50;
+        scaleSlider.maximumValue = 150;
+        scaleSlider.value = 100;
+        row4.addArrangedSubview(slState);
+        row4.addArrangedSubview(scState);
+        row4.addArrangedSubview(scaleSlider);
+        demoArea5.addArrangedSubview(row4);
 
-        hueSlider.addEventListener('input', (e) => {
-            sliderValue.value = parseInt(e.target.value);
-        });
+        tfInput.addTarget(tfValue, (sender) => { tfValue.value = sender.text; });
+        hueSlider.addTarget(sliderValue, (sender) => { sliderValue.value = Math.round(sender.value); });
+        scaleSlider.addTarget(scaleValue, (sender) => { scaleValue.value = sender.value / 100; });
 
-        scaleSlider.addEventListener('input', (e) => {
-            scaleValue.value = parseInt(e.target.value) / 100;
-        });
+        tfValue.sink((v) => { tfValLabel.text = v; lblValLabel.text = v; }).storeIn(cancellables);
+        sliderValue.sink((v) => {
+            slValLabel.text = String(v);
+            hueDesc.text = `Hue: ${v}`;
+            colorBoxView.backgroundColor = UIColor.colorWithHSB(v / 360, 1, 1);
+        }).storeIn(cancellables);
+        scaleValue.sink((v) => {
+            scValLabel.text = v.toFixed(1);
+            colorBoxView.transform = `scale(${v})`;
+        }).storeIn(cancellables);
 
-        tfValue.subscribe((v) => {
-            tfValueDisplay.textContent = v;
-            labelValueDisplay.textContent = v;
-        });
+        // ── Section 6: ObservableObject + KVO Demo ──
+        const section6 = makeSection();
+        const h6 = new UIStackView('horizontal');
+        h6.spacing = 10;
+        h6.alignment = 'center';
+        h6.addArrangedSubview(headingLabel('ObservableObject + KVO Demo'));
+        h6.addArrangedSubview(tagLabel('ObservableObject', '#ff9500'));
+        section6.addArrangedSubview(h6);
+        app.addArrangedSubview(section6);
 
-        sliderValue.subscribe((v) => {
-            sliderValueDisplay.textContent = v;
-            colorBox.style.background = `hsl(${v}, 100%, 50%)`;
-        });
+        const demoArea6 = makeDemoArea('vertical');
+        section6.addArrangedSubview(demoArea6);
 
-        scaleValue.subscribe((v) => {
-            scaleValueDisplay.textContent = v.toFixed(1);
-            colorBox.style.transform = `scale(${v})`;
-        });
+        const objDisplay = new UIStackView('vertical');
+        objDisplay.spacing = 4;
+        objDisplay.backgroundColor = UIColor.colorWithHex('#fff3cd');
+        objDisplay.layer.cornerRadius = 6;
+        objDisplay.layer.borderWidth = 1;
+        objDisplay.layer.borderColor = UIColor.colorWithHex('#ffc107');
+        objDisplay.padding = 10;
+        objDisplay.minHeight = 40;
+        const objLabel = new UILabel('ObservableObject State');
+        objLabel.font = UIFont.systemFont(11);
+        objLabel.textColor = UIColor.colorWithHex('#856404');
+        objLabel.numberOfLines = 0;
+        const objState = new UILabel('Loading...');
+        objState.font = UIFont.monospacedSystemFont(13);
+        objState.numberOfLines = 0;
+        objDisplay.addArrangedSubview(objLabel);
+        objDisplay.addArrangedSubview(objState);
+        demoArea6.addArrangedSubview(objDisplay);
 
-        const section6 = document.createElement('div');
-        section6.className = 'section';
-        section6.innerHTML = `
-            <h2>ObservableObject Demo <span class="tag observable">ObservableObject</span></h2>
-            <p class="info">A class that manages observable properties with automatic change tracking.</p>
-            <div class="demo-area col">
-                <div class="demo-row">
-                    <div class="output-display" id="obj-display">
-                        <div class="label">ObservableObject State</div>
-                        <div id="obj-state">Loading...</div>
-                    </div>
-                </div>
-                <div class="demo-row">
-                    <button class="btn" id="btn-name">Change Name</button>
-                    <button class="btn green" id="btn-age">Increment Age</button>
-                    <button class="btn orange" id="btn-email">Update Email</button>
-                    <button class="btn purple" id="btn-reset">Reset All</button>
-                </div>
-            </div>
-        `;
-        app.appendChild(section6);
+        const btnRow = new UIStackView('horizontal');
+        btnRow.spacing = 15;
+        btnRow.alignment = 'center';
+        const btnName = new UIButton('Change Name');
+        btnName.font = UIFont.systemFont(14, '600');
+        const btnAge = new UIButton('Increment Age');
+        btnAge.backgroundColor = UIColor.colorWithHex('#34c759');
+        btnAge.font = UIFont.systemFont(14, '600');
+        const btnEmail = new UIButton('Update Email');
+        btnEmail.backgroundColor = UIColor.colorWithHex('#ff9500');
+        btnEmail.font = UIFont.systemFont(14, '600');
+        const btnReset = new UIButton('Reset All');
+        btnReset.backgroundColor = UIColor.colorWithHex('#5856d6');
+        btnReset.font = UIFont.systemFont(14, '600');
+        btnRow.addArrangedSubview(btnName);
+        btnRow.addArrangedSubview(btnAge);
+        btnRow.addArrangedSubview(btnEmail);
+        btnRow.addArrangedSubview(btnReset);
+        demoArea6.addArrangedSubview(btnRow);
 
         class Person extends ObservableObject {
             constructor(name, age, email) {
@@ -300,110 +363,96 @@
                 this._email = email;
             }
             get name() { return this._name; }
-            set name(v) { this._name = v; this.$set('name', v); }
+            set name(v) { this.willChangeValue('name'); this._name = v; this.$set('name', v); this.didChangeValue('name'); }
             get age() { return this._age; }
-            set age(v) { this._age = v; this.$set('age', v); }
+            set age(v) { this.willChangeValue('age'); this._age = v; this.$set('age', v); this.didChangeValue('age'); }
             get email() { return this._email; }
-            set email(v) { this._email = v; this.$set('email', v); }
+            set email(v) { this.willChangeValue('email'); this._email = v; this.$set('email', v); this.didChangeValue('email'); }
         }
 
         const person = new Person('John', 30, 'john@example.com');
-        const objState = document.getElementById('obj-state');
         const updateDisplay = () => {
-            objState.textContent = JSON.stringify({
-                name: person.name,
-                age: person.age,
-                email: person.email
-            }, null, 2);
+            objState.text = JSON.stringify({ name: person.name, age: person.age, email: person.email }, null, 2);
         };
-
-        person.$observe('name', (v) => log1(`Name changed: ${v}`, 'binding'));
-        person.$observe('age', (v) => log1(`Age changed: ${v}`, 'binding'));
-        person.$observe('email', (v) => log1(`Email changed: ${v}`, 'binding'));
-
+        person.$observe('name', (v) => log1(`Name: ${v}`, 'binding'));
+        person.$observe('age', (v) => log1(`Age: ${v}`, 'binding'));
+        person.$observe('email', (v) => log1(`Email: ${v}`, 'binding'));
+        person.observe('name', (_, change) => {
+            if (change.kind === 'set') log1(`KVO: name = ${change.newValue}`, 'warn');
+        }).storeIn(cancellables);
         updateDisplay();
 
-        document.getElementById('btn-name').addEventListener('click', () => {
-            person.name = person.name === 'John' ? 'Jane' : 'John';
-            updateDisplay();
-        });
+        btnName.addTarget(null, () => { person.name = person.name === 'John' ? 'Jane' : 'John'; updateDisplay(); });
+        btnAge.addTarget(null, () => { person.age = person.age + 1; updateDisplay(); });
+        btnEmail.addTarget(null, () => { person.email = `user${Date.now()}@example.com`; updateDisplay(); });
+        btnReset.addTarget(null, () => { person.$unbindAll(); person.name = 'John'; person.age = 30; person.email = 'john@example.com'; updateDisplay(); });
 
-        document.getElementById('btn-age').addEventListener('click', () => {
-            person.age = person.age + 1;
-            updateDisplay();
-        });
+        // ── Section 7: Array Demo ──
+        const section7 = makeSection();
+        const h7 = new UIStackView('horizontal');
+        h7.spacing = 10;
+        h7.alignment = 'center';
+        h7.addArrangedSubview(headingLabel('Array Demo'));
+        h7.addArrangedSubview(tagLabel('Interactive', '#ff9500'));
+        section7.addArrangedSubview(h7);
+        app.addArrangedSubview(section7);
 
-        document.getElementById('btn-email').addEventListener('click', () => {
-            person.email = `user${Date.now()}@example.com`;
-            updateDisplay();
-        });
+        const demoArea7 = makeDemoArea('vertical');
+        section7.addArrangedSubview(demoArea7);
 
-        document.getElementById('btn-reset').addEventListener('click', () => {
-            person.$unbindAll();
-            person.name = 'John';
-            person.age = 30;
-            person.email = 'john@example.com';
-            updateDisplay();
-        });
+        const fruitList = new UIStackView('vertical');
+        fruitList.spacing = 8;
+        fruitList.alignment = 'fill';
+        demoArea7.addArrangedSubview(fruitList);
 
-        const section7 = document.createElement('div');
-        section7.className = 'section';
-        section7.innerHTML = `
-            <h2>ObservableArray Demo <span class="tag observable">Interactive</span></h2>
-            <p class="info">Watch an observable array respond to CRUD operations in real-time.</p>
-            <div class="demo-area col">
-                <div class="list-demo" id="fruit-list"></div>
-                <div class="demo-row" style="margin-top: 15px;">
-                    <input type="text" id="new-item" placeholder="New item name...">
-                    <button class="btn" id="btn-add">Add</button>
-                    <button class="btn green" id="btn-remove">Remove Last</button>
-                    <button class="btn orange" id="btn-clear">Clear All</button>
-                </div>
-            </div>
-        `;
-        app.appendChild(section7);
+        const fruitRow = new UIStackView('horizontal');
+        fruitRow.spacing = 15;
+        fruitRow.alignment = 'center';
+        fruitRow.margin = { top: 15 };
+        const newItemInput = new UITextField('New item name...');
+        newItemInput.font = UIFont.systemFont(14);
+        const btnAdd = new UIButton('Add');
+        btnAdd.font = UIFont.systemFont(14, '600');
+        const btnRemove = new UIButton('Remove Last');
+        btnRemove.backgroundColor = UIColor.colorWithHex('#34c759');
+        btnRemove.font = UIFont.systemFont(14, '600');
+        const btnClear = new UIButton('Clear All');
+        btnClear.backgroundColor = UIColor.colorWithHex('#ff9500');
+        btnClear.font = UIFont.systemFont(14, '600');
+        fruitRow.addArrangedSubview(newItemInput);
+        fruitRow.addArrangedSubview(btnAdd);
+        fruitRow.addArrangedSubview(btnRemove);
+        fruitRow.addArrangedSubview(btnClear);
+        demoArea7.addArrangedSubview(fruitRow);
 
-        const fruits = new ObservableArray(['Apple', 'Banana', 'Cherry', 'Date']);
-        const fruitList = document.getElementById('fruit-list');
-
-        const renderFruits = () => {
-            fruitList.innerHTML = '';
-            fruits.forEach((fruit, index) => {
-                const item = document.createElement('div');
-                item.className = 'list-item';
-                item.innerHTML = `
-                    <div>
-                        <div class="title">${fruit}</div>
-                        <div class="subtitle">Index: ${index}</div>
-                    </div>
-                `;
-                fruitList.appendChild(item);
+        const fruits = new CurrentValueSubject(['Apple', 'Banana', 'Cherry', 'Date']);
+        const renderFruits = (arr) => {
+            fruitList.removeAllArrangedSubviews();
+            arr.forEach((fruit, index) => {
+                const item = new UIStackView('vertical');
+                item.spacing = 2;
+                item.backgroundColor = UIColor.colorWithHex('#f0f0f0');
+                item.padding = { top: 12, left: 16, bottom: 12, right: 16 };
+                item.layer.cornerRadius = 8;
+                const title = new UILabel(fruit);
+                title.font = UIFont.systemFont(14, '500');
+                const sub = new UILabel(`Index: ${index}`);
+                sub.font = UIFont.systemFont(12);
+                sub.textColor = UIColor.colorWithHex('#666666');
+                item.addArrangedSubview(title);
+                item.addArrangedSubview(sub);
+                fruitList.addArrangedSubview(item);
             });
         };
+        fruits.sink((arr) => renderFruits(arr)).storeIn(cancellables);
 
-        fruits.subscribe((arr, change) => {
-            log3(`[${change.type}] index=${change.index}, items=${change.items?.join(', ') || 'N/A'}`, 'binding');
-            renderFruits();
-        }, { immediately: true });
-
-        document.getElementById('btn-add').addEventListener('click', () => {
-            const input = document.getElementById('new-item');
-            if (input.value.trim()) {
-                fruits.push(input.value.trim());
-                input.value = '';
-            }
+        btnAdd.addTarget(null, () => {
+            const text = newItemInput.text.trim();
+            if (text) { fruits.send([...fruits.value, text]); newItemInput.text = ''; }
         });
+        btnRemove.addTarget(null, () => { const a = [...fruits.value]; a.pop(); fruits.send(a); });
+        btnClear.addTarget(null, () => { fruits.send([]); });
 
-        document.getElementById('btn-remove').addEventListener('click', () => {
-            fruits.pop();
-        });
-
-        document.getElementById('btn-clear').addEventListener('click', () => {
-            fruits.clear();
-        });
-
-        console.log('Data Binding Demo loaded successfully');
-        console.log('Available exports: Observable, Binding, ObservableObject, ObservableArray');
     </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-import { Observable } from './Observable.js';
+import { CurrentValueSubject } from './Observable.js';
 
-class ObservableArray extends Observable {
+class ObservableArray extends CurrentValueSubject {
     constructor(items = []) {
         super([...items]);
         this._items = this._value;

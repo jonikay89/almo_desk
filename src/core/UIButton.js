@@ -11,6 +11,7 @@ class UIButton extends UIControl {
         this._padding = { horizontal: 16, vertical: 10 };
         this._isAccessibilityElement = true;
         this._accessibilityTraits = 0x1;
+        this.init();
     }
 
     get title() { return this._title; }
@@ -23,6 +24,9 @@ class UIButton extends UIControl {
     set titleColor(value) { this._titleColor = value; this._updateDisplay(); }
 
     setTitleColor(color) { this.titleColor = color; }
+
+    get font() { return this._font; }
+    set font(value) { this._font = value; this._applyFont(); }
 
     _updateDisplay() {
         if (typeof document !== 'undefined' && this._element) {
@@ -37,17 +41,28 @@ class UIButton extends UIControl {
         this.accessibilityLabel = this._title;
     }
 
+    _applyFont() {
+        if (!this._element || !this._font) return;
+        if (typeof this._font.toCSS === 'function') {
+            this._element.style.font = this._font.toCSS();
+        } else {
+            const f = this._font;
+            if (f.size) this._element.style.fontSize = `${f.size}px`;
+            if (f.weight) this._element.style.fontWeight = f.weight;
+        }
+    }
+
     init() {
         if (typeof document !== 'undefined' && !this._element) {
             this._element = document.createElement('button');
             this._element.style.border = 'none';
             this._element.style.fontFamily = 'inherit';
-            this._element.style.fontSize = '15px';
+            this._element.style.fontSize = '14px';
             this._element.style.fontWeight = '600';
             this._element.style.display = 'inline-flex';
             this._element.style.alignItems = 'center';
             this._element.style.justifyContent = 'center';
-            this._element.style.transition = 'opacity 0.15s, transform 0.1s';
+            this._element.style.transition = 'opacity 0.15s, transform 0.1s, filter 0.15s';
             this._updateDisplay();
 
             this._element.addEventListener('click', () => {
@@ -68,9 +83,14 @@ class UIButton extends UIControl {
 
             this._element.addEventListener('mouseleave', () => {
                 this._element.style.transform = 'scale(1)';
+                this._element.style.filter = 'none';
+            });
+
+            this._element.addEventListener('mouseenter', () => {
+                this._element.style.filter = 'brightness(0.85)';
             });
         }
-        return this._element;
+        return this;
     }
 }
 

@@ -1,4 +1,29 @@
-class Observable {
+class AnyCancellable {
+    constructor(cancelAction) {
+        this._cancelAction = cancelAction;
+        this._isCancelled = false;
+    }
+
+    cancel() {
+        if (this._isCancelled) return;
+        this._isCancelled = true;
+        if (this._cancelAction) {
+            this._cancelAction();
+            this._cancelAction = null;
+        }
+    }
+
+    get isCancelled() {
+        return this._isCancelled;
+    }
+
+    storeIn(set) {
+        set.add(this);
+        return this;
+    }
+}
+
+class CurrentValueSubject {
     constructor(value) {
         this._value = value;
         this._subscribers = [];
@@ -11,11 +36,17 @@ class Observable {
     }
 
     set value(newValue) {
+        this.send(newValue);
+    }
+
+    send(newValue) {
         const oldValue = this._value;
         if (oldValue === newValue) return;
         if (this._areEqual(oldValue, newValue)) return;
+        this._willChangeValue(oldValue, newValue);
         this._value = newValue;
         this._notifySubscribers(newValue, oldValue);
+        this._didChangeValue(oldValue, newValue);
     }
 
     _areEqual(a, b) {
@@ -25,6 +56,9 @@ class Observable {
         }
         return false;
     }
+
+    _willChangeValue(oldValue, newValue) {}
+    _didChangeValue(oldValue, newValue) {}
 
     _notifySubscribers(newValue, oldValue) {
         const change = {
@@ -41,9 +75,24 @@ class Observable {
             try {
                 subscriber.callback(this._value, oldValue);
             } catch (error) {
-                console.error('Observable subscriber error:', error);
+                console.error('CurrentValueSubject subscriber error:', error);
             }
         }
+    }
+
+    sink(receiveValue) {
+        const subscriber = {
+            callback: receiveValue,
+            id: null,
+            disposed: false
+        };
+        this._subscribers.push(subscriber);
+        try {
+            receiveValue(this._value, undefined);
+        } catch (error) {
+            console.error('CurrentValueSubject sink error:', error);
+        }
+        return new AnyCancellable(() => this.unsubscribe(subscriber));
     }
 
     subscribe(callback, options = {}) {
@@ -58,7 +107,7 @@ class Observable {
             try {
                 callback(this._value, { type: 'initial', index: -1, oldValue: undefined, newValue: this._value });
             } catch (error) {
-                console.error('Observable immediate notification error:', error);
+                console.error('CurrentValueSubject immediate notification error:', error);
             }
         }
         return () => this.unsubscribe(subscriber);
@@ -83,7 +132,7 @@ class Observable {
     }
 
     map(transform) {
-        const mapped = new Observable(transform(this._value));
+        const mapped = new CurrentValueSubject(transform(this._value));
         this.subscribe((newValue) => {
             mapped.value = transform(newValue);
         });
@@ -91,7 +140,7 @@ class Observable {
     }
 
     filter(predicate) {
-        const filtered = new Observable(this._value);
+        const filtered = new CurrentValueSubject(this._value);
         this.subscribe((newValue) => {
             if (predicate(newValue)) {
                 filtered.value = newValue;
@@ -101,7 +150,7 @@ class Observable {
     }
 
     debounce(delay) {
-        const debounced = new Observable(this._value);
+        const debounced = new CurrentValueSubject(this._value);
         let timeoutId = null;
         this.subscribe((newValue) => {
             if (timeoutId) clearTimeout(timeoutId);
@@ -113,7 +162,7 @@ class Observable {
     }
 
     throttle(delay) {
-        const throttled = new Observable(this._value);
+        const throttled = new CurrentValueSubject(this._value);
         let lastUpdate = 0;
         this.subscribe((newValue) => {
             const now = Date.now();
@@ -209,11 +258,11 @@ class Binding {
 }
 
 function observable(initialValue) {
-    return new Observable(initialValue);
+    return new CurrentValueSubject(initialValue);
 }
 
 function computed(computeFn, initialValue) {
-    const computed = new Observable(initialValue);
+    const computed = new CurrentValueSubject(initialValue);
     const sources = [];
     let compute = () => {
         try {
@@ -240,13 +289,14 @@ class ObservableObject {
     constructor() {
         this._observables = {};
         this._bindings = [];
+        this._kvoObservers = {};
         this._objectId = ObservableObject._nextObjectId++;
     }
 
     static _nextObjectId = 0;
 
     _createObservable(propertyName, initialValue) {
-        const obs = new Observable(initialValue);
+        const obs = new CurrentValueSubject(initialValue);
         this._observables[propertyName] = obs;
         return obs;
     }
@@ -275,6 +325,57 @@ class ObservableObject {
     $get(propertyName) {
         const obs = this._observables[propertyName];
         return obs ? obs.value : undefined;
+    }
+
+    observe(forKeyPath, handler) {
+        if (!this._kvoObservers[forKeyPath]) {
+            this._kvoObservers[forKeyPath] = [];
+        }
+        const observer = {
+            keyPath: forKeyPath,
+            handler,
+            cancelled: false
+        };
+        this._kvoObservers[forKeyPath].push(observer);
+
+        if (this._observables[forKeyPath]) {
+            try {
+                handler(this, { kind: 'set', newValue: this._observables[forKeyPath].value, oldValue: undefined });
+            } catch (e) {}
+        }
+
+        return new AnyCancellable(() => {
+            observer.cancelled = true;
+            const list = this._kvoObservers[forKeyPath];
+            if (list) {
+                const idx = list.indexOf(observer);
+                if (idx !== -1) list.splice(idx, 1);
+            }
+        });
+    }
+
+    willChangeValue(forKey) {
+        const observers = this._kvoObservers[forKey];
+        if (observers) {
+            const oldValue = this[forKey];
+            for (const obs of observers) {
+                if (!obs.cancelled) {
+                    try { obs.handler(this, { kind: 'setting', oldValue }); } catch (e) {}
+                }
+            }
+        }
+    }
+
+    didChangeValue(forKey) {
+        const observers = this._kvoObservers[forKey];
+        if (observers) {
+            const newValue = this[forKey];
+            for (const obs of observers) {
+                if (!obs.cancelled) {
+                    try { obs.handler(this, { kind: 'set', newValue }); } catch (e) {}
+                }
+            }
+        }
     }
 
     $bind(sourceProperty, targetObject, targetProperty, options = {}) {
@@ -308,5 +409,7 @@ class ObservableObject {
     }
 }
 
-export { Observable, Binding, observable, computed, ObservableObject };
-export default Observable;
+const Observable = CurrentValueSubject;
+
+export { CurrentValueSubject, AnyCancellable, Observable, Binding, observable, computed, ObservableObject };
+export default CurrentValueSubject;

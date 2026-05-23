@@ -38,7 +38,7 @@ describe('NSLayoutConstraint & NSISEngine', () => {
                 { variable: 'x', coefficient: 1 },
                 { variable: 'min', coefficient: -1 },
             ],
-            _relation: 'gte',
+            _relation: 'greaterThanOrEqual',
             _constant: 0,
             _priority: 1000,
         });

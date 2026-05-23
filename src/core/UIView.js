@@ -1,7 +1,7 @@
 import UIResponder from './UIResponder.js';
 import { CALayer, CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup } from './CALayer.js';
 import { ViewLayerBridge } from './bridge/index.js';
-import { Observable, Binding } from './Observable.js';
+import { CurrentValueSubject, Binding } from './Observable.js';
 import { NSLayoutAnchor } from './NSLayoutConstraint.js';
 
 class UIView extends UIResponder {
@@ -58,6 +58,15 @@ class UIView extends UIResponder {
         this._contentCompressionResistancePriority = { horizontal: 750, vertical: 750 };
         this._anchorCache = {};
         this._needsUpdateConstraints = false;
+
+        this._shadow = null;
+        this._padding = null;
+        this._margin = null;
+        this._minHeight = null;
+        this._maxWidth = null;
+        this._maxHeight = null;
+        this._overflow = null;
+        this._flex = null;
     }
 
     static layer() {
@@ -69,6 +78,7 @@ class UIView extends UIResponder {
         this._frame = { ...value };
         this._bounds = { x: 0, y: 0, width: value.width, height: value.height };
         this._center = { x: value.x + value.width / 2, y: value.y + value.height / 2 };
+        this._applyFrameToElement();
         this._syncFrameToLayer();
         this.setNeedsLayout();
     }
@@ -82,6 +92,7 @@ class UIView extends UIResponder {
             width: value.width,
             height: value.height
         };
+        this._applyFrameToElement();
         this._syncFrameToLayer();
         this.setNeedsLayout();
     }
@@ -95,6 +106,7 @@ class UIView extends UIResponder {
             width: this._bounds.width,
             height: this._bounds.height
         };
+        this._applyFrameToElement();
         this._syncFrameToLayer();
         this.setNeedsLayout();
     }
@@ -109,13 +121,45 @@ class UIView extends UIResponder {
     set isHidden(value) { this._isHidden = value; this._layer.isHidden = value; }
 
     get clipsToBounds() { return this._clipsToBounds; }
-    set clipsToBounds(value) { this._clipsToBounds = value; this._layer.masksToBounds = value; }
+    set clipsToBounds(value) { this._clipsToBounds = value; this._layer.masksToBounds = value; this._applyVisualProperties(); }
 
     get backgroundColor() { return this._backgroundColor; }
-    set backgroundColor(value) { this._backgroundColor = value; this._layer.backgroundColor = value; }
+    set backgroundColor(value) { this._backgroundColor = value; this._layer.backgroundColor = value; this._applyVisualProperties(); }
 
     get tag() { return this._tag; }
     set tag(value) { this._tag = value; }
+
+    get cornerRadius() { return this._cornerRadius || (this._layer ? this._layer.cornerRadius : 0); }
+    set cornerRadius(value) { this._cornerRadius = value; if (this._layer) this._layer.cornerRadius = value; this._applyVisualProperties(); }
+
+    get shadow() { return this._shadow; }
+    set shadow(value) { this._shadow = value; this._applyVisualProperties(); }
+
+    get padding() { return this._padding; }
+    set padding(value) { this._padding = value; this._applyVisualProperties(); }
+
+    get margin() { return this._margin; }
+    set margin(value) { this._margin = value; this._applyVisualProperties(); }
+
+    get minHeight() { return this._minHeight; }
+    set minHeight(value) { this._minHeight = value; this._applyVisualProperties(); }
+
+    get maxWidth() { return this._maxWidth; }
+    set maxWidth(value) { this._maxWidth = value; this._applyVisualProperties(); }
+
+    get maxHeight() { return this._maxHeight; }
+    set maxHeight(value) { this._maxHeight = value; this._applyVisualProperties(); }
+
+    get overflow() { return this._overflow; }
+    set overflow(value) { this._overflow = value; this._applyVisualProperties(); }
+
+    get flex() { return this._flex; }
+    set flex(value) { this._flex = value; this._applyVisualProperties(); }
+
+    setContentHuggingPriority(priority, axis) {
+        if (axis === 'horizontal') this._contentHuggingPriority.horizontal = priority;
+        else if (axis === 'vertical') this._contentHuggingPriority.vertical = priority;
+    }
 
     get layer() { return this._layer; }
 
@@ -143,19 +187,20 @@ class UIView extends UIResponder {
     init() {
         if (typeof document !== 'undefined' && !this._element) {
             this._element = document.createElement('div');
-            this._element.style.position = 'absolute';
-            this._element.style.left = '0px';
-            this._element.style.top = '0px';
+            this._element.style.boxSizing = 'border-box';
+            this._applyFrameToElement();
+            this._applyVisualProperties();
         }
-        return this._element;
+        return this;
     }
 
     _applyFrameToElement() {
         if (!this._element) return;
+        this._element.style.position = 'absolute';
         this._element.style.left = `${this._frame.x}px`;
         this._element.style.top = `${this._frame.y}px`;
-        this._element.style.width = `${this._frame.width}px`;
-        this._element.style.height = `${this._frame.height}px`;
+        if (this._frame.width > 0) this._element.style.width = `${this._frame.width}px`;
+        if (this._frame.height > 0) this._element.style.height = `${this._frame.height}px`;
     }
 
     _applyVisualProperties() {
@@ -165,27 +210,69 @@ class UIView extends UIResponder {
         }
         if (this._alpha !== 1) this._element.style.opacity = String(this._alpha);
         if (this._isHidden) this._element.style.display = 'none';
-        if (this._cornerRadius) this._element.style.borderRadius = `${this._cornerRadius}px`;
+        this._element.style.overflow = this._clipsToBounds ? 'hidden' : '';
+        const cr = this._cornerRadius || (this._layer ? this._layer.cornerRadius : 0);
+        if (cr) this._element.style.borderRadius = `${cr}px`;
+        if (this._layer) {
+            if (this._layer.borderWidth > 0) {
+                this._element.style.borderWidth = `${this._layer.borderWidth}px`;
+                this._element.style.borderStyle = 'solid';
+                this._element.style.borderColor = this._layer.borderColor
+                    ? (this._layer.borderColor.toRGBAString ? this._layer.borderColor.toRGBAString() : String(this._layer.borderColor))
+                    : 'transparent';
+            }
+        }
+        if (this._shadow) {
+            const s = this._shadow;
+            this._element.style.boxShadow = `${s.offsetX || 0}px ${s.offsetY || 0}px ${s.radius || 0}px ${s.color || 'rgba(0,0,0,0)'}`;
+        }
+        if (this._padding) {
+            const p = this._padding;
+            this._element.style.padding = typeof p === 'number' ? `${p}px` : `${p.top || 0}px ${p.right || 0}px ${p.bottom || 0}px ${p.left || 0}px`;
+        }
+        if (this._margin) {
+            const m = this._margin;
+            if (typeof m === 'object') {
+                const top = m.top || 0;
+                const right = m.right != null ? m.right : 0;
+                const bottom = m.bottom || 0;
+                const left = m.left != null ? m.left : 0;
+                this._element.style.margin = `${typeof top === 'string' ? top : top + 'px'} ${typeof right === 'string' ? right : right + 'px'} ${typeof bottom === 'string' ? bottom : bottom + 'px'} ${typeof left === 'string' ? left : left + 'px'}`;
+            } else {
+                this._element.style.margin = `${m}px`;
+            }
+        }
+        if (this._minHeight) this._element.style.minHeight = typeof this._minHeight === 'string' ? this._minHeight : `${this._minHeight}px`;
+        if (this._maxWidth) this._element.style.maxWidth = typeof this._maxWidth === 'string' ? this._maxWidth : `${this._maxWidth}px`;
+        if (this._maxHeight) this._element.style.maxHeight = typeof this._maxHeight === 'string' ? this._maxHeight : `${this._maxHeight}px`;
+        if (this._overflow) this._element.style.overflow = this._overflow;
+        if (this._flex) this._element.style.flex = this._flex;
     }
 
     get element() { return this._element; }
 
+    scrollToBottom() {
+        if (this._element) {
+            this._element.scrollTop = this._element.scrollHeight;
+        }
+    }
+
     $observe(propertyName, callback, options = {}) {
         if (!this._observables[propertyName]) {
-            this._observables[propertyName] = new Observable(this[propertyName]);
+            this._observables[propertyName] = new CurrentValueSubject(this[propertyName]);
         }
         return this._observables[propertyName].subscribe(callback, options);
     }
 
     $bind(propertyName, target, targetProperty, options = {}) {
         if (!this._observables[propertyName]) {
-            this._observables[propertyName] = new Observable(this[propertyName]);
+            this._observables[propertyName] = new CurrentValueSubject(this[propertyName]);
         }
         if (!target._observables) {
             target._observables = {};
         }
         if (!target._observables[targetProperty]) {
-            target._observables[targetProperty] = new Observable(target[targetProperty]);
+            target._observables[targetProperty] = new CurrentValueSubject(target[targetProperty]);
         }
         const binding = this._observables[propertyName].bindTo(target._observables[targetProperty], options);
         this._bindings.push(binding);
@@ -218,12 +305,29 @@ class UIView extends UIResponder {
         if (this._layer && this._transform) {
             this._layer.transform = this._transform;
         }
+        if (this._element && this._transform) {
+            if (typeof this._transform === 'string') {
+                this._element.style.transform = this._transform;
+            } else if (this._transform.scale) {
+                this._element.style.transform = `scale(${this._transform.scale})`;
+            } else if (this._transform.rotation) {
+                this._element.style.transform = `rotate(${this._transform.rotation}rad)`;
+            } else if (this._transform.translateX || this._transform.translateY) {
+                this._element.style.transform = `translate(${this._transform.translateX || 0}px, ${this._transform.translateY || 0}px)`;
+            }
+        }
     }
 
     setNeedsLayout() {
         if (this._isLayoutSubviewsScheduled) return;
         this._isLayoutSubviewsScheduled = true;
         this._needsLayout = true;
+        if (!UIView._pendingRoots) UIView._pendingRoots = [];
+        let root = this;
+        while (root._superview) root = root._superview;
+        if (!UIView._pendingRoots.includes(root)) {
+            UIView._pendingRoots.push(root);
+        }
         UIView._scheduleLayoutPass();
     }
 
@@ -231,6 +335,7 @@ class UIView extends UIResponder {
         this._needsLayout = false;
         this.updateConstraints();
         if (this._layoutEngine && this._layoutEngine.isStale()) {
+            this._syncOwnFrameToEngine();
             this._layoutEngine.solve();
             this._applyEngineResults();
         }
@@ -242,16 +347,115 @@ class UIView extends UIResponder {
         }
     }
 
+    _syncOwnFrameToEngine() {
+        if (!this._layoutEngine) return;
+        const vars = this._layoutEngine._variables;
+        const engine = this._layoutEngine;
+
+        const syncSelf = (view) => {
+            const guid = view._layoutGuid;
+            if (!guid) return;
+            let f = view._frame;
+            if (view._element && view._element.getBoundingClientRect) {
+                const rect = view._element.getBoundingClientRect();
+                if (rect.width > 0) {
+                    f = { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
+                }
+            }
+            const pairs = {
+                left: f.x, leading: f.x, top: f.y,
+                width: f.width, height: f.height,
+                right: f.x + f.width, trailing: f.x + f.width,
+                bottom: f.y + f.height,
+                centerX: f.x + f.width / 2, centerY: f.y + f.height / 2,
+            };
+            for (const [attr, val] of Object.entries(pairs)) {
+                const key = `${guid}.${attr}`;
+                if (vars.has(key)) {
+                    engine.suggestVariable(key, val);
+                }
+            }
+        };
+
+        const syncSubview = (view) => {
+            const guid = view._layoutGuid;
+            if (!guid) return;
+            let f = view._frame;
+            if (view._element && view._element.getBoundingClientRect) {
+                const rect = view._element.getBoundingClientRect();
+                if (rect.width > 0) {
+                    f = { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
+                }
+            }
+            const pairs = {
+                left: f.x, leading: f.x, top: f.y,
+                width: f.width, height: f.height,
+                right: f.x + f.width, trailing: f.x + f.width,
+                bottom: f.y + f.height,
+                centerX: f.x + f.width / 2, centerY: f.y + f.height / 2,
+            };
+            for (const [attr, val] of Object.entries(pairs)) {
+                const key = `${guid}.${attr}`;
+                if (vars.has(key)) {
+                    engine.setVariable(key, val);
+                }
+            }
+        };
+
+        syncSelf(this);
+        for (const subview of this._subviews) {
+            syncSubview(subview);
+        }
+    }
+
     _applyEngineResults() {
         if (!this._layoutEngine) return;
         const vars = this._layoutEngine._variables;
         for (const subview of this._subviews) {
             if (subview._layoutGuid) {
-                const x = vars.get(`${subview._layoutGuid}.left`) ?? subview._frame.x;
-                const y = vars.get(`${subview._layoutGuid}.top`) ?? subview._frame.y;
-                const w = vars.get(`${subview._layoutGuid}.width`) ?? subview._frame.width;
-                const h = vars.get(`${subview._layoutGuid}.height`) ?? subview._frame.height;
-                subview.frame = { x, y, width: w, height: h };
+                const guid = subview._layoutGuid;
+                const left = vars.get(`${guid}.left`) ?? vars.get(`${guid}.leading`);
+                const right = vars.get(`${guid}.right`) ?? vars.get(`${guid}.trailing`);
+                const top = vars.get(`${guid}.top`);
+                const bottom = vars.get(`${guid}.bottom`);
+                const w = vars.get(`${guid}.width`);
+                const h = vars.get(`${guid}.height`);
+                const cx = vars.get(`${guid}.centerX`);
+                const cy = vars.get(`${guid}.centerY`);
+
+                let x, width;
+                if (left !== undefined && right !== undefined) {
+                    x = left;
+                    width = right - left;
+                } else if (cx !== undefined) {
+                    width = w ?? subview._frame.width;
+                    x = cx - width / 2;
+                } else if (right !== undefined) {
+                    width = w ?? subview._frame.width;
+                    x = right - width;
+                } else {
+                    x = left ?? subview._frame.x;
+                    width = w ?? subview._frame.width;
+                }
+
+                let y, height;
+                if (top !== undefined && bottom !== undefined) {
+                    y = top;
+                    height = bottom - top;
+                } else if (cy !== undefined) {
+                    height = h ?? subview._frame.height;
+                    y = cy - height / 2;
+                } else if (bottom !== undefined) {
+                    height = h ?? subview._frame.height;
+                    y = bottom - height;
+                } else {
+                    y = top ?? subview._frame.y;
+                    height = h ?? subview._frame.height;
+                }
+
+                if (width < 0) width = 0;
+                if (height < 0) height = 0;
+                subview.frame = { x, y, width, height };
             }
         }
     }
@@ -259,7 +463,10 @@ class UIView extends UIResponder {
     static _scheduleLayoutPass() {
         if (UIView._layoutPassScheduled) return;
         UIView._layoutPassScheduled = true;
-        Promise.resolve().then(() => {
+        const schedule = typeof requestAnimationFrame === 'function'
+            ? requestAnimationFrame
+            : (cb) => Promise.resolve().then(cb);
+        schedule(() => {
             UIView._layoutPassScheduled = false;
             UIView._runLayoutPass();
         });
@@ -345,9 +552,8 @@ class UIView extends UIResponder {
     _syncSubviewLayer(view) {
         if (typeof document !== 'undefined' && !view._element) {
             view._element = document.createElement('div');
-            view._element.style.position = 'absolute';
-            view._element.style.left = '0px';
-            view._element.style.top = '0px';
+            view._element.style.boxSizing = 'border-box';
+            view._applyFrameToElement();
         }
         if (view._element && this._element && typeof document !== 'undefined') {
             if (view._element.parentElement !== this._element) {

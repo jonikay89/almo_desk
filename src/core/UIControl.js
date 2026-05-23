@@ -36,7 +36,7 @@ class UIControl extends UIView {
     }
 
     sendActionsForControlEvents(event) {
-        if (this._target && this._action) {
+        if (this._action) {
             this._action.call(this._target, this);
         }
     }

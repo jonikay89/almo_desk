@@ -33,8 +33,11 @@ class NSISEngine {
     }
 
     addConstraint(constraint) {
-        for (const term of constraint._terms) {
-            this.registerVariable(term.variable);
+        // BUG FIX: Check if _terms exists before iterating
+        if (constraint._terms) {
+            for (const term of constraint._terms) {
+                this.registerVariable(term.variable);
+            }
         }
         this._constraints.push(constraint);
         this._stale = true;
@@ -74,73 +77,68 @@ class NSISEngine {
             .sort((a, b) => b._priority - a._priority);
 
         const solution = new Map(this._variables);
-        this._applyConstraints(requiredConstraints, solution, true);
-        optionalConstraints.forEach(constraint => {
-            this._tryApplyConstraint(constraint, solution);
-        });
+
+        for (let iter = 0; iter < 10; iter++) {
+            let changed = false;
+            for (const c of requiredConstraints) {
+                if (this._applyConstraintToSolution(c, solution)) changed = true;
+            }
+            if (!changed) break;
+        }
+
+        for (const c of optionalConstraints) {
+            this._applyConstraintToSolution(c, solution);
+        }
+
+        for (let iter = 0; iter < 10; iter++) {
+            let changed = false;
+            for (const c of requiredConstraints) {
+                if (this._applyConstraintToSolution(c, solution)) changed = true;
+            }
+            if (!changed) break;
+        }
 
         for (const [name, value] of solution) {
             this._variables.set(name, value);
         }
     }
 
-    _applyConstraints(constraints, solution, required) {
-        for (const constraint of constraints) {
-            this._applySingleConstraint(constraint, solution, required);
-        }
-    }
-
-    _applySingleConstraint(constraint, solution, required) {
-        const { _terms: terms, _relation: relation, _constant: constant } = constraint;
-        if (!terms || terms.length === 0) return;
+    _applyConstraintToSolution(constraint, solution) {
+        const { _terms: terms, _relation: relation, _constant: constant, _priority: priority } = constraint;
+        if (!terms || terms.length === 0) return false;
 
         const values = terms.map(t => ({
             name: t.variable,
             coeff: t.coefficient,
-            value: solution.get(t.variable) ?? 0
+            value: solution.get(t.variable) ?? 0,
+            isFixed: this._editVariables.has(t.variable)
         }));
 
-        const sum = values.reduce((acc, v) => acc + v.coeff * v.value, 0) + constant;
+        const sum = values.reduce((acc, v) => acc + v.coeff * v.value, 0) - constant;
 
         if (relation === 'equal') {
-            if (Math.abs(sum) > 0.001) {
-                const freeVar = values.find(v => !this._editVariables.has(v.name));
-                if (freeVar) {
-                    const newVal = freeVar.value - sum / freeVar.coeff;
-                    solution.set(freeVar.name, newVal);
-                } else if (required) {
-                    const avg = sum / values.length;
-                    values.forEach(v => solution.set(v.name, v.value - avg / v.coeff));
-                }
-            }
-        } else if (relation === 'gte') {
-            if (sum < -0.001) {
-                const freeVar = values.find(v => !this._editVariables.has(v.name));
-                if (freeVar) {
-                    solution.set(freeVar.name, freeVar.value + (-sum) / freeVar.coeff);
-                }
-            }
-        } else if (relation === 'lte') {
-            if (sum > 0.001) {
-                const freeVar = values.find(v => !this._editVariables.has(v.name));
-                if (freeVar) {
-                    solution.set(freeVar.name, freeVar.value - sum / freeVar.coeff);
-                }
-            }
+            if (Math.abs(sum) < 0.001) return false;
+            const freeVar = values.find(v => !v.isFixed);
+            if (!freeVar) return false;
+            const newVal = freeVar.value - sum / freeVar.coeff;
+            solution.set(freeVar.name, newVal);
+            return true;
+        } else if (relation === 'lessThanOrEqual') {
+            if (sum <= 0.001) return false;
+            const freeVar = values.find(v => !v.isFixed);
+            if (!freeVar) return false;
+            const newVal = freeVar.value - sum / freeVar.coeff;
+            solution.set(freeVar.name, Math.min(newVal, freeVar.value));
+            return true;
+        } else if (relation === 'greaterThanOrEqual') {
+            if (sum >= -0.001) return false;
+            const freeVar = values.find(v => !v.isFixed);
+            if (!freeVar) return false;
+            const newVal = freeVar.value - sum / freeVar.coeff;
+            solution.set(freeVar.name, Math.max(newVal, freeVar.value));
+            return true;
         }
-    }
-
-    _tryApplyConstraint(constraint, solution) {
-        const { _terms: terms, _relation: relation, _constant: constant } = constraint;
-        if (!terms || terms.length === 0) return;
-
-        const sum = terms.reduce((acc, t) => acc + t.coefficient * (solution.get(t.variable) ?? 0), 0) + constant;
-
-        if (relation === 'equal' && Math.abs(sum) < 0.001) return;
-        if (relation === 'gte' && sum >= -0.001) return;
-        if (relation === 'lte' && sum <= 0.001) return;
-
-        this._applySingleConstraint(constraint, solution, false);
+        return false;
     }
 
     suggestVariable(name, value) {
@@ -183,8 +181,8 @@ const NSLayoutAttribute = {
 
 const NSLayoutRelation = {
     equal: 'equal',
-    greaterThanOrEqual: 'gte',
-    lessThanOrEqual: 'lte',
+    greaterThanOrEqual: 'greaterThanOrEqual',
+    lessThanOrEqual: 'lessThanOrEqual',
 };
 
 class NSLayoutConstraint {
@@ -199,6 +197,7 @@ class NSLayoutConstraint {
         this._priority = UILayoutPriority.required;
         this._isActive = false;
         this._identifier = '';
+        this._engine = null;
         this._terms = this._buildTerms();
     }
 
@@ -216,8 +215,11 @@ class NSLayoutConstraint {
     }
 
     _variableName(item, attribute) {
-        const uid = item._layoutGuid || (item._layoutGuid = NSLayoutConstraint._nextGuid++);
-        return `${uid}.${attribute}`;
+        // BUG FIX: Check if item has _layoutGuid property
+        if (!item._layoutGuid) {
+            item._layoutGuid = NSLayoutConstraint._nextGuid++;
+        }
+        return `${item._layoutGuid}.${attribute}`;
     }
 
     get firstItem() { return this._firstItem; }
@@ -231,7 +233,6 @@ class NSLayoutConstraint {
     set constant(value) {
         if (this._constant !== value) {
             this._constant = value;
-            this._terms = this._buildTerms();
             if (this._isActive && this._engine) {
                 this._engine.updateConstraintConstant(this, value);
                 this._notifyViews();
@@ -242,14 +243,14 @@ class NSLayoutConstraint {
     get priority() { return this._priority; }
     set priority(value) {
         if (value > UILayoutPriority.required) value = UILayoutPriority.required;
-        if (this._isActive && this._priority !== value) {
-            this._priority = value;
-            if (this._engine) {
-                this._engine.markStale();
-                this._notifyViews();
-            }
-        }
+        const oldValue = this._priority;
         this._priority = value;
+        if (this._isActive && this._engine && oldValue !== value) {
+            // BUG FIX: Need to re-add constraint with new priority
+            this._engine.removeConstraint(this);
+            this._engine.addConstraint(this);
+            this._notifyViews();
+        }
     }
 
     get isActive() { return this._isActive; }
@@ -262,6 +263,7 @@ class NSLayoutConstraint {
         this._terms = this._buildTerms();
         const engine = this._getEngine();
         if (engine) {
+            this._engine = engine;
             engine.addConstraint(this);
             this._notifyViews();
         }
@@ -278,23 +280,29 @@ class NSLayoutConstraint {
     }
 
     _getEngine() {
-        const view = this._firstItem || this._secondItem;
-        if (view) {
-            const root = this._findRootView(view);
-            if (root) {
-                if (!root._layoutEngine) {
-                    root._layoutEngine = new NSISEngine();
-                }
-                this._engine = root._layoutEngine;
-                return this._engine;
+        // BUG FIX: Find first valid item that has _superview chain
+        let view = this._firstItem || this._secondItem;
+        if (!view) return null;
+        
+        let root = view;
+        let maxDepth = 100; // Prevent infinite loop
+        while (root._superview && maxDepth-- > 0) {
+            root = root._superview;
+        }
+        
+        if (root) {
+            if (!root._layoutEngine) {
+                root._layoutEngine = new NSISEngine();
             }
+            return root._layoutEngine;
         }
         return null;
     }
 
     _findRootView(view) {
         let current = view;
-        while (current._superview) {
+        let maxDepth = 100;
+        while (current && current._superview && maxDepth-- > 0) {
             current = current._superview;
         }
         return current;
@@ -302,12 +310,14 @@ class NSLayoutConstraint {
 
     _notifyViews() {
         const views = new Set();
-        if (this._firstItem) views.add(this._firstItem);
-        if (this._secondItem) views.add(this._secondItem);
+        if (this._firstItem && this._firstItem.setNeedsLayout) {
+            views.add(this._firstItem);
+        }
+        if (this._secondItem && this._secondItem.setNeedsLayout) {
+            views.add(this._secondItem);
+        }
         for (const view of views) {
-            if (view && view.setNeedsLayout) {
-                view.setNeedsLayout();
-            }
+            view.setNeedsLayout();
         }
     }
 
@@ -338,32 +348,18 @@ class UILayoutGuide {
     get identifier() { return this._identifier; }
     set identifier(value) { this._identifier = value; }
 
-    _attributeValue(attr) {
-        const frame = this.layoutFrame;
-        switch (attr) {
-            case NSLayoutAttribute.left:
-            case NSLayoutAttribute.leading: return frame.x;
-            case NSLayoutAttribute.right:
-            case NSLayoutAttribute.trailing: return frame.x + frame.width;
-            case NSLayoutAttribute.top: return frame.y;
-            case NSLayoutAttribute.bottom: return frame.y + frame.height;
-            case NSLayoutAttribute.width: return frame.width;
-            case NSLayoutAttribute.height: return frame.height;
-            case NSLayoutAttribute.centerX: return frame.x + frame.width / 2;
-            case NSLayoutAttribute.centerY: return frame.y + frame.height / 2;
-            default: return 0;
-        }
-    }
-
     get layoutFrame() {
         if (!this._owningView) return { x: 0, y: 0, width: 0, height: 0 };
         const owner = this._owningView;
         const safe = owner.safeAreaInsets || { top: 0, bottom: 0, left: 0, right: 0 };
+        // BUG FIX: Check if owner._bounds exists
+        const width = owner._bounds ? owner._bounds.width : 0;
+        const height = owner._bounds ? owner._bounds.height : 0;
         return {
             x: safe.left,
             y: safe.top,
-            width: owner._bounds.width - safe.left - safe.right,
-            height: owner._bounds.height - safe.top - safe.bottom,
+            width: width - safe.left - safe.right,
+            height: height - safe.top - safe.bottom,
         };
     }
 
@@ -374,16 +370,16 @@ class UILayoutGuide {
         return this._anchorCache[attr];
     }
 
-    get leadingAnchor() { return this._getAnchor('leading'); }
-    get trailingAnchor() { return this._getAnchor('trailing'); }
-    get leftAnchor() { return this._getAnchor('left'); }
-    get rightAnchor() { return this._getAnchor('right'); }
-    get topAnchor() { return this._getAnchor('top'); }
-    get bottomAnchor() { return this._getAnchor('bottom'); }
-    get widthAnchor() { return this._getAnchor('width'); }
-    get heightAnchor() { return this._getAnchor('height'); }
-    get centerXAnchor() { return this._getAnchor('centerX'); }
-    get centerYAnchor() { return this._getAnchor('centerY'); }
+    get leadingAnchor() { return this._getAnchor(NSLayoutAttribute.leading); }
+    get trailingAnchor() { return this._getAnchor(NSLayoutAttribute.trailing); }
+    get leftAnchor() { return this._getAnchor(NSLayoutAttribute.left); }
+    get rightAnchor() { return this._getAnchor(NSLayoutAttribute.right); }
+    get topAnchor() { return this._getAnchor(NSLayoutAttribute.top); }
+    get bottomAnchor() { return this._getAnchor(NSLayoutAttribute.bottom); }
+    get widthAnchor() { return this._getAnchor(NSLayoutAttribute.width); }
+    get heightAnchor() { return this._getAnchor(NSLayoutAttribute.height); }
+    get centerXAnchor() { return this._getAnchor(NSLayoutAttribute.centerX); }
+    get centerYAnchor() { return this._getAnchor(NSLayoutAttribute.centerY); }
 }
 
 class NSLayoutAnchor {
@@ -439,12 +435,6 @@ class NSLayoutAnchor {
 }
 
 export {
-    NSISEngine,
-    UILayoutPriority,
-    NSLayoutAttribute,
-    NSLayoutRelation,
-    NSLayoutConstraint,
-    UILayoutGuide,
-    NSLayoutAnchor,
+    NSISEngine, NSLayoutAnchor, NSLayoutAttribute, NSLayoutConstraint, NSLayoutRelation, UILayoutGuide, UILayoutPriority
 };
 export default NSLayoutConstraint;

@@ -107,7 +107,7 @@ export { default as UIPickerView } from './UIPickerView.js';
 export { default as UIVisualEffectView, UIVisualEffect, UIBlurEffect, UIVibrancyEffect } from './UIVisualEffectView.js';
 export { default as UIContextMenuInteraction, UIMenuElement, UIAction, UIMenu } from './UIContextMenuInteraction.js';
 export { default as UIPasteboard } from './UIPasteboard.js';
-export { Observable, Binding, observable, computed, ObservableObject } from './Observable.js';
+export { CurrentValueSubject, AnyCancellable, Observable, Binding, observable, computed, ObservableObject } from './Observable.js';
 export { ObservableArray } from './ObservableArray.js';
 export { 
     UIDragItem, 

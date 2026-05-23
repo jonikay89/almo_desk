@@ -12,6 +12,7 @@ class UITextView extends UIView {
         this._textAlignment = 'left';
         this._isAccessibilityElement = true;
         this._accessibilityTraits = 0x80;
+        this.init();
     }
 
     get text() { return this._text; }
@@ -47,7 +48,6 @@ class UITextView extends UIView {
     init() {
         if (typeof document !== 'undefined' && !this._element) {
             this._element = document.createElement('textarea');
-            this._element.style.position = 'absolute';
             this._element.style.outline = 'none';
             this._element.style.boxSizing = 'border-box';
             this._element.style.overflow = 'auto';
@@ -57,7 +57,7 @@ class UITextView extends UIView {
                 this._text = e.target.value;
             });
         }
-        return this._element;
+        return this;
     }
 }
 

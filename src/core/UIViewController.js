@@ -1,6 +1,6 @@
 import UIResponder from './UIResponder.js';
 import UIView from './UIView.js';
-import { Observable, Binding } from './Observable.js';
+import { CurrentValueSubject, Binding } from './Observable.js';
 
 class UIViewController extends UIResponder {
     constructor(nibName = null, bundle = null) {
@@ -324,20 +324,20 @@ class UIViewController extends UIResponder {
 
     $observe(propertyName, callback, options = {}) {
         if (!this._observables[propertyName]) {
-            this._observables[propertyName] = new Observable(this[propertyName]);
+            this._observables[propertyName] = new CurrentValueSubject(this[propertyName]);
         }
         return this._observables[propertyName].subscribe(callback, options);
     }
 
     $bind(propertyName, target, targetProperty, options = {}) {
         if (!this._observables[propertyName]) {
-            this._observables[propertyName] = new Observable(this[propertyName]);
+            this._observables[propertyName] = new CurrentValueSubject(this[propertyName]);
         }
         if (!target._observables) {
             target._observables = {};
         }
         if (!target._observables[targetProperty]) {
-            target._observables[targetProperty] = new Observable(target[targetProperty]);
+            target._observables[targetProperty] = new CurrentValueSubject(target[targetProperty]);
         }
         const binding = this._observables[propertyName].bindTo(target._observables[targetProperty], options);
         this._bindings.push(binding);
