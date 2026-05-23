@@ -96,7 +96,15 @@
             UITableView, UICollectionView, UINavigationBar, UITabBar,
             UIImageView, UIImage, UIAlertController, UIPickerView,
             UITableViewCell, UICollectionViewCell, UINavigationItem, UITabBarItem,
-            UICollectionViewFlowLayout
+            UICollectionViewFlowLayout,
+            UIFont, UISwipeGestureRecognizer,
+            UIToolbar, UIBarButtonItem,
+            UINavigationController, UITabBarController,
+            UISearchController,
+            UIVisualEffectView, UIBlurEffect, UIVibrancyEffect,
+            UICollectionReusableView,
+            UIContextMenuInteraction, UIMenu, UIAction,
+            UIPasteboard
         } from './src/core/index.js';
 
         class Demo {
@@ -315,6 +323,139 @@
                     </div>
 
                     <div class="section">
+                        <h2>UIFont <span class="tag foundation">Typography</span></h2>
+                        <p class="info">Swift-style font system with system, bold, italic, monospaced variants.</p>
+                        <div class="demo-area col" id="font-demo">
+                            <div id="font-samples"></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UINavigationController <span class="tag control">Navigation</span></h2>
+                        <p class="info">Stack-based push/pop navigation controller.</p>
+                        <div class="demo-area col" id="nav-controller-demo">
+                            <div style="width:280px;border:1px solid #ccc;border-radius:8px;overflow:hidden;background:white;">
+                                <div id="nav-bar-display" style="height:44px;background:#f8f8f8;border-bottom:1px solid #ccc;display:flex;align-items:center;padding:0 12px;">
+                                    <span id="nav-back" style="color:#007aff;cursor:pointer;font-size:15px;display:none;">‹ Back</span>
+                                    <span id="nav-title" style="flex:1;text-align:center;font-weight:600;font-size:17px;">Page 1</span>
+                                    <span style="width:40px;"></span>
+                                </div>
+                                <div id="nav-content" style="padding:20px;font-size:14px;color:#333;min-height:80px;text-align:center;">
+                                    Root View Controller
+                                </div>
+                            </div>
+                            <div class="demo-row" style="margin-top:10px;">
+                                <button class="btn" id="nav-push">Push</button>
+                                <button class="btn orange" id="nav-pop">Pop</button>
+                                <button class="btn red" id="nav-pop-root">Pop to Root</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UITabBarController <span class="tag control">Navigation</span></h2>
+                        <p class="info">Tab-based view controller switching.</p>
+                        <div class="demo-area col" id="tab-controller-demo">
+                            <div style="width:280px;border:1px solid #ccc;border-radius:8px;overflow:hidden;background:white;">
+                                <div id="tab-content" style="padding:20px;font-size:14px;color:#333;min-height:80px;text-align:center;">
+                                    Home Content
+                                </div>
+                                <div class="tab-bar" id="tabbar-vc-demo">
+                                    <div class="tab-item active" data-idx="0">🏠 Home</div>
+                                    <div class="tab-item" data-idx="1">🔍 Search</div>
+                                    <div class="tab-item" data-idx="2">👤 Profile</div>
+                                    <div class="tab-item" data-idx="3">⚙️ Settings</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UIToolbar + UIBarButtonItem <span class="tag control">Controls</span></h2>
+                        <p class="info">Bottom toolbar with bar button items.</p>
+                        <div class="demo-area col" id="toolbar-demo">
+                            <div style="width:280px;border:1px solid #ccc;border-radius:8px;overflow:hidden;background:white;">
+                                <div style="padding:20px;font-size:13px;color:#666;min-height:60px;text-align:center;">Content Area</div>
+                                <div id="toolbar-bar" style="height:44px;background:rgba(248,248,248,0.9);border-top:1px solid #ccc;display:flex;align-items:center;padding:0 8px;gap:4px;">
+                                    <button style="background:none;border:none;color:#007aff;font-size:15px;cursor:pointer;" id="tb-item-compose">✏️</button>
+                                    <span style="flex:1;"></span>
+                                    <button style="background:none;border:none;color:#007aff;font-size:15px;cursor:pointer;" id="tb-item-trash">🗑️</button>
+                                    <button style="background:none;border:none;color:#007aff;font-size:15px;font-weight:bold;cursor:pointer;" id="tb-item-done">Done</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UISearchController <span class="tag control">Search</span></h2>
+                        <p class="info">Integrated search with results controller.</p>
+                        <div class="demo-area col" id="search-controller-demo">
+                            <div style="width:300px;border:1px solid #ccc;border-radius:8px;overflow:hidden;background:white;">
+                                <div style="padding:8px;background:#f8f8f8;">
+                                    <div class="search-bar" style="width:100%;">
+                                        <span>🔍</span>
+                                        <input type="text" placeholder="Search items..." id="sc-search-input">
+                                        <button style="background:none;border:none;cursor:pointer;font-size:16px;color:#999;display:none;" id="sc-cancel">✕</button>
+                                    </div>
+                                </div>
+                                <div id="sc-results" style="min-height:60px;padding:8px;font-size:13px;color:#666;">
+                                    Type to search...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UIVisualEffectView <span class="tag core">Effects</span></h2>
+                        <p class="info">Blur and vibrancy effects using CSS backdrop-filter.</p>
+                        <div class="demo-area" id="effects-demo">
+                            <div style="position:relative;width:200px;height:120px;border-radius:12px;overflow:hidden;">
+                                <div style="position:absolute;inset:0;background:linear-gradient(135deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3);"></div>
+                                <div style="position:absolute;inset:0;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-weight:600;color:#333;">UIBlurEffect</div>
+                            </div>
+                            <div style="position:relative;width:200px;height:120px;border-radius:12px;overflow:hidden;">
+                                <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0abde3,#10ac84,#ee5a24,#5f27cd);"></div>
+                                <div style="position:absolute;inset:0;backdrop-filter:blur(30px) brightness(0.85);-webkit-backdrop-filter:blur(30px) brightness(0.85);background:rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;">Dark Blur</div>
+                            </div>
+                            <div style="position:relative;width:200px;height:120px;border-radius:12px;overflow:hidden;">
+                                <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23667eea%22 width=%22200%22 height=%22200%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23764ba2%22/><circle cx=%22150%22 cy=%22100%22 r=%2260%22 fill=%22%23f093fb%22/></svg>') center/cover;"></div>
+                                <div style="position:absolute;inset:0;backdrop-filter:blur(0.5px) saturate(1.5);-webkit-backdrop-filter:blur(0.5px) saturate(1.5);background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;">UIVibrancyEffect</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UIContextMenuInteraction <span class="tag core">Interaction</span></h2>
+                        <p class="info">Right-click (or long-press) for context menu.</p>
+                        <div class="demo-area" id="context-menu-demo">
+                            <div id="context-target" style="width:200px;height:80px;background:#5856d6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;cursor:context-menu;">Right-click me</div>
+                            <div id="context-menu" style="display:none;position:fixed;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);padding:6px 0;min-width:180px;z-index:9999;font-size:14px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UIPasteboard <span class="tag foundation">Clipboard</span></h2>
+                        <p class="info">System clipboard via general pasteboard singleton.</p>
+                        <div class="demo-area col" id="pasteboard-demo">
+                            <div class="demo-row">
+                                <input type="text" id="pb-input" placeholder="Type text to copy..." style="width:200px;">
+                                <button class="btn" id="pb-copy">Copy</button>
+                                <button class="btn green" id="pb-paste">Paste</button>
+                            </div>
+                            <div id="pb-result" style="font-size:13px;color:#333;min-height:20px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>UISwipeGestureRecognizer <span class="tag core">Gestures</span></h2>
+                        <p class="info">Swipe detection for up, down, left, right directions.</p>
+                        <div class="demo-area col" id="swipe-demo">
+                            <div id="swipe-area" style="width:200px;height:120px;background:#f0f0f0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;border:2px dashed #ccc;user-select:none;">Swipe inside here</div>
+                            <div id="swipe-indicator" style="font-size:24px;opacity:0;transition:opacity 0.3s;">👆</div>
+                        </div>
+                    </div>
+
+                    <div class="section">
                         <h2>Events Log</h2>
                         <div class="log" id="log"></div>
                         <button class="btn" style="margin-top:10px;background:#8e8e93;" id="clear-log">Clear</button>
@@ -421,6 +562,14 @@
                 this.log('UIKit Demo initialized', 'info');
                 this.runLayerDemo();
                 this.runGestureDemo();
+                this.runFontDemo();
+                this.runNavControllerDemo();
+                this.runTabBarControllerDemo();
+                this.runToolbarDemo();
+                this.runSearchControllerDemo();
+                this.runContextMenuDemo();
+                this.runPasteboardDemo();
+                this.runSwipeDemo();
             }
 
             runLayerDemo() {
@@ -474,6 +623,240 @@
                     if (el) el.style.transform = '';
                 });
                 this.log('Gestures reset', 'warn');
+            }
+
+            runFontDemo() {
+                const fonts = [
+                    { label: 'System 17', font: UIFont.systemFont(17) },
+                    { label: 'Bold 20', font: UIFont.boldSystemFont(20) },
+                    { label: 'Italic 16', font: UIFont.italicSystemFont(16) },
+                    { label: 'Mono 14', font: UIFont.monospacedSystemFont(14) },
+                    { label: 'Georgia 18', font: UIFont.fontWithName('Georgia', 18) },
+                ];
+                const container = document.getElementById('font-samples');
+                if (!container) return;
+                container.innerHTML = fonts.map(({ label, font }) =>
+                    `<div style="font:${font.toCSS()};padding:8px 0;border-bottom:1px solid #eee;">${label} — ${font.description}</div>`
+                ).join('');
+                this.log('UIFont: 5 font variants rendered', 'info');
+            }
+
+            runNavControllerDemo() {
+                const pages = ['Root View Controller', 'Second Page', 'Third Page', 'Fourth Page'];
+                let pageIdx = 0;
+
+                const updateNav = () => {
+                    document.getElementById('nav-title').textContent = `Page ${pageIdx + 1}`;
+                    document.getElementById('nav-content').textContent = pages[pageIdx];
+                    document.getElementById('nav-back').style.display = pageIdx > 0 ? 'inline' : 'none';
+                };
+
+                document.getElementById('nav-push').onclick = () => {
+                    if (pageIdx < pages.length - 1) {
+                        pageIdx++;
+                        updateNav();
+                        this.log(`UINavigationController: Pushed Page ${pageIdx + 1}`);
+                    } else {
+                        this.log('UINavigationController: No more pages to push', 'warn');
+                    }
+                };
+
+                document.getElementById('nav-pop').onclick = () => {
+                    if (pageIdx > 0) {
+                        pageIdx--;
+                        updateNav();
+                        this.log(`UINavigationController: Popped to Page ${pageIdx + 1}`);
+                    } else {
+                        this.log('UINavigationController: Already at root', 'warn');
+                    }
+                };
+
+                document.getElementById('nav-pop-root').onclick = () => {
+                    pageIdx = 0;
+                    updateNav();
+                    this.log('UINavigationController: Popped to root');
+                };
+
+                document.getElementById('nav-back').onclick = () => {
+                    if (pageIdx > 0) {
+                        pageIdx--;
+                        updateNav();
+                        this.log(`UINavigationController: Back to Page ${pageIdx + 1}`);
+                    }
+                };
+
+                this.log('UINavigationController: Ready', 'info');
+            }
+
+            runTabBarControllerDemo() {
+                const contents = ['Home Content', 'Search Content', 'Profile Content', 'Settings Content'];
+                const tabs = document.querySelectorAll('#tabbar-vc-demo .tab-item');
+                tabs.forEach(tab => {
+                    tab.onclick = () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        const idx = parseInt(tab.dataset.idx);
+                        document.getElementById('tab-content').textContent = contents[idx];
+                        this.log(`UITabBarController: Selected tab ${idx + 1} — ${contents[idx]}`);
+                    };
+                });
+                this.log('UITabBarController: Ready', 'info');
+            }
+
+            runToolbarDemo() {
+                document.getElementById('tb-item-compose').onclick = () => {
+                    this.log('UIToolbar: Compose tapped');
+                };
+                document.getElementById('tb-item-trash').onclick = () => {
+                    this.log('UIToolbar: Trash tapped');
+                };
+                document.getElementById('tb-item-done').onclick = () => {
+                    this.log('UIToolbar: Done tapped');
+                };
+                this.log('UIToolbar + UIBarButtonItem: Ready', 'info');
+            }
+
+            runSearchControllerDemo() {
+                const items = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape', 'Honeydew'];
+                const input = document.getElementById('sc-search-input');
+                const cancelBtn = document.getElementById('sc-cancel');
+                const results = document.getElementById('sc-results');
+
+                input.oninput = () => {
+                    const query = input.value.toLowerCase();
+                    cancelBtn.style.display = query ? 'inline' : 'none';
+                    if (!query) {
+                        results.innerHTML = 'Type to search...';
+                        return;
+                    }
+                    const filtered = items.filter(i => i.toLowerCase().includes(query));
+                    results.innerHTML = filtered.length
+                        ? filtered.map(i => `<div style="padding:6px 8px;border-bottom:1px solid #eee;cursor:pointer;" data-item="${i}">${i}</div>`).join('')
+                        : '<div style="padding:8px;color:#999;">No results</div>';
+                    results.querySelectorAll('[data-item]').forEach(el => {
+                        el.onclick = () => this.log(`UISearchController: Selected "${el.dataset.item}"`);
+                    });
+                    this.log(`UISearchController: "${input.value}" → ${filtered.length} results`, 'info');
+                };
+
+                cancelBtn.onclick = () => {
+                    input.value = '';
+                    cancelBtn.style.display = 'none';
+                    results.innerHTML = 'Type to search...';
+                    this.log('UISearchController: Cancelled');
+                };
+                this.log('UISearchController: Ready', 'info');
+            }
+
+            runContextMenuDemo() {
+                const target = document.getElementById('context-target');
+                const menu = document.getElementById('context-menu');
+
+                const actions = [
+                    { title: 'Copy', emoji: '📋', handler: () => this.log('Context: Copy') },
+                    { title: 'Paste', emoji: '📎', handler: () => this.log('Context: Paste') },
+                    { title: 'Share...', emoji: '🔗', handler: () => this.log('Context: Share') },
+                    { title: 'Delete', emoji: '🗑️', handler: () => this.log('Context: Delete') },
+                ];
+
+                target.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    menu.innerHTML = actions.map((a, i) =>
+                        `<div style="padding:8px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;" data-idx="${i}">${a.emoji} ${a.title}</div>`
+                    ).join('');
+                    menu.style.left = `${e.clientX}px`;
+                    menu.style.top = `${e.clientY}px`;
+                    menu.style.display = 'block';
+                    menu.querySelectorAll('[data-idx]').forEach(el => {
+                        el.onmouseenter = () => el.style.background = '#f0f0f0';
+                        el.onmouseleave = () => el.style.background = '';
+                        el.onclick = () => {
+                            actions[el.dataset.idx].handler();
+                            menu.style.display = 'none';
+                        };
+                    });
+                    this.log('UIContextMenuInteraction: Menu presented', 'info');
+                };
+
+                document.addEventListener('click', () => { menu.style.display = 'none'; });
+                this.log('UIContextMenuInteraction: Ready', 'info');
+            }
+
+            runPasteboardDemo() {
+                document.getElementById('pb-copy').onclick = () => {
+                    const text = document.getElementById('pb-input').value;
+                    if (!text) return;
+                    UIPasteboard.general.string = text;
+                    document.getElementById('pb-result').textContent = `Copied: "${text}"`;
+                    this.log(`UIPasteboard: Copied "${text}"`);
+                };
+
+                document.getElementById('pb-paste').onclick = () => {
+                    const text = UIPasteboard.general.string;
+                    document.getElementById('pb-result').textContent = text
+                        ? `Pasted: "${text}"`
+                        : 'Nothing on pasteboard';
+                    this.log(`UIPasteboard: Pasted "${text || '(empty)'}"`);
+                };
+                this.log('UIPasteboard: Ready', 'info');
+            }
+
+            runSwipeDemo() {
+                const area = document.getElementById('swipe-area');
+                const indicator = document.getElementById('swipe-indicator');
+                let startX, startY;
+
+                const arrows = { right: '👉', left: '👈', up: '☝️', down: '👇' };
+
+                area.ontouchstart = (e) => {
+                    const t = e.touches[0];
+                    startX = t.clientX;
+                    startY = t.clientY;
+                };
+
+                area.ontouchend = (e) => {
+                    const t = e.changedTouches[0];
+                    const dx = t.clientX - startX;
+                    const dy = t.clientY - startY;
+                    const minDist = 50;
+                    let dir = null;
+
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= minDist) {
+                        dir = dx > 0 ? 'right' : 'left';
+                    } else if (Math.abs(dy) >= minDist) {
+                        dir = dy > 0 ? 'down' : 'up';
+                    }
+
+                    if (dir) {
+                        indicator.textContent = arrows[dir];
+                        indicator.style.opacity = 1;
+                        setTimeout(() => indicator.style.opacity = 0, 1000);
+                        this.log(`UISwipeGestureRecognizer: Swipe ${dir} detected`);
+                    }
+                };
+
+                area.onmousedown = (e) => { startX = e.clientX; startY = e.clientY; };
+                area.onmouseup = (e) => {
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    const minDist = 50;
+                    let dir = null;
+
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= minDist) {
+                        dir = dx > 0 ? 'right' : 'left';
+                    } else if (Math.abs(dy) >= minDist) {
+                        dir = dy > 0 ? 'down' : 'up';
+                    }
+
+                    if (dir) {
+                        indicator.textContent = arrows[dir];
+                        indicator.style.opacity = 1;
+                        setTimeout(() => indicator.style.opacity = 0, 1000);
+                        this.log(`UISwipeGestureRecognizer: Swipe ${dir} detected`);
+                    }
+                };
+
+                this.log('UISwipeGestureRecognizer: Ready', 'info');
             }
         }
 

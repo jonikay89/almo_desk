@@ -92,8 +92,16 @@ class UIViewController extends UIResponder {
         return this._navigationController;
     }
 
+    set navigationController(value) {
+        this._navigationController = value;
+    }
+
     get tabBarController() {
         return this._tabBarController;
+    }
+
+    set tabBarController(value) {
+        this._tabBarController = value;
     }
 
     get splitViewController() {
