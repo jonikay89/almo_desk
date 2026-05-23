@@ -335,13 +335,15 @@
                         <p class="info">Stack-based push/pop navigation controller.</p>
                         <div class="demo-area col" id="nav-controller-demo">
                             <div style="width:280px;border:1px solid #ccc;border-radius:8px;overflow:hidden;background:white;">
-                                <div id="nav-bar-display" style="height:44px;background:#f8f8f8;border-bottom:1px solid #ccc;display:flex;align-items:center;padding:0 12px;">
-                                    <span id="nav-back" style="color:#007aff;cursor:pointer;font-size:15px;display:none;">‹ Back</span>
-                                    <span id="nav-title" style="flex:1;text-align:center;font-weight:600;font-size:17px;">Page 1</span>
+                                <div id="nav-bar-display" style="height:44px;background:#f8f8f8;border-bottom:1px solid #ccc;display:flex;align-items:center;padding:0 12px;transition:background 0.3s;">
+                                    <span id="nav-back" style="color:#007aff;cursor:pointer;font-size:15px;display:none;transition:opacity 0.3s;">‹ Back</span>
+                                    <span id="nav-title" style="flex:1;text-align:center;font-weight:600;font-size:17px;transition:opacity 0.2s;">Page 1</span>
                                     <span style="width:40px;"></span>
                                 </div>
-                                <div id="nav-content" style="padding:20px;font-size:14px;color:#333;min-height:80px;text-align:center;">
-                                    Root View Controller
+                                <div style="position:relative;overflow:hidden;min-height:80px;">
+                                    <div id="nav-content" style="padding:20px;font-size:14px;color:#333;min-height:80px;text-align:center;position:relative;will-change:transform,opacity;">
+                                        Root View Controller
+                                    </div>
                                 </div>
                             </div>
                             <div class="demo-row" style="margin-top:10px;">
@@ -448,10 +450,17 @@
 
                     <div class="section">
                         <h2>UISwipeGestureRecognizer <span class="tag core">Gestures</span></h2>
-                        <p class="info">Swipe detection for up, down, left, right directions.</p>
+                        <p class="info">Swipe detection for up, down, left, right directions. Click & drag inside the area.</p>
                         <div class="demo-area col" id="swipe-demo">
-                            <div id="swipe-area" style="width:200px;height:120px;background:#f0f0f0;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;border:2px dashed #ccc;user-select:none;">Swipe inside here</div>
-                            <div id="swipe-indicator" style="font-size:24px;opacity:0;transition:opacity 0.3s;">👆</div>
+                            <div id="swipe-area" style="width:260px;height:150px;background:#f0f0f0;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#999;font-size:14px;border:2px dashed #d0d0d0;user-select:none;position:relative;overflow:hidden;touch-action:none;">
+                                <div id="swipe-hint" style="text-align:center;">
+                                    <div style="font-size:28px;margin-bottom:4px;">👆</div>
+                                    <div>Click & drag to swipe</div>
+                                    <div id="swipe-dist" style="font-size:11px;color:#bbb;margin-top:4px;">Distance: 0px</div>
+                                </div>
+                                <div id="swipe-trail" style="position:absolute;width:4px;height:4px;border-radius:50%;background:#007aff;opacity:0;pointer-events:none;transition:opacity 0.3s;"></div>
+                            </div>
+                            <div id="swipe-indicator" style="font-size:32px;opacity:0;transition:opacity 0.3s,transform 0.3s;transform:scale(0.5);"></div>
                         </div>
                     </div>
 
@@ -469,8 +478,14 @@
                 document.getElementById('clear-log').onclick = () => { this.logs = []; document.getElementById('log').innerHTML = ''; };
                 document.getElementById('announce-btn').onclick = () => {
                     const view = new UIView();
-                    view.announceForAccessibility('Demo: All UIKit components are working!');
-                    this.log('Announced for accessibility');
+                    view.announceForAccessibility('All UIKit components are working!');
+                    const toast = document.createElement('div');
+                    toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,30,30,0.92);color:white;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:500;z-index:10000;opacity:0;transition:opacity 0.3s,transform 0.3s;backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                    toast.textContent = '📢 Accessibility: "All UIKit components are working!"';
+                    document.body.appendChild(toast);
+                    requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(-50%) translateY(0)'; });
+                    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(20px)'; setTimeout(() => toast.remove(), 300); }, 2500);
+                    this.log('Announced for accessibility (aria-live + visual toast)');
                 };
                 document.getElementById('reset-gestures').onclick = () => this.resetGestures();
 
@@ -644,18 +659,46 @@
             runNavControllerDemo() {
                 const pages = ['Root View Controller', 'Second Page', 'Third Page', 'Fourth Page'];
                 let pageIdx = 0;
+                let animating = false;
 
-                const updateNav = () => {
-                    document.getElementById('nav-title').textContent = `Page ${pageIdx + 1}`;
-                    document.getElementById('nav-content').textContent = pages[pageIdx];
-                    document.getElementById('nav-back').style.display = pageIdx > 0 ? 'inline' : 'none';
+                const content = document.getElementById('nav-content');
+                const titleEl = document.getElementById('nav-title');
+                const backEl = document.getElementById('nav-back');
+
+                const animateTransition = (direction, newIdx, logMsg) => {
+                    if (animating) return;
+                    animating = true;
+
+                    const slideOut = direction === 'push' ? '-30%' : '30%';
+                    const slideIn = direction === 'push' ? '30%' : '-30%';
+
+                    content.style.transition = 'transform 0.3s cubic-bezier(0.25,0.1,0.25,1), opacity 0.3s';
+                    content.style.transform = `translateX(${slideOut})`;
+                    content.style.opacity = '0';
+
+                    setTimeout(() => {
+                        pageIdx = newIdx;
+                        content.textContent = pages[pageIdx];
+                        titleEl.textContent = `Page ${pageIdx + 1}`;
+                        backEl.style.display = pageIdx > 0 ? 'inline' : 'none';
+
+                        content.style.transition = 'none';
+                        content.style.transform = `translateX(${slideIn})`;
+
+                        requestAnimationFrame(() => {
+                            content.style.transition = 'transform 0.3s cubic-bezier(0.25,0.1,0.25,1), opacity 0.3s';
+                            content.style.transform = 'translateX(0)';
+                            content.style.opacity = '1';
+                            animating = false;
+                        });
+                    }, 300);
+
+                    this.log(logMsg);
                 };
 
                 document.getElementById('nav-push').onclick = () => {
                     if (pageIdx < pages.length - 1) {
-                        pageIdx++;
-                        updateNav();
-                        this.log(`UINavigationController: Pushed Page ${pageIdx + 1}`);
+                        animateTransition('push', pageIdx + 1, `UINavigationController: Push → Page ${pageIdx + 2}`);
                     } else {
                         this.log('UINavigationController: No more pages to push', 'warn');
                     }
@@ -663,29 +706,25 @@
 
                 document.getElementById('nav-pop').onclick = () => {
                     if (pageIdx > 0) {
-                        pageIdx--;
-                        updateNav();
-                        this.log(`UINavigationController: Popped to Page ${pageIdx + 1}`);
+                        animateTransition('pop', pageIdx - 1, `UINavigationController: Pop → Page ${pageIdx}`);
                     } else {
                         this.log('UINavigationController: Already at root', 'warn');
                     }
                 };
 
                 document.getElementById('nav-pop-root').onclick = () => {
-                    pageIdx = 0;
-                    updateNav();
-                    this.log('UINavigationController: Popped to root');
-                };
-
-                document.getElementById('nav-back').onclick = () => {
                     if (pageIdx > 0) {
-                        pageIdx--;
-                        updateNav();
-                        this.log(`UINavigationController: Back to Page ${pageIdx + 1}`);
+                        animateTransition('pop', 0, 'UINavigationController: Pop to root');
                     }
                 };
 
-                this.log('UINavigationController: Ready', 'info');
+                document.getElementById('nav-back').onclick = () => {
+                    if (pageIdx > 0 && !animating) {
+                        animateTransition('pop', pageIdx - 1, `UINavigationController: Back → Page ${pageIdx}`);
+                    }
+                };
+
+                this.log('UINavigationController: Ready (with slide animation)', 'info');
             }
 
             runTabBarControllerDemo() {
@@ -704,15 +743,18 @@
             }
 
             runToolbarDemo() {
-                document.getElementById('tb-item-compose').onclick = () => {
-                    this.log('UIToolbar: Compose tapped');
+                const flash = (id, msg) => {
+                    const btn = document.getElementById(id);
+                    btn.style.transition = 'transform 0.15s, background 0.15s';
+                    btn.style.transform = 'scale(1.35)';
+                    btn.style.background = 'rgba(0,122,255,0.15)';
+                    btn.style.borderRadius = '6px';
+                    setTimeout(() => { btn.style.transform = ''; btn.style.background = 'none'; }, 250);
+                    this.log(`UIToolbar: ${msg}`);
                 };
-                document.getElementById('tb-item-trash').onclick = () => {
-                    this.log('UIToolbar: Trash tapped');
-                };
-                document.getElementById('tb-item-done').onclick = () => {
-                    this.log('UIToolbar: Done tapped');
-                };
+                document.getElementById('tb-item-compose').onclick = () => flash('tb-item-compose', 'Compose tapped');
+                document.getElementById('tb-item-trash').onclick = () => flash('tb-item-trash', 'Trash tapped');
+                document.getElementById('tb-item-done').onclick = () => flash('tb-item-done', 'Done tapped');
                 this.log('UIToolbar + UIBarButtonItem: Ready', 'info');
             }
 
@@ -783,80 +825,127 @@
             }
 
             runPasteboardDemo() {
-                document.getElementById('pb-copy').onclick = () => {
-                    const text = document.getElementById('pb-input').value;
-                    if (!text) return;
-                    UIPasteboard.general.string = text;
-                    document.getElementById('pb-result').textContent = `Copied: "${text}"`;
-                    this.log(`UIPasteboard: Copied "${text}"`);
+                const resultEl = document.getElementById('pb-result');
+                const flashBtn = (id) => {
+                    const btn = document.getElementById(id);
+                    btn.style.transform = 'scale(0.95)';
+                    setTimeout(() => btn.style.transform = '', 150);
                 };
 
-                document.getElementById('pb-paste').onclick = () => {
-                    const text = UIPasteboard.general.string;
-                    document.getElementById('pb-result').textContent = text
-                        ? `Pasted: "${text}"`
-                        : 'Nothing on pasteboard';
+                document.getElementById('pb-copy').onclick = async () => {
+                    const text = document.getElementById('pb-input').value;
+                    if (!text) { resultEl.textContent = 'Type something first!'; return; }
+                    UIPasteboard.general.string = text;
+                    try { await navigator.clipboard.writeText(text); } catch(e) {}
+                    flashBtn('pb-copy');
+                    resultEl.innerHTML = `<span style="color:#34c759;font-weight:600;">✓ Copied:</span> "${text}" <span style="color:#999;">(system clipboard + UIPasteboard)</span>`;
+                    this.log(`UIPasteboard: Copied "${text}" to system clipboard`);
+                };
+
+                document.getElementById('pb-paste').onclick = async () => {
+                    flashBtn('pb-paste');
+                    let text = null;
+                    try { text = await navigator.clipboard.readText(); } catch(e) {
+                        text = UIPasteboard.general.string;
+                    }
+                    resultEl.innerHTML = text
+                        ? `<span style="color:#007aff;font-weight:600;">📋 Pasted:</span> "${text}" <span style="color:#999;">(from system clipboard)</span>`
+                        : '<span style="color:#ff3b30;">Nothing on pasteboard</span>';
                     this.log(`UIPasteboard: Pasted "${text || '(empty)'}"`);
                 };
-                this.log('UIPasteboard: Ready', 'info');
+                this.log('UIPasteboard: Ready (with system clipboard)', 'info');
             }
 
             runSwipeDemo() {
                 const area = document.getElementById('swipe-area');
                 const indicator = document.getElementById('swipe-indicator');
-                let startX, startY;
+                const trail = document.getElementById('swipe-trail');
+                const distEl = document.getElementById('swipe-dist');
+                let startX, startY, isDragging = false;
 
                 const arrows = { right: '👉', left: '👈', up: '☝️', down: '👇' };
+                const colors = { right: '#007aff', left: '#5856d6', up: '#34c759', down: '#ff9500' };
+                const minDist = 30;
 
-                area.ontouchstart = (e) => {
+                const handleSwipe = (dx, dy) => {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    distEl.textContent = `Distance: ${Math.round(dist)}px (need ${minDist})`;
+
+                    if (dist > 8 && isDragging) {
+                        area.style.background = `rgba(0,122,255,${Math.min(0.08, dist / 1000)})`;
+                        trail.style.opacity = Math.min(1, dist / 60);
+                        trail.style.left = `${startX + dx - 2}px`;
+                        trail.style.top = `${startY + dy - 2}px`;
+                        trail.style.width = `${Math.min(60, dist * 0.5)}px`;
+                        trail.style.height = `${Math.min(60, dist * 0.5)}px`;
+                    }
+
+                    if (dist < minDist) return null;
+                    if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'right' : 'left';
+                    return dy > 0 ? 'down' : 'up';
+                };
+
+                const onEnd = (dx, dy) => {
+                    isDragging = false;
+                    area.style.background = '#f0f0f0';
+                    trail.style.opacity = '0';
+                    distEl.textContent = 'Distance: 0px';
+
+                    const dir = handleSwipe(dx, dy);
+                    if (dir) {
+                        indicator.textContent = arrows[dir];
+                        indicator.style.opacity = '1';
+                        indicator.style.transform = 'scale(1)';
+                        area.style.borderColor = colors[dir];
+                        area.style.boxShadow = `0 0 20px ${colors[dir]}33`;
+                        setTimeout(() => {
+                            indicator.style.opacity = '0';
+                            indicator.style.transform = 'scale(0.5)';
+                            area.style.borderColor = '#d0d0d0';
+                            area.style.boxShadow = 'none';
+                        }, 800);
+                        this.log(`UISwipeGestureRecognizer: Swipe ${dir} (${Math.round(Math.sqrt(dx*dx+dy*dy))}px)`);
+                    }
+                };
+
+                area.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    const rect = area.getBoundingClientRect();
+                    startX = e.clientX - rect.left;
+                    startY = e.clientY - rect.top;
+                });
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    const rect = area.getBoundingClientRect();
+                    handleSwipe(e.clientX - rect.left - startX, e.clientY - rect.top - startY);
+                });
+                document.addEventListener('mouseup', (e) => {
+                    if (!isDragging) return;
+                    const rect = area.getBoundingClientRect();
+                    onEnd(e.clientX - rect.left - startX, e.clientY - rect.top - startY);
+                });
+
+                area.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    const rect = area.getBoundingClientRect();
                     const t = e.touches[0];
-                    startX = t.clientX;
-                    startY = t.clientY;
-                };
-
-                area.ontouchend = (e) => {
+                    startX = t.clientX - rect.left;
+                    startY = t.clientY - rect.top;
+                }, { passive: true });
+                area.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    const rect = area.getBoundingClientRect();
+                    const t = e.touches[0];
+                    handleSwipe(t.clientX - rect.left - startX, t.clientY - rect.top - startY);
+                }, { passive: true });
+                area.addEventListener('touchend', (e) => {
+                    if (!isDragging) return;
                     const t = e.changedTouches[0];
-                    const dx = t.clientX - startX;
-                    const dy = t.clientY - startY;
-                    const minDist = 50;
-                    let dir = null;
+                    const rect = area.getBoundingClientRect();
+                    onEnd(t.clientX - rect.left - startX, t.clientY - rect.top - startY);
+                });
 
-                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= minDist) {
-                        dir = dx > 0 ? 'right' : 'left';
-                    } else if (Math.abs(dy) >= minDist) {
-                        dir = dy > 0 ? 'down' : 'up';
-                    }
-
-                    if (dir) {
-                        indicator.textContent = arrows[dir];
-                        indicator.style.opacity = 1;
-                        setTimeout(() => indicator.style.opacity = 0, 1000);
-                        this.log(`UISwipeGestureRecognizer: Swipe ${dir} detected`);
-                    }
-                };
-
-                area.onmousedown = (e) => { startX = e.clientX; startY = e.clientY; };
-                area.onmouseup = (e) => {
-                    const dx = e.clientX - startX;
-                    const dy = e.clientY - startY;
-                    const minDist = 50;
-                    let dir = null;
-
-                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= minDist) {
-                        dir = dx > 0 ? 'right' : 'left';
-                    } else if (Math.abs(dy) >= minDist) {
-                        dir = dy > 0 ? 'down' : 'up';
-                    }
-
-                    if (dir) {
-                        indicator.textContent = arrows[dir];
-                        indicator.style.opacity = 1;
-                        setTimeout(() => indicator.style.opacity = 0, 1000);
-                        this.log(`UISwipeGestureRecognizer: Swipe ${dir} detected`);
-                    }
-                };
-
-                this.log('UISwipeGestureRecognizer: Ready', 'info');
+                this.log('UISwipeGestureRecognizer: Ready (30px threshold)', 'info');
             }
         }
 

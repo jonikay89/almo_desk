@@ -262,13 +262,11 @@
 
         sliderValue.subscribe((v) => {
             sliderValueDisplay.textContent = v;
-            hueSlider.nextElementSibling.textContent = `Hue: ${v}`;
             colorBox.style.background = `hsl(${v}, 100%, 50%)`;
         });
 
         scaleValue.subscribe((v) => {
             scaleValueDisplay.textContent = v.toFixed(1);
-            scaleSlider.nextElementSibling.textContent = `Box Scale: ${v.toFixed(1)}`;
             colorBox.style.transform = `scale(${v})`;
         });
 
