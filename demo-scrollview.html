@@ -93,10 +93,6 @@
         
         const scrollView = new UIScrollView({ x: 0, y: 0, width: 300, height: 200 });
         scrollView.init();
-        scrollView.contentSize = { width: 600, height: 400 };
-        scrollView.bounces = true;
-        scrollView.alwaysBounceHorizontal = true;
-        scrollView.alwaysBounceVertical = true;
         container1.appendChild(scrollView._element);
 
         const colors = [
@@ -126,6 +122,8 @@
             box.textContent = name;
             scrollView._contentElement.appendChild(box);
         });
+
+        requestAnimationFrame(() => scrollView.sizeToFit());
 
         const scrollDelegate = {
             scrollViewWillBeginDragging(sv) {
@@ -178,12 +176,11 @@
         app.appendChild(section2);
 
         const container2 = document.getElementById('paging-container');
-        const pagingScroll = new UIScrollView({ x: 0, y: 0, width: 600, height: 200 });
+        const pagingWidth = container2.clientWidth || 600;
+        const pagingScroll = new UIScrollView({ x: 0, y: 0, width: pagingWidth, height: 200 });
         pagingScroll.init();
-        pagingScroll.contentSize = { width: 1200, height: 200 };
+        pagingScroll.contentSize = { width: pagingWidth * 4, height: 200 };
         pagingScroll.pagingEnabled = true;
-        pagingScroll.bounces = true;
-        pagingScroll.alwaysBounceHorizontal = true;
         container2.appendChild(pagingScroll._element);
 
         const pageColors = ['#667eea', '#764ba2', '#f093fb', '#f5576c'];
@@ -191,10 +188,10 @@
         for (let i = 0; i < 4; i++) {
             const page = document.createElement('div');
             page.style.cssText = `
-                width: 300px;
+                width: ${pagingWidth}px;
                 height: 200px;
                 position: absolute;
-                left: ${i * 300}px;
+                left: ${i * pagingWidth}px;
                 top: 0;
                 display: flex;
                 align-items: center;
@@ -220,14 +217,16 @@
                 transition: background 0.2s;
             `;
             dot.addEventListener('click', () => {
-                pagingScroll.contentOffset = { x: i * 300, y: 0 };
+                const pageWidth = pagingScroll.pageSize.width || pagingScroll._bounds.width;
+                pagingScroll.setContentOffsetAnimated({ x: i * pageWidth, y: 0 });
             });
             pageIndicator.appendChild(dot);
         }
 
         pagingScroll.delegate = {
             scrollViewDidScroll(sv) {
-                const page = Math.round(sv.contentOffset.x / 300);
+                const pageWidth = sv.pageSize.width || sv._bounds.width;
+                const page = Math.round(sv.contentOffset.x / pageWidth);
                 const dots = pageIndicator.querySelectorAll('div');
                 dots.forEach((dot, i) => {
                     dot.style.background = i === page ? '#007aff' : '#ccc';
@@ -259,30 +258,23 @@
         const container3 = document.getElementById('zoom-container');
         const zoomScroll = new UIScrollView({ x: 0, y: 0, width: 300, height: 250 });
         zoomScroll.init();
-        zoomScroll.contentSize = { width: 500, height: 400 };
+        zoomScroll.contentSize = { width: 300, height: 250 };
         zoomScroll.minimumZoomScale = 0.5;
         zoomScroll.maximumZoomScale = 3.0;
         zoomScroll.zoomScale = 1.0;
-        zoomScroll.bounces = true;
-        zoomScroll.showsHorizontalScrollIndicator = false;
-        zoomScroll.showsVerticalScrollIndicator = false;
         container3.appendChild(zoomScroll._element);
 
         const zoomBox = document.createElement('div');
         zoomBox.style.cssText = `
-            width: 200px;
-            height: 200px;
+            width: 300px;
+            height: 250px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 16px;
+            font-size: 24px;
             font-weight: 600;
-            position: absolute;
-            left: 150px;
-            top: 100px;
         `;
         zoomBox.textContent = 'Zoom Me!';
         zoomScroll._contentElement.appendChild(zoomBox);
@@ -324,24 +316,22 @@
         app.appendChild(section4);
 
         const container4 = document.getElementById('settings-container');
-        const settingsScroll = new UIScrollView({ x: 0, y: 0, width: 400, height: 250 });
+        const settingsWidth = container4.clientWidth || 400;
+        const settingsScroll = new UIScrollView({ x: 0, y: 0, width: settingsWidth, height: 250 });
         settingsScroll.init();
-        settingsScroll.contentSize = { width: 380, height: 500 };
-        settingsScroll.bounces = true;
-        settingsScroll.alwaysBounceVertical = true;
         container4.appendChild(settingsScroll._element);
 
         const settings = [
-            { icon: '🌙', label: 'Dark Mode' },
-            { icon: '🔔', label: 'Notifications' },
-            { icon: '📧', label: 'Email' },
-            { icon: '🔒', label: 'Privacy' },
-            { icon: '🎨', label: 'Appearance' },
-            { icon: '🔤', label: 'Language' },
-            { icon: '📏', label: 'Units' },
-            { icon: '🔄', label: 'Auto-Update' },
-            { icon: '💾', label: 'Storage' },
-            { icon: '🆘', label: 'Help' },
+            { icon: '🌙', label: 'Dark Mode', on: true },
+            { icon: '🔔', label: 'Notifications', on: true },
+            { icon: '📧', label: 'Email', on: false },
+            { icon: '🔒', label: 'Privacy', on: true },
+            { icon: '🎨', label: 'Appearance', on: false },
+            { icon: '🔤', label: 'Language', on: false },
+            { icon: '📏', label: 'Units', on: true },
+            { icon: '🔄', label: 'Auto-Update', on: true },
+            { icon: '💾', label: 'Storage', on: false },
+            { icon: '🆘', label: 'Help', on: false },
         ];
 
         settings.forEach((setting, i) => {
@@ -350,23 +340,36 @@
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 15px 10px;
+                padding: 12px 10px;
                 border-bottom: 1px solid #eee;
-                position: absolute;
                 width: 100%;
-                left: 0;
-                top: ${i * 50}px;
                 box-sizing: border-box;
             `;
-            row.innerHTML = `
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <span style="font-size:20px;">${setting.icon}</span>
-                    <span style="font-size:15px;">${setting.label}</span>
-                </div>
-                <div style="width:50px;height:30px;background:#34c759;border-radius:15px;"></div>
-            `;
+            const leftSide = document.createElement('div');
+            leftSide.style.cssText = 'display:flex;align-items:center;gap:12px;';
+            leftSide.innerHTML = `<span style="font-size:20px;">${setting.icon}</span><span style="font-size:15px;">${setting.label}</span>`;
+
+            const track = document.createElement('div');
+            const thumb = document.createElement('div');
+            const isOn = setting.on;
+            track.style.cssText = `width:50px;height:30px;border-radius:15px;position:relative;cursor:pointer;transition:background 0.2s;background:${isOn ? '#34c759' : '#e0e0e0'};`;
+            thumb.style.cssText = `position:absolute;width:26px;height:26px;background:white;border-radius:13px;top:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);left:${isOn ? '22px' : '2px'};`;
+            track.appendChild(thumb);
+
+            track.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setting.on = !setting.on;
+                track.style.background = setting.on ? '#34c759' : '#e0e0e0';
+                thumb.style.left = setting.on ? '22px' : '2px';
+                log(`UISwitch: ${setting.label} → ${setting.on ? 'ON' : 'OFF'}`);
+            });
+
+            row.appendChild(leftSide);
+            row.appendChild(track);
             settingsScroll._contentElement.appendChild(row);
         });
+
+        requestAnimationFrame(() => settingsScroll.sizeToFit());
 
         console.log('Enhanced UIScrollView Demo loaded successfully');
     </script>

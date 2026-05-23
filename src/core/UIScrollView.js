@@ -23,89 +23,74 @@ class UIScrollView extends UIView {
         this._contentOffset = { x: 0, y: 0 };
         this._contentInset = { top: 0, left: 0, bottom: 0, right: 0 };
         this._adjustedContentInset = { top: 0, left: 0, bottom: 0, right: 0 };
-        
+
         this._showsHorizontalScrollIndicator = true;
         this._showsVerticalScrollIndicator = true;
         this._indicatorStyle = 'default';
-        
+
         this._bounces = true;
         this._bouncesZoom = true;
-        this._alwaysBounceHorizontal = false;
-        this._alwaysBounceVertical = false;
-        
-        this._decelerationRate = 0.998;
-        this._decelerationRateNormalized = 0.998;
-        this._decelerationDistance = 0.0;
+        this._alwaysBounceHorizontal = true;
+        this._alwaysBounceVertical = true;
+
+        this._decelerationRate = 0.975;
         this._isDecelerating = false;
         this._decelerationTimer = null;
-        
+
         this._minimumZoomScale = 1.0;
         this._maximumZoomScale = 1.0;
         this._zoomScale = 1.0;
         this._isZooming = false;
-        
+
         this._pagingEnabled = false;
         this._pageSize = { width: 0, height: 0 };
-        
+
         this._keyboardDismissMode = 'none';
-        this._keyboardAvoidingEnabled = false;
-        
+
         this._delegate = null;
-        
+
         this._isDragging = false;
         this._isTracking = false;
-        
-        // Animation frames
+
         this._bounceAnimation = null;
         this._scrollAnimation = null;
-        
-        // Scroll indicators
+
         this._horizontalIndicator = null;
         this._verticalIndicator = null;
-        this._indicatorOpacity = 0;
         this._indicatorTimer = null;
-        
-        // Drag state with better velocity tracking
+
         this._dragStartOffset = { x: 0, y: 0 };
         this._dragStartLocation = { x: 0, y: 0 };
         this._dragVelocity = { x: 0, y: 0 };
-        this._velocitySamples = []; // Store multiple samples for smoother velocity
+        this._velocitySamples = [];
         this._lastDragLocation = { x: 0, y: 0 };
         this._lastDragTime = 0;
-        
+
         this._scrollsToTop = true;
         this._delaysContentTouches = true;
         this._canCancelTouchInSubviews = true;
-        
-        // Performance optimizations
+
         this._useGPUAcceleration = true;
-        this._scrollFrame = null;
-        this._pendingScrollUpdate = false;
-        
-        // Smooth scrolling state
-        this._scrollStartTime = 0;
-        this._scrollStartOffset = { x: 0, y: 0 };
-        this._scrollTargetOffset = { x: 0, y: 0 };
-        this._scrollDuration = 0;
+
+        this._isAnimating = false;
     }
 
-    // Getters and Setters (same as before, but with performance improvements)
     get contentSize() { return { ...this._contentSize }; }
     set contentSize(value) {
         this._contentSize = { ...value };
         this._updateContentElement();
         this._updateScrollIndicators();
-        this._updateTransformMatrix();
+        this._applyTransform();
     }
 
     get contentOffset() { return { ...this._contentOffset }; }
     set contentOffset(value) {
-        const oldOffset = { ...this._contentOffset };
+        if (this._isAnimating) return;
         const clamped = this._clampOffset({ ...value });
         this._contentOffset = clamped;
-        this._syncContentElement();
+        this._applyTransform();
         this._updateScrollIndicators();
-        
+
         if (this._delegate && this._delegate.scrollViewDidScroll) {
             this._delegate.scrollViewDidScroll(this);
         }
@@ -146,10 +131,7 @@ class UIScrollView extends UIView {
     set alwaysBounceVertical(value) { this._alwaysBounceVertical = value; }
 
     get decelerationRate() { return this._decelerationRate; }
-    set decelerationRate(value) { 
-        this._decelerationRate = value;
-        this._decelerationRateNormalized = Math.pow(value, 16); // Normalize for 60fps
-    }
+    set decelerationRate(value) { this._decelerationRate = value; }
 
     get minimumZoomScale() { return this._minimumZoomScale; }
     set minimumZoomScale(value) { this._minimumZoomScale = value; }
@@ -162,15 +144,20 @@ class UIScrollView extends UIView {
         const scale = Math.max(this._minimumZoomScale, Math.min(this._maximumZoomScale, value));
         if (Math.abs(scale - this._zoomScale) < 0.001) return;
         this._zoomScale = scale;
-        this._applyZoomScale();
+
+        const clamped = this._clampOffset(this._contentOffset);
+        this._contentOffset = clamped;
+
+        this._applyTransform();
+
         if (this._delegate && this._delegate.scrollViewDidZoom) {
             this._delegate.scrollViewDidZoom(this);
         }
     }
 
     get pagingEnabled() { return this._pagingEnabled; }
-    set pagingEnabled(value) { 
-        this._pagingEnabled = value; 
+    set pagingEnabled(value) {
+        this._pagingEnabled = value;
         if (value && this._pageSize.width === 0) {
             this._pageSize = { width: this._bounds.width, height: this._bounds.height };
         }
@@ -189,10 +176,17 @@ class UIScrollView extends UIView {
     get scrollsToTop() { return this._scrollsToTop; }
     set scrollsToTop(value) { this._scrollsToTop = value; }
 
-    // Core calculations
+    _canScrollHorizontal() {
+        return this._getMaxOffset().x > 0;
+    }
+
+    _canScrollVertical() {
+        return this._getMaxOffset().y > 0;
+    }
+
     _getMaxOffset() {
-        const maxX = Math.max(0, this._contentSize.width - this._bounds.width);
-        const maxY = Math.max(0, this._contentSize.height - this._bounds.height);
+        const maxX = Math.max(0, this._contentSize.width * this._zoomScale - this._bounds.width);
+        const maxY = Math.max(0, this._contentSize.height * this._zoomScale - this._bounds.height);
         return { x: maxX, y: maxY };
     }
 
@@ -204,7 +198,6 @@ class UIScrollView extends UIView {
         };
     }
 
-    // Improved rubber banding with smoother curve
     _rubberBand(overscroll, maxDistance = 200) {
         const resistance = 0.55;
         const sign = overscroll > 0 ? 1 : -1;
@@ -216,7 +209,7 @@ class UIScrollView extends UIView {
     _applyRubberBanding(offset) {
         const max = this._getMaxOffset();
         let result = { x: offset.x, y: offset.y };
-        
+
         const canBounceX = this._bounces && (this._alwaysBounceHorizontal || max.x > 0);
         if (canBounceX) {
             if (offset.x < 0) {
@@ -227,7 +220,7 @@ class UIScrollView extends UIView {
         } else {
             result.x = Math.max(0, Math.min(offset.x, max.x));
         }
-        
+
         const canBounceY = this._bounces && (this._alwaysBounceVertical || max.y > 0);
         if (canBounceY) {
             if (offset.y < 0) {
@@ -238,45 +231,22 @@ class UIScrollView extends UIView {
         } else {
             result.y = Math.max(0, Math.min(offset.y, max.y));
         }
-        
+
         return result;
     }
 
-    // Optimized transform with GPU acceleration
-    _updateTransformMatrix() {
+    _applyTransform() {
         if (!this._contentElement) return;
-        
-        if (this._useGPUAcceleration) {
-            const matrix = `matrix3d(1,0,0,0, 0,1,0,0, 0,0,1,0, ${-this._contentOffset.x}, ${-this._contentOffset.y}, 0, 1)`;
-            this._contentElement.style.transform = matrix;
-        } else {
-            this._contentElement.style.transform = `translate3d(${-this._contentOffset.x}px, ${-this._contentOffset.y}px, 0)`;
-        }
-    }
 
-    _applyZoomScale() {
-        if (!this._contentElement) return;
-        
-        if (this._useGPUAcceleration) {
-            const matrix = `matrix3d(${this._zoomScale},0,0,0, 0,${this._zoomScale},0,0, 0,0,1,0, ${-this._contentOffset.x}, ${-this._contentOffset.y}, 0, 1)`;
-            this._contentElement.style.transform = matrix;
-        } else {
-            this._contentElement.style.transform = `translate3d(${-this._contentOffset.x}px, ${-this._contentOffset.y}px, 0) scale(${this._zoomScale})`;
-        }
-    }
+        const s = this._zoomScale;
+        const tx = -this._contentOffset.x;
+        const ty = -this._contentOffset.y;
 
-    _syncContentElement() {
-        if (this._pendingScrollUpdate) return;
-        
-        this._pendingScrollUpdate = true;
-        
-        // Use requestAnimationFrame for smooth rendering
-        requestAnimationFrame(() => {
-            if (this._contentElement) {
-                this._updateTransformMatrix();
-            }
-            this._pendingScrollUpdate = false;
-        });
+        if (this._useGPUAcceleration) {
+            this._contentElement.style.transform = `matrix3d(${s},0,0,0, 0,${s},0,0, 0,0,1,0, ${tx},${ty}, 0, 1)`;
+        } else {
+            this._contentElement.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${s})`;
+        }
     }
 
     _updateContentElement() {
@@ -292,93 +262,94 @@ class UIScrollView extends UIView {
         }
     }
 
-    // Improved bounce animation with spring physics
+    _stopAllAnimations() {
+        if (this._bounceAnimation) {
+            cancelAnimationFrame(this._bounceAnimation);
+            this._bounceAnimation = null;
+        }
+        if (this._scrollAnimation) {
+            cancelAnimationFrame(this._scrollAnimation);
+            this._scrollAnimation = null;
+        }
+        if (this._decelerationTimer) {
+            cancelAnimationFrame(this._decelerationTimer);
+            this._decelerationTimer = null;
+        }
+        this._isAnimating = false;
+    }
+
+    _easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+
+    _animateToOffset(targetOffset, duration = 300, onComplete = null) {
+        this._stopAllAnimations();
+
+        const startOffset = { ...this._contentOffset };
+        const startTime = performance.now();
+        this._isAnimating = true;
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(1, elapsed / duration);
+            const eased = this._easeOutCubic(progress);
+
+            this._contentOffset = {
+                x: startOffset.x + (targetOffset.x - startOffset.x) * eased,
+                y: startOffset.y + (targetOffset.y - startOffset.y) * eased
+            };
+            this._applyTransform();
+            this._updateScrollIndicators();
+
+            if (this._delegate && this._delegate.scrollViewDidScroll) {
+                this._delegate.scrollViewDidScroll(this);
+            }
+
+            if (progress < 1) {
+                this._scrollAnimation = requestAnimationFrame(animate);
+            } else {
+                this._scrollAnimation = null;
+                this._isAnimating = false;
+                if (onComplete) {
+                    onComplete();
+                } else if (this._delegate && this._delegate.scrollViewDidEndScrollingAnimation) {
+                    this._delegate.scrollViewDidEndScrollingAnimation(this);
+                }
+            }
+        };
+
+        this._scrollAnimation = requestAnimationFrame(animate);
+    }
+
     _animateBounceBack(fromDeceleration = false) {
-        if (!this._bounces) return;
-        
-        this._stopDeceleration();
-        this._stopScrollAnimation();
-        
         const target = this._clampOffset(this._contentOffset);
         const start = { ...this._contentOffset };
-        
-        const dx = target.x - start.x;
-        const dy = target.y - start.y;
-        
-        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+
+        const dx = Math.abs(target.x - start.x);
+        const dy = Math.abs(target.y - start.y);
+
+        if (dx < 0.5 && dy < 0.5) {
             this._contentOffset = { ...target };
-            this._syncContentElement();
+            this._applyTransform();
+            this._updateScrollIndicators();
             this._isDecelerating = false;
             this._completeDrag(fromDeceleration);
             return;
         }
-        
-        // Improved spring physics
-        const stiffness = 180;
-        const damping = 16;
-        const mass = 1;
-        
-        const angularFrequency = Math.sqrt(stiffness / mass);
-        const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
-        
-        const startTime = performance.now();
-        
-        const animate = (currentTime) => {
-            const elapsed = (currentTime - startTime) / 1000;
-            
-            if (elapsed >= 1.0) {
-                this._contentOffset = { ...target };
-                this._syncContentElement();
-                this._updateScrollIndicators();
-                this._isDecelerating = false;
-                this._completeDrag(fromDeceleration);
-                return;
-            }
-            
-            let currentX, currentY;
-            
-            if (dampingRatio < 1) {
-                // Underdamped
-                const omegaD = angularFrequency * Math.sqrt(1 - dampingRatio * dampingRatio);
-                const envelope = Math.exp(-dampingRatio * angularFrequency * elapsed);
-                const cosTerm = Math.cos(omegaD * elapsed);
-                const sinTerm = Math.sin(omegaD * elapsed);
-                
-                const xProgress = 1 - envelope * cosTerm;
-                const yProgress = 1 - envelope * cosTerm;
-                
-                currentX = start.x + dx * xProgress;
-                currentY = start.y + dy * yProgress;
-            } else {
-                // Critically damped or overdamped
-                const progress = 1 - Math.exp(-angularFrequency * elapsed);
-                currentX = start.x + dx * progress;
-                currentY = start.y + dy * progress;
-            }
-            
-            this._contentOffset = { x: currentX, y: currentY };
-            this._syncContentElement();
-            this._updateScrollIndicators();
-            
-            if (this._delegate && this._delegate.scrollViewDidScroll) {
-                this._delegate.scrollViewDidScroll(this);
-            }
-            
-            this._bounceAnimation = requestAnimationFrame(animate);
-        };
-        
-        if (this._bounceAnimation) {
-            cancelAnimationFrame(this._bounceAnimation);
-        }
-        
-        this._bounceAnimation = requestAnimationFrame(animate);
+
+        const duration = Math.min(350, Math.max(100, Math.max(dx, dy) * 0.6));
+
+        this._animateToOffset(target, duration, () => {
+            this._isDecelerating = false;
+            this._completeDrag(fromDeceleration);
+        });
     }
 
     _completeDrag(fromDeceleration) {
         if (this._delegate) {
             if (fromDeceleration && this._delegate.scrollViewDidEndDecelerating) {
                 this._delegate.scrollViewDidEndDecelerating(this);
-            } else if (this._delegate.scrollViewDidEndDragging) {
+            } else if (this._delegate && this._delegate.scrollViewDidEndDragging) {
                 this._delegate.scrollViewDidEndDragging(this, false);
             }
         }
@@ -396,22 +367,21 @@ class UIScrollView extends UIView {
             this._element.style.height = `${this._bounds.height}px`;
             this._element.style.cursor = 'grab';
             this._element.style.willChange = 'transform';
-            
-            // Create container for better performance
+
             this._scrollContainer = document.createElement('div');
             this._scrollContainer.style.position = 'relative';
             this._scrollContainer.style.width = '100%';
             this._scrollContainer.style.height = '100%';
             this._scrollContainer.style.overflow = 'visible';
-            
+
             this._contentElement = document.createElement('div');
             this._contentElement.style.position = 'absolute';
             this._contentElement.style.transformOrigin = '0 0';
             this._contentElement.style.willChange = 'transform';
-            
+
             this._scrollContainer.appendChild(this._contentElement);
             this._element.appendChild(this._scrollContainer);
-            
+
             this._createScrollIndicators();
             this._setupEventListeners();
         }
@@ -431,7 +401,7 @@ class UIScrollView extends UIView {
                 backgroundColor: 'rgba(128, 128, 128, 0.6)',
                 willChange: 'opacity'
             };
-            
+
             if (isHorizontal) {
                 style.height = '3px';
                 style.bottom = '2px';
@@ -443,37 +413,35 @@ class UIScrollView extends UIView {
                 style.top = '0';
                 style.bottom = '0';
             }
-            
+
             Object.assign(indicator.style, style);
             return indicator;
         };
-        
+
         this._horizontalIndicator = createIndicator(true);
         this._verticalIndicator = createIndicator(false);
         this._element.appendChild(this._horizontalIndicator);
         this._element.appendChild(this._verticalIndicator);
     }
 
-    // Improved velocity tracking with weighted average
     _addVelocitySample(x, y, time) {
         this._velocitySamples.unshift({ x, y, time });
         if (this._velocitySamples.length > 5) {
             this._velocitySamples.pop();
         }
-        
-        // Calculate weighted average velocity
+
         let totalWeight = 0;
         let weightedX = 0;
         let weightedY = 0;
-        
+
         for (let i = 0; i < this._velocitySamples.length; i++) {
             const sample = this._velocitySamples[i];
-            const weight = Math.pow(0.7, i); // Exponential weighting
+            const weight = Math.pow(0.7, i);
             weightedX += sample.x * weight;
             weightedY += sample.y * weight;
             totalWeight += weight;
         }
-        
+
         if (totalWeight > 0) {
             this._dragVelocity = {
                 x: weightedX / totalWeight,
@@ -484,98 +452,132 @@ class UIScrollView extends UIView {
 
     _setupEventListeners() {
         if (typeof document === 'undefined') return;
-        
+
         let isDragging = false;
         let startX = 0, startY = 0;
         let startOffsetX = 0, startOffsetY = 0;
-        
+        let dragAxis = null;
+
         const onMouseDown = (e) => {
             if (e.target !== this._element && !this._element.contains(e.target)) return;
-            
-            // Stop any ongoing animations
-            this._stopDeceleration();
-            this._stopScrollAnimation();
-            if (this._bounceAnimation) {
-                cancelAnimationFrame(this._bounceAnimation);
-                this._bounceAnimation = null;
-            }
-            
+
+            this._stopAllAnimations();
+
             e.preventDefault();
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
             startOffsetX = this._contentOffset.x;
             startOffsetY = this._contentOffset.y;
-            
-            // Clear velocity samples
+            dragAxis = null;
+
             this._velocitySamples = [];
             this._lastDragLocation = { x: e.clientX, y: e.clientY };
             this._lastDragTime = Date.now();
-            
+
             this._element.style.cursor = 'grabbing';
             this._isDragging = true;
             this._dragStartOffset = { x: startOffsetX, y: startOffsetY };
             this._dragStartLocation = { x: startX, y: startY };
-            
+
             if (this._delegate && this._delegate.scrollViewWillBeginDragging) {
                 this._delegate.scrollViewWillBeginDragging(this);
             }
             if (this._delegate && this._delegate.scrollViewDidBeginDragging) {
                 this._delegate.scrollViewDidBeginDragging(this);
             }
-            
+
             this._showScrollIndicators();
         };
-        
+
         const onMouseMove = (e) => {
             if (!isDragging) return;
-            
+
             e.preventDefault();
-            
+
             const now = Date.now();
             const dt = Math.max(1, now - this._lastDragTime);
-            
-            // Calculate instantaneous velocity
-            const vx = (e.clientX - this._lastDragLocation.x) / dt * 1000;
-            const vy = (e.clientY - this._lastDragLocation.y) / dt * 1000;
-            
-            this._addVelocitySample(vx, vy, now);
-            
-            this._lastDragLocation = { x: e.clientX, y: e.clientY };
-            this._lastDragTime = now;
-            
+
             const deltaX = e.clientX - startX;
             const deltaY = e.clientY - startY;
-            
+
+            if (dragAxis === null) {
+                const absDeltaX = Math.abs(deltaX);
+                const absDeltaY = Math.abs(deltaY);
+                const threshold = 5;
+
+                if (absDeltaX > threshold || absDeltaY > threshold) {
+                    const canH = this._canScrollHorizontal();
+                    const canV = this._canScrollVertical();
+
+                    if (canH && !canV) {
+                        dragAxis = 'horizontal';
+                    } else if (canV && !canH) {
+                        dragAxis = 'vertical';
+                    } else {
+                        dragAxis = 'both';
+                    }
+                } else {
+                    return;
+                }
+            }
+
+            let moveX = (dragAxis === 'horizontal' || dragAxis === 'both') ? deltaX : 0;
+            let moveY = (dragAxis === 'vertical' || dragAxis === 'both') ? deltaY : 0;
+
+            const vx = (dragAxis === 'horizontal' || dragAxis === 'both') ? (e.clientX - this._lastDragLocation.x) / dt * 1000 : 0;
+            const vy = (dragAxis === 'vertical' || dragAxis === 'both') ? (e.clientY - this._lastDragLocation.y) / dt * 1000 : 0;
+
+            this._addVelocitySample(vx, vy, now);
+
+            this._lastDragLocation = { x: e.clientX, y: e.clientY };
+            this._lastDragTime = now;
+
             let newOffset = {
-                x: startOffsetX - deltaX,
-                y: startOffsetY - deltaY
+                x: startOffsetX - moveX,
+                y: startOffsetY - moveY
             };
-            
-            newOffset = this._applyRubberBanding(newOffset);
+
+            if (this._pagingEnabled) {
+                newOffset = this._applyRubberBanding(newOffset);
+            } else {
+                newOffset = this._applyRubberBanding(newOffset);
+            }
+
             this._contentOffset = newOffset;
-            this._syncContentElement();
+            this._applyTransform();
             this._updateScrollIndicators();
-            
+
             if (this._delegate && this._delegate.scrollViewDidScroll) {
                 this._delegate.scrollViewDidScroll(this);
             }
         };
-        
+
         const onMouseUp = (e) => {
             if (!isDragging) return;
-            
+
             e.preventDefault();
             isDragging = false;
             this._element.style.cursor = 'grab';
             this._isDragging = false;
-            
+
+            if (dragAxis === null) {
+                this._hideScrollIndicatorsAfterDelay();
+                return;
+            }
+
             const velocity = { ...this._dragVelocity };
-            
+
+            if (this._pagingEnabled) {
+                this._handlePaging(velocity);
+                this._hideScrollIndicatorsAfterDelay();
+                return;
+            }
+
             const max = this._getMaxOffset();
             const isOutOfBounds = this._contentOffset.x < 0 || this._contentOffset.x > max.x ||
                                  this._contentOffset.y < 0 || this._contentOffset.y > max.y;
-            
+
             if (this._bounces && isOutOfBounds) {
                 this._animateBounceBack();
                 if (this._delegate && this._delegate.scrollViewWillEndDragging) {
@@ -583,58 +585,63 @@ class UIScrollView extends UIView {
                 }
                 return;
             }
-            
-            if (this._pagingEnabled) {
-                this._handlePaging(velocity);
-            } else {
-                this._handleInertialScrolling(velocity);
-            }
-            
+
+            this._handleInertialScrolling(velocity);
             this._hideScrollIndicatorsAfterDelay();
         };
-        
+
         const onWheel = (e) => {
+            e.preventDefault();
+
             if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
                 const scaleChange = e.deltaY > 0 ? 0.95 : 1.05;
                 const newScale = Math.max(this._minimumZoomScale, Math.min(this._maximumZoomScale, this._zoomScale * scaleChange));
                 if (Math.abs(newScale - this._zoomScale) > 0.001) {
+                    if (!this._isZooming) {
+                        this._isZooming = true;
+                        if (this._delegate && this._delegate.scrollViewWillBeginZooming) {
+                            this._delegate.scrollViewWillBeginZooming(this);
+                        }
+                    }
                     this.zoomScale = newScale;
+                    clearTimeout(this._zoomEndTimer);
+                    this._zoomEndTimer = setTimeout(() => {
+                        this._isZooming = false;
+                        if (this._delegate && this._delegate.scrollViewDidEndZooming) {
+                            this._delegate.scrollViewDidEndZooming(this, this._zoomScale);
+                        }
+                    }, 200);
                 }
-            } else {
-                e.preventDefault();
-                
-                this._stopDeceleration();
-                this._stopScrollAnimation();
-                if (this._bounceAnimation) {
-                    cancelAnimationFrame(this._bounceAnimation);
-                    this._bounceAnimation = null;
-                }
-                
-                // Smooth wheel scrolling with momentum
-                const deltaX = e.deltaX * (e.shiftKey && e.deltaY !== 0 ? e.deltaY : 1);
-                const deltaY = e.deltaY;
-                
-                let newOffset = {
-                    x: this._contentOffset.x + deltaX,
-                    y: this._contentOffset.y + deltaY
-                };
-                
-                newOffset = this._applyRubberBanding(newOffset);
-                this._contentOffset = newOffset;
-                this._syncContentElement();
-                this._updateScrollIndicators();
-                
-                if (this._delegate && this._delegate.scrollViewDidScroll) {
-                    this._delegate.scrollViewDidScroll(this);
-                }
-                
-                this._showScrollIndicators();
-                this._hideScrollIndicatorsAfterDelay();
+                return;
             }
+
+            this._stopAllAnimations();
+
+            const deltaX = e.deltaX * (e.shiftKey && e.deltaY !== 0 ? e.deltaY : 1);
+            const deltaY = e.deltaY;
+
+            let newOffset = {
+                x: this._canScrollHorizontal() ? this._contentOffset.x + deltaX : this._contentOffset.x,
+                y: this._canScrollVertical() ? this._contentOffset.y + deltaY : this._contentOffset.y
+            };
+
+            const max = this._getMaxOffset();
+            const wasInBounds = this._contentOffset.x >= 0 && this._contentOffset.x <= max.x &&
+                                this._contentOffset.y >= 0 && this._contentOffset.y <= max.y;
+
+            newOffset = this._clampOffset(newOffset);
+            this._contentOffset = newOffset;
+            this._applyTransform();
+            this._updateScrollIndicators();
+
+            if (this._delegate && this._delegate.scrollViewDidScroll) {
+                this._delegate.scrollViewDidScroll(this);
+            }
+
+            this._showScrollIndicators();
+            this._hideScrollIndicatorsAfterDelay();
         };
-        
-        // Touch events for mobile
+
         const onTouchStart = (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
@@ -646,7 +653,7 @@ class UIScrollView extends UIView {
                 });
             }
         };
-        
+
         const onTouchMove = (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
@@ -657,59 +664,62 @@ class UIScrollView extends UIView {
                 });
             }
         };
-        
+
         const onTouchEnd = (e) => {
             onMouseUp(e);
         };
-        
+
         this._element.addEventListener('mousedown', onMouseDown);
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
-        
+
         this._element.addEventListener('touchstart', onTouchStart, { passive: false });
         this._element.addEventListener('touchmove', onTouchMove, { passive: false });
         this._element.addEventListener('touchend', onTouchEnd);
         this._element.addEventListener('wheel', onWheel, { passive: false });
-        
-        // Store for cleanup
+
         this._eventHandlers = { onMouseDown, onMouseMove, onMouseUp, onTouchStart, onTouchMove, onTouchEnd, onWheel };
     }
 
     _handlePaging(velocity) {
         const pageWidth = this._pageSize.width > 0 ? this._pageSize.width : this._bounds.width;
         const pageHeight = this._pageSize.height > 0 ? this._pageSize.height : this._bounds.height;
-        
-        const currentPageX = Math.round(this._contentOffset.x / pageWidth);
-        const currentPageY = Math.round(this._contentOffset.y / pageHeight);
-        
-        const maxPageX = Math.max(0, Math.floor(this._contentSize.width / pageWidth));
-        const maxPageY = Math.max(0, Math.floor(this._contentSize.height / pageHeight));
-        
+
+        const clampedOffset = this._clampOffset(this._contentOffset);
+        const currentPageX = Math.round(clampedOffset.x / pageWidth);
+        const currentPageY = Math.round(clampedOffset.y / pageHeight);
+
+        const maxPageX = Math.max(0, Math.ceil(this._contentSize.width / pageWidth) - 1);
+        const maxPageY = Math.max(0, Math.ceil(this._contentSize.height / pageHeight) - 1);
+
         let targetPageX = currentPageX;
         let targetPageY = currentPageY;
-        
-        // Check for flick based on velocity
+
         const isFlickX = Math.abs(velocity.x) > 300;
         const isFlickY = Math.abs(velocity.y) > 300;
-        
+
         if (isFlickX) {
             targetPageX += velocity.x > 0 ? -1 : 1;
         }
-        
+
         if (isFlickY) {
             targetPageY += velocity.y > 0 ? -1 : 1;
         }
-        
+
         targetPageX = Math.max(0, Math.min(targetPageX, maxPageX));
         targetPageY = Math.max(0, Math.min(targetPageY, maxPageY));
-        
+
         const targetOffset = {
             x: targetPageX * pageWidth,
             y: targetPageY * pageHeight
         };
-        
-        this._animateToOffset(targetOffset, 300);
-        
+
+        this._animateToOffset(targetOffset, 300, () => {
+            if (this._delegate && this._delegate.scrollViewDidEndScrollingAnimation) {
+                this._delegate.scrollViewDidEndScrollingAnimation(this);
+            }
+        });
+
         if (this._delegate && this._delegate.scrollViewWillEndDragging) {
             this._delegate.scrollViewWillEndDragging(this, velocity, targetOffset);
         }
@@ -721,11 +731,11 @@ class UIScrollView extends UIView {
     _handleInertialScrolling(velocity) {
         const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
         const shouldDecelerate = speed > 50;
-        
+
         if (shouldDecelerate) {
             this._startDeceleration(velocity.x, velocity.y);
         }
-        
+
         if (this._delegate && this._delegate.scrollViewWillEndDragging) {
             this._delegate.scrollViewWillEndDragging(this, velocity, this._contentOffset);
         }
@@ -736,40 +746,38 @@ class UIScrollView extends UIView {
 
     _startDeceleration(velocityX, velocityY) {
         if (this._isDecelerating) return;
-        
+
         this._isDecelerating = true;
         let velX = velocityX;
         let velY = velocityY;
-        
+
         if (this._delegate && this._delegate.scrollViewWillBeginDecelerating) {
             this._delegate.scrollViewWillBeginDecelerating(this);
         }
-        
+
         const startTime = performance.now();
         const startOffset = { ...this._contentOffset };
-        
+
         const decelerate = (currentTime) => {
             if (!this._isDecelerating) return;
-            
+
             const elapsed = (currentTime - startTime) / 1000;
-            
-            // Exponential decay with deceleration rate
+
             const decayFactor = Math.pow(this._decelerationRate, elapsed * 60);
             const currentVelX = velX * decayFactor;
             const currentVelY = velY * decayFactor;
-            
-            // Calculate position using integral of velocity
-            let newX = startOffset.x + (velX * (1 - decayFactor) / Math.log(this._decelerationRate) * 60);
-            let newY = startOffset.y + (velY * (1 - decayFactor) / Math.log(this._decelerationRate) * 60);
-            
+
+            const logRate = Math.log(this._decelerationRate) * 60;
+            let newX = startOffset.x + (velX * (1 - decayFactor) / logRate);
+            let newY = startOffset.y + (velY * (1 - decayFactor) / logRate);
+
             const max = this._getMaxOffset();
             let shouldStop = false;
-            
-            // Check bounds with rubber banding
+
             if (newX < 0) {
                 if (this._bounces) {
-                    newX = this._applyRubberBanding({ x: newX, y: 0 }).x;
-                    if (Math.abs(currentVelX) < 10) shouldStop = true;
+                    newX = -this._rubberBand(-newX);
+                    if (Math.abs(currentVelX) < 50) shouldStop = true;
                 } else {
                     newX = 0;
                     shouldStop = true;
@@ -777,17 +785,17 @@ class UIScrollView extends UIView {
             } else if (newX > max.x) {
                 if (this._bounces) {
                     newX = max.x + this._rubberBand(newX - max.x);
-                    if (Math.abs(currentVelX) < 10) shouldStop = true;
+                    if (Math.abs(currentVelX) < 50) shouldStop = true;
                 } else {
                     newX = max.x;
                     shouldStop = true;
                 }
             }
-            
+
             if (newY < 0) {
                 if (this._bounces) {
-                    newY = this._applyRubberBanding({ x: 0, y: newY }).y;
-                    if (Math.abs(currentVelY) < 10) shouldStop = true;
+                    newY = -this._rubberBand(-newY);
+                    if (Math.abs(currentVelY) < 50) shouldStop = true;
                 } else {
                     newY = 0;
                     shouldStop = true;
@@ -795,41 +803,50 @@ class UIScrollView extends UIView {
             } else if (newY > max.y) {
                 if (this._bounces) {
                     newY = max.y + this._rubberBand(newY - max.y);
-                    if (Math.abs(currentVelY) < 10) shouldStop = true;
+                    if (Math.abs(currentVelY) < 50) shouldStop = true;
                 } else {
                     newY = max.y;
                     shouldStop = true;
                 }
             }
-            
+
             this._contentOffset = { x: newX, y: newY };
-            this._syncContentElement();
+            this._applyTransform();
             this._updateScrollIndicators();
-            
+
             if (this._delegate && this._delegate.scrollViewDidScroll) {
                 this._delegate.scrollViewDidScroll(this);
             }
-            
+
             const currentSpeed = Math.sqrt(currentVelX * currentVelX + currentVelY * currentVelY);
-            
-            if (currentSpeed < 10 || shouldStop || elapsed > 1.5) {
-                this._stopDeceleration();
-                
-                if (this._bounces && (this._contentOffset.x < 0 || this._contentOffset.x > max.x ||
-                                     this._contentOffset.y < 0 || this._contentOffset.y > max.y)) {
+
+            if (currentSpeed < 50 || shouldStop || elapsed > 0.6) {
+                this._isDecelerating = false;
+                if (this._decelerationTimer) {
+                    cancelAnimationFrame(this._decelerationTimer);
+                    this._decelerationTimer = null;
+                }
+
+                const isOutOfBounds = this._contentOffset.x < 0 || this._contentOffset.x > max.x ||
+                                     this._contentOffset.y < 0 || this._contentOffset.y > max.y;
+                if (this._bounces && isOutOfBounds) {
                     this._animateBounceBack(true);
-                } else if (this._delegate && this._delegate.scrollViewDidEndDecelerating) {
-                    this._delegate.scrollViewDidEndDecelerating(this);
+                } else {
+                    this._contentOffset = this._clampOffset(this._contentOffset);
+                    this._applyTransform();
+                    if (this._delegate && this._delegate.scrollViewDidEndDecelerating) {
+                        this._delegate.scrollViewDidEndDecelerating(this);
+                    }
                 }
             } else {
                 this._decelerationTimer = requestAnimationFrame(decelerate);
             }
         };
-        
+
         if (this._decelerationTimer) {
             cancelAnimationFrame(this._decelerationTimer);
         }
-        
+
         this._decelerationTimer = requestAnimationFrame(decelerate);
     }
 
@@ -838,25 +855,15 @@ class UIScrollView extends UIView {
             cancelAnimationFrame(this._decelerationTimer);
             this._decelerationTimer = null;
         }
-        
+
         if (this._isDecelerating) {
             this._isDecelerating = false;
-            if (this._delegate && this._delegate.scrollViewDidEndDecelerating) {
-                this._delegate.scrollViewDidEndDecelerating(this);
-            }
-        }
-    }
-
-    _stopScrollAnimation() {
-        if (this._scrollAnimation) {
-            cancelAnimationFrame(this._scrollAnimation);
-            this._scrollAnimation = null;
         }
     }
 
     _showScrollIndicators() {
         if (this._indicatorTimer) clearTimeout(this._indicatorTimer);
-        
+
         if (this._horizontalIndicator && this._showsHorizontalScrollIndicator && this._getMaxOffset().x > 0) {
             this._horizontalIndicator.style.opacity = '0.8';
         }
@@ -867,9 +874,9 @@ class UIScrollView extends UIView {
 
     _hideScrollIndicatorsAfterDelay() {
         if (this._indicatorTimer) clearTimeout(this._indicatorTimer);
-        
+
         this._indicatorTimer = setTimeout(() => {
-            if (!this._isDragging && !this._isDecelerating && !this._bounceAnimation) {
+            if (!this._isDragging && !this._isDecelerating && !this._scrollAnimation) {
                 if (this._horizontalIndicator) this._horizontalIndicator.style.opacity = '0';
                 if (this._verticalIndicator) this._verticalIndicator.style.opacity = '0';
             }
@@ -878,37 +885,37 @@ class UIScrollView extends UIView {
 
     _updateScrollIndicators() {
         if (!this._horizontalIndicator || !this._verticalIndicator) return;
-        
+
         const max = this._getMaxOffset();
-        
-        // Update horizontal indicator
+        const zoomedWidth = this._contentSize.width * this._zoomScale;
+        const zoomedHeight = this._contentSize.height * this._zoomScale;
+
         if (max.x > 0 && this._showsHorizontalScrollIndicator) {
-            const viewportRatio = this._bounds.width / this._contentSize.width;
+            const viewportRatio = this._bounds.width / zoomedWidth;
             const indicatorWidth = Math.max(30, viewportRatio * this._bounds.width);
             const maxIndicatorX = this._bounds.width - indicatorWidth - 4;
             let indicatorX = (this._contentOffset.x / max.x) * maxIndicatorX;
             indicatorX = Math.max(2, Math.min(maxIndicatorX, indicatorX));
-            
+
             this._horizontalIndicator.style.width = `${indicatorWidth}px`;
             this._horizontalIndicator.style.transform = `translateX(${indicatorX}px)`;
         }
-        
-        // Update vertical indicator
+
         if (max.y > 0 && this._showsVerticalScrollIndicator) {
-            const viewportRatio = this._bounds.height / this._contentSize.height;
+            const viewportRatio = this._bounds.height / zoomedHeight;
             const indicatorHeight = Math.max(30, viewportRatio * this._bounds.height);
             const maxIndicatorY = this._bounds.height - indicatorHeight - 4;
             let indicatorY = (this._contentOffset.y / max.y) * maxIndicatorY;
             indicatorY = Math.max(2, Math.min(maxIndicatorY, indicatorY));
-            
+
             this._verticalIndicator.style.height = `${indicatorHeight}px`;
             this._verticalIndicator.style.transform = `translateY(${indicatorY}px)`;
         }
     }
 
     _updateIndicatorStyles() {
-        const style = this._indicatorStyle === 'black' ? 'rgba(0,0,0,0.6)' : 
-                      this._indicatorStyle === 'white' ? 'rgba(255,255,255,0.6)' : 
+        const style = this._indicatorStyle === 'black' ? 'rgba(0,0,0,0.6)' :
+                      this._indicatorStyle === 'white' ? 'rgba(255,255,255,0.6)' :
                       'rgba(128,128,128,0.6)';
         if (this._horizontalIndicator) this._horizontalIndicator.style.backgroundColor = style;
         if (this._verticalIndicator) this._verticalIndicator.style.backgroundColor = style;
@@ -935,64 +942,52 @@ class UIScrollView extends UIView {
         this.contentSize = { width: maxX, height: maxY };
     }
 
+    sizeToFit() {
+        if (!this._contentElement) return;
+
+        this._contentElement.style.width = `${this._bounds.width}px`;
+
+        const children = this._contentElement.children;
+        let maxX = 0;
+        let maxY = 0;
+
+        for (const child of children) {
+            const rect = child.getBoundingClientRect();
+            const x = child.offsetLeft + rect.width;
+            const y = child.offsetTop + rect.height;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+
+        if (maxX <= this._bounds.width) maxX = this._bounds.width;
+
+        this.contentSize = { width: maxX, height: maxY };
+    }
+
     scrollRectToVisible(rect, animated = true) {
         let targetOffset = { ...this._contentOffset };
-        
+
         if (rect.x < this._contentOffset.x) {
             targetOffset.x = rect.x;
         } else if (rect.x + rect.width > this._contentOffset.x + this._bounds.width) {
             targetOffset.x = rect.x + rect.width - this._bounds.width;
         }
-        
+
         if (rect.y < this._contentOffset.y) {
             targetOffset.y = rect.y;
         } else if (rect.y + rect.height > this._contentOffset.y + this._bounds.height) {
             targetOffset.y = rect.y + rect.height - this._bounds.height;
         }
-        
+
         targetOffset = this._clampOffset(targetOffset);
-        
+
         if (animated) {
             this._animateToOffset(targetOffset);
         } else {
-            this.contentOffset = targetOffset;
+            this._contentOffset = targetOffset;
+            this._applyTransform();
+            this._updateScrollIndicators();
         }
-    }
-
-    _animateToOffset(targetOffset, duration = 300) {
-        this._stopDeceleration();
-        this._stopScrollAnimation();
-        if (this._bounceAnimation) {
-            cancelAnimationFrame(this._bounceAnimation);
-            this._bounceAnimation = null;
-        }
-        
-        const startOffset = { ...this._contentOffset };
-        const startTime = performance.now();
-        
-        const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-        
-        const animate = (currentTime) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(1, elapsed / duration);
-            const eased = easeOutCubic(progress);
-            
-            this.contentOffset = {
-                x: startOffset.x + (targetOffset.x - startOffset.x) * eased,
-                y: startOffset.y + (targetOffset.y - startOffset.y) * eased
-            };
-            
-            if (progress < 1) {
-                this._scrollAnimation = requestAnimationFrame(animate);
-            } else {
-                this._scrollAnimation = null;
-                if (this._delegate && this._delegate.scrollViewDidEndScrollingAnimation) {
-                    this._delegate.scrollViewDidEndScrollingAnimation(this);
-                }
-            }
-        };
-        
-        this._scrollAnimation = requestAnimationFrame(animate);
     }
 
     setContentOffsetAnimated(offset, duration = 0.25) {
@@ -1007,7 +1002,7 @@ class UIScrollView extends UIView {
     }
 
     scrollToBottom(animated = true) {
-        const maxY = Math.max(0, this._contentSize.height - this._bounds.height);
+        const maxY = Math.max(0, this._contentSize.height * this._zoomScale - this._bounds.height);
         this.scrollRectToVisible({ x: 0, y: maxY, width: 1, height: 1 }, animated);
     }
 
@@ -1018,61 +1013,72 @@ class UIScrollView extends UIView {
 
     zoomToRect(rect, animated = true) {
         if (this._maximumZoomScale <= this._minimumZoomScale) return;
-        
+
         const targetScale = Math.max(this._minimumZoomScale, Math.min(
             this._maximumZoomScale,
             Math.min(this._bounds.width / rect.width, this._bounds.height / rect.height)
         ));
-        
+
         const targetOffset = {
-            x: rect.x - (this._bounds.width - rect.width * targetScale) / 2,
-            y: rect.y - (this._bounds.height - rect.height * targetScale) / 2
+            x: rect.x * targetScale - (this._bounds.width - rect.width * targetScale) / 2,
+            y: rect.y * targetScale - (this._bounds.height - rect.height * targetScale) / 2
         };
-        
+
         if (animated) {
-            this._animateZoom(targetScale);
-            this._animateToOffset(targetOffset);
+            this._animateZoomAndOffset(targetScale, targetOffset);
         } else {
-            this.zoomScale = targetScale;
-            this.contentOffset = targetOffset;
+            this._zoomScale = targetScale;
+            this._contentOffset = this._clampOffset(targetOffset);
+            this._applyTransform();
         }
     }
 
-    _animateZoom(targetScale) {
+    _animateZoomAndOffset(targetScale, targetOffset, duration = 250) {
+        this._stopAllAnimations();
+
         const startScale = this._zoomScale;
+        const startOffset = { ...this._contentOffset };
+        const clampedTarget = this._clampOffset(targetOffset);
         const startTime = performance.now();
-        const duration = 250;
-        
-        const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-        
+        this._isAnimating = true;
+
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
             const progress = Math.min(1, elapsed / duration);
-            const eased = easeOutCubic(progress);
-            const newScale = startScale + (targetScale - startScale) * eased;
-            
-            if (Math.abs(newScale - this._zoomScale) > 0.001) {
-                this.zoomScale = newScale;
+            const eased = this._easeOutCubic(progress);
+
+            this._zoomScale = startScale + (targetScale - startScale) * eased;
+            this._contentOffset = {
+                x: startOffset.x + (clampedTarget.x - startOffset.x) * eased,
+                y: startOffset.y + (clampedTarget.y - startOffset.y) * eased
+            };
+            this._applyTransform();
+            this._updateScrollIndicators();
+
+            if (this._delegate && this._delegate.scrollViewDidZoom) {
+                this._delegate.scrollViewDidZoom(this);
             }
-            
+            if (this._delegate && this._delegate.scrollViewDidScroll) {
+                this._delegate.scrollViewDidScroll(this);
+            }
+
             if (progress < 1) {
-                requestAnimationFrame(animate);
+                this._scrollAnimation = requestAnimationFrame(animate);
+            } else {
+                this._scrollAnimation = null;
+                this._isAnimating = false;
             }
         };
-        requestAnimationFrame(animate);
+
+        this._scrollAnimation = requestAnimationFrame(animate);
     }
 
     removeFromSuperview() {
-        this._stopDeceleration();
-        this._stopScrollAnimation();
-        if (this._bounceAnimation) {
-            cancelAnimationFrame(this._bounceAnimation);
-        }
+        this._stopAllAnimations();
         if (this._indicatorTimer) {
             clearTimeout(this._indicatorTimer);
         }
-        
-        // Remove event listeners
+
         if (this._eventHandlers && this._element) {
             const handlers = this._eventHandlers;
             this._element.removeEventListener('mousedown', handlers.onMouseDown);
@@ -1083,7 +1089,7 @@ class UIScrollView extends UIView {
             window.removeEventListener('mousemove', handlers.onMouseMove);
             window.removeEventListener('mouseup', handlers.onMouseUp);
         }
-        
+
         super.removeFromSuperview();
     }
 }
