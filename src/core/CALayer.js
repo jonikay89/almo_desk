@@ -1,5 +1,6 @@
 import { CGPoint, CGSize, CGRect } from './CGGeometry.js';
 import UIColor from './UIColor.js';
+import { lazyVar } from './LazyVar.js';
 
 class CGPath {
     constructor() {
@@ -573,15 +574,15 @@ class CALayer {
         this._contents = null;
         this._contentsGravity = 'resize';
         this._transform = CATransform3D.identity();
-        this._sublayers = [];
+        lazyVar(this, '_sublayers', () => []);
         this._superlayer = null;
         this._mask = null;
         this._isDoubleSided = true;
         this._geometryFlipped = false;
         this._name = '';
         this._delegate = null;
-        this._actions = {};
-        this._style = {};
+        lazyVar(this, '_actions', () => ({}));
+        lazyVar(this, '_style', () => ({}));
         this._presentationLayer = null;
         this._modelLayer = null;
         this._customDrawContext = null;
@@ -590,7 +591,7 @@ class CALayer {
         this._shouldRasterize = false;
         this._edgeAntialiasing = true;
         this._opaque = false;
-        this._customState = {};
+        lazyVar(this, '_customState', () => ({}));
         this._cssClass = '';
     }
 

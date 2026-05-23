@@ -198,7 +198,7 @@ class NSLayoutConstraint {
         this._isActive = false;
         this._identifier = '';
         this._engine = null;
-        this._terms = this._buildTerms();
+        this._terms = [];
     }
 
     _buildTerms() {

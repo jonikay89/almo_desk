@@ -1,5 +1,6 @@
 export { default as DesktopOS } from './DesktopOS.js';
 export { default as WindowController } from './WindowController.js';
+export { lazyVar } from './LazyVar.js';
 export { default as NSObject } from './NSObject.js';
 export { default as NSNotification } from './NSNotification.js';
 export { default as NSNotificationCenter } from './NSNotificationCenter.js';

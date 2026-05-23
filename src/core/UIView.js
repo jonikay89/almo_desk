@@ -3,6 +3,7 @@ import { CALayer, CABasicAnimation, CAKeyframeAnimation, CAAnimationGroup } from
 import { ViewLayerBridge } from './bridge/index.js';
 import { CurrentValueSubject, Binding } from './Observable.js';
 import { NSLayoutAnchor } from './NSLayoutConstraint.js';
+import { lazyVar } from './LazyVar.js';
 
 class UIView extends UIResponder {
     static get layerClass() {
@@ -26,7 +27,7 @@ class UIView extends UIResponder {
         this._layer = new (this.constructor.layerClass)();
         this._layer.frame = this._frame;
         this._layer.bounds = this._bounds;
-        this._gestureRecognizers = [];
+        lazyVar(this, '_gestureRecognizers', () => []);
         this._isUserInteractionEnabled = true;
         this._isMultipleTouchEnabled = false;
         this._contentMode = 'scaleToFill';
@@ -36,14 +37,14 @@ class UIView extends UIResponder {
         this._needsDisplay = true;
         this._viewBridge = null;
         this._element = null;
-        this._constraints = [];
-        this._animationStack = [];
+        lazyVar(this, '_constraints', () => []);
+        lazyVar(this, '_animationStack', () => []);
         this._isLayoutSubviewsScheduled = false;
-        this._sublayers = [];
-        this._observables = {};
-        this._bindings = [];
-        this._dragInteractions = [];
-        this._dropInteractions = [];
+        lazyVar(this, '_sublayers', () => []);
+        lazyVar(this, '_observables', () => ({}));
+        lazyVar(this, '_bindings', () => []);
+        lazyVar(this, '_dragInteractions', () => []);
+        lazyVar(this, '_dropInteractions', () => []);
         this._dragDelegate = null;
         this._dropDelegate = null;
         this._layoutEngine = null;
@@ -54,9 +55,9 @@ class UIView extends UIResponder {
         this._directionalLayoutMargins = { top: 0, leading: 0, bottom: 0, trailing: 0 };
         this._preservesSuperviewLayoutMargins = false;
         this._insetsLayoutMarginsFromSafeArea = true;
-        this._contentHuggingPriority = { horizontal: 250, vertical: 250 };
-        this._contentCompressionResistancePriority = { horizontal: 750, vertical: 750 };
-        this._anchorCache = {};
+        lazyVar(this, '_contentHuggingPriority', () => ({ horizontal: 250, vertical: 250 }));
+        lazyVar(this, '_contentCompressionResistancePriority', () => ({ horizontal: 750, vertical: 750 }));
+        lazyVar(this, '_anchorCache', () => ({}));
         this._needsUpdateConstraints = false;
 
         this._shadow = null;
@@ -881,7 +882,6 @@ class UIView extends UIResponder {
     }
 
     _getAnchor(attr) {
-        if (!this._anchorCache) this._anchorCache = {};
         if (!this._anchorCache[attr]) {
             this._anchorCache[attr] = new NSLayoutAnchor(this, attr);
         }

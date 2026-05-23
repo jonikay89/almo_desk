@@ -24,8 +24,13 @@ class UIControl extends UIView {
     set isHighlighted(value) { this._isHighlighted = value; }
 
     addTarget(target, action) {
-        this._target = target;
-        this._action = action;
+        if (typeof target === 'function') {
+            this._action = target;
+            this._target = null;
+        } else {
+            this._target = target;
+            this._action = action;
+        }
     }
 
     removeTarget(target, action) {
